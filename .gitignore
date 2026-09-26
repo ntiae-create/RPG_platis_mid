@@ -3,3 +3,8 @@ node_modules/
 .github_repo
 .env
 .env.*
+.vercel
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
