@@ -20,6 +20,18 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
       - name: Android SDK
         run: |
           SDKMANAGER=$(find /usr/local/lib/android/sdk -name sdkmanager -type f | head -n 1)
