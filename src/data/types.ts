@@ -12,7 +12,22 @@ export type StatKey =
 
 export type Stats = Record<StatKey, number>;
 
-export type RaceTier = "basic" | "rare" | "legendary" | "extreme" | "extra";
+export type RaceTier =
+  | "basic"
+  | "rare"
+  | "legendary"
+  | "extreme"
+  | "extra";
+
+/* =========================================================
+   GÊNERO DO PERSONAGEM
+   ========================================================= */
+
+export type Gender = "masculino" | "feminino";
+
+/* =========================================================
+   RAÇA
+   ========================================================= */
 
 export type RaceDef = {
   id: string;
@@ -25,6 +40,10 @@ export type RaceDef = {
   unlock: "start" | "mission" | "master";
 };
 
+/* =========================================================
+   CLASSE
+   ========================================================= */
+
 export type ClassDef = {
   id: string;
   name: string;
@@ -32,6 +51,10 @@ export type ClassDef = {
   bonus: Partial<Stats>;
   passive: { name: string; description: string };
 };
+
+/* =========================================================
+   AFINIDADES
+   ========================================================= */
 
 export type AffinityId =
   | "fogo"
@@ -52,10 +75,33 @@ export type AffinityDef = {
   effect: string;
 };
 
-export type SkillType = "buff" | "debuff" | "heal" | "ataque" | "ataque-magico";
-export type SkillStatus = "draft" | "pending" | "approved" | "rejected";
-export type TargetMode = "unico" | "area";
-export type AreaDir = "cima" | "baixo" | "lados" | "diagonal" | "personalizado";
+/* =========================================================
+   HABILIDADES
+   ========================================================= */
+
+export type SkillType =
+  | "buff"
+  | "debuff"
+  | "heal"
+  | "ataque"
+  | "ataque-magico";
+
+export type SkillStatus =
+  | "draft"
+  | "pending"
+  | "approved"
+  | "rejected";
+
+export type TargetMode =
+  | "unico"
+  | "area";
+
+export type AreaDir =
+  | "cima"
+  | "baixo"
+  | "lados"
+  | "diagonal"
+  | "personalizado";
 
 export type Skill = {
   id: string;
@@ -64,7 +110,11 @@ export type Skill = {
   description: string;
   image?: string;
   type: SkillType;
-  cost: { hp: number; mp: number; est: number };
+  cost: {
+    hp: number;
+    mp: number;
+    est: number;
+  };
   target: TargetMode;
   areaCount: number;
   areaSquares: number;
@@ -76,6 +126,10 @@ export type Skill = {
   masterNote?: string;
 };
 
+/* =========================================================
+   INVENTÁRIO
+   ========================================================= */
+
 export type InventoryItem = {
   id: string;
   name: string;
@@ -84,6 +138,10 @@ export type InventoryItem = {
   qty: number;
 };
 
+/* =========================================================
+   MOEDAS
+   ========================================================= */
+
 export type Currency = {
   bronze: number;
   silver: number;
@@ -91,23 +149,58 @@ export type Currency = {
   platinum: number;
 };
 
+/* =========================================================
+   PERSONAGEM
+   ========================================================= */
+
 export type Character = {
   id: string;
+
   name: string;
+
+  /*
+   * NOVO:
+   * Gênero escolhido durante a criação do personagem.
+   */
+  gender: Gender;
+
+  /*
+   * Imagem final exibida no card.
+   * Posteriormente será escolhida automaticamente
+   * de acordo com raça + gênero.
+   */
   image: string;
+
   raceId: string;
   classId: string;
   affinityId: AffinityId;
+
   level: number;
   xp: number;
   brasaoXp: number;
+
   attrPoints: number;
   poolPoints: number;
+
   allocated: Partial<Stats>;
-  current: { hp: number; mp: number; est: number; san: number };
+
+  current: {
+    hp: number;
+    mp: number;
+    est: number;
+    san: number;
+  };
+
   skills: Skill[];
-  personalPassive: { name: string; description: string; stacks: number };
+
+  personalPassive: {
+    name: string;
+    description: string;
+    stacks: number;
+  };
+
   inventory: InventoryItem[];
+
   equipment: {
     arma?: InventoryItem;
     armadura?: InventoryItem;
@@ -115,33 +208,80 @@ export type Character = {
     reliquia?: InventoryItem;
     colar?: InventoryItem;
   };
+
   currency: Currency;
-  position: { continentId: string; layer: number; x: number; y: number };
+
+  position: {
+    continentId: string;
+    layer: number;
+    x: number;
+    y: number;
+  };
+
   unlockedRaces: string[];
+
   isMaster: boolean;
+
   isDemo?: boolean;
 };
 
+/* =========================================================
+   ENTIDADES DO MAPA
+   ========================================================= */
+
 export type MapEntity = {
   id: string;
-  kind: "player" | "monster" | "boss" | "npc" | "dungeon" | "trap";
+
+  kind:
+    | "player"
+    | "monster"
+    | "boss"
+    | "npc"
+    | "dungeon"
+    | "trap";
+
   name: string;
+
   continentId: string;
+
   layer: number;
+
   x: number;
+
   y: number;
+
   image?: string;
+
   hidden?: boolean;
+
   hp?: number;
+
   hpMax?: number;
 };
+
+/* =========================================================
+   LOG DE COMBATE
+   ========================================================= */
 
 export type CombatLogEntry = {
   id: string;
   at: number;
   text: string;
-  kind: "roll" | "hit" | "miss" | "crit" | "counter" | "passive" | "xp" | "system";
+
+  kind:
+    | "roll"
+    | "hit"
+    | "miss"
+    | "crit"
+    | "counter"
+    | "passive"
+    | "xp"
+    | "system";
 };
+
+/* =========================================================
+   CHAT
+   ========================================================= */
 
 export type ChatMsg = {
   id: string;
