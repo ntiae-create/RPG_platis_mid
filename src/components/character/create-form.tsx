@@ -6,7 +6,11 @@ import type { AffinityId, Gender } from "@/data/types";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { AffinityIcon } from "./affinity-icon";
-import { createCharacter, finalStats } from "@/lib/stats";
+import {
+  createCharacter,
+  finalStats,
+  getCharacterImage,
+} from "@/lib/stats";
 import { STAT_LABELS } from "@/data/progression";
 import { cn } from "@/lib/utils";
 import { Lock, Mars, Venus } from "lucide-react";
@@ -22,12 +26,44 @@ export function CreateForm({
   const [gender, setGender] = useState<Gender>("masculino");
   const [raceId, setRaceId] = useState("humano");
   const [classId, setClassId] = useState("guerreiro");
-  const [affinityId, setAffinityId] = useState<AffinityId>("fogo");
+  const [affinityId, setAffinityId] =
+    useState<AffinityId>("fogo");
   const [image, setImage] = useState<string | undefined>();
   const [filter, setFilter] = useState("");
 
   const race = RACES.find((r) => r.id === raceId)!;
   const cls = CLASSES.find((c) => c.id === classId)!;
+
+  /*
+   * ============================================================
+   * IMAGEM ATUAL DO PERSONAGEM
+   *
+   * Se houver imagem personalizada, ela tem prioridade.
+   * Caso contrário:
+   *
+   * raça + gênero
+   *        ↓
+   * imagem correspondente
+   *        ↓
+   * fallback para portrait da raça
+   * ============================================================
+   */
+
+  const characterImage = useMemo(
+    () =>
+      getCharacterImage(
+        raceId,
+        gender,
+        image,
+      ),
+    [raceId, gender, image],
+  );
+
+  /*
+   * ============================================================
+   * PREVIEW DOS STATUS
+   * ============================================================
+   */
 
   const preview = useMemo(
     () =>
@@ -44,8 +80,16 @@ export function CreateForm({
   );
 
   const classes = CLASSES.filter((c) =>
-    c.name.toLowerCase().includes(filter.toLowerCase()),
+    c.name
+      .toLowerCase()
+      .includes(filter.toLowerCase()),
   );
+
+  /*
+   * ============================================================
+   * UPLOAD DE IMAGEM PERSONALIZADA
+   * ============================================================
+   */
 
   function onFile(file: File | undefined) {
     if (!file) return;
@@ -56,13 +100,16 @@ export function CreateForm({
       const img = new Image();
 
       img.onload = () => {
-        const canvas = document.createElement("canvas");
+        const canvas =
+          document.createElement("canvas");
+
         const size = 512;
 
         canvas.width = size;
         canvas.height = size;
 
         const ctx = canvas.getContext("2d");
+
         if (!ctx) return;
 
         const scale = Math.max(
@@ -82,7 +129,10 @@ export function CreateForm({
         );
 
         setImage(
-          canvas.toDataURL("image/jpeg", 0.82),
+          canvas.toDataURL(
+            "image/jpeg",
+            0.82,
+          ),
         );
       };
 
@@ -91,6 +141,12 @@ export function CreateForm({
 
     reader.readAsDataURL(file);
   }
+
+  /*
+   * ============================================================
+   * FORMULÁRIO
+   * ============================================================
+   */
 
   return (
     <form
@@ -105,7 +161,18 @@ export function CreateForm({
             raceId,
             classId,
             affinityId,
-            image: image || race.portrait,
+
+            /*
+             * IMPORTANTE:
+             *
+             * Não usamos race.portrait aqui.
+             *
+             * Se image estiver vazia, createCharacter()
+             * escolherá automaticamente a imagem através
+             * de raça + gênero.
+             */
+            image,
+
             isMaster,
           }),
         );
@@ -186,8 +253,9 @@ export function CreateForm({
           </div>
 
           <p className="mt-2 text-xs text-muted">
-            O gênero será usado para definir a arte
-            correspondente à raça do personagem.
+            O gênero será usado para definir a
+            arte correspondente à raça do
+            personagem.
           </p>
         </div>
 
@@ -210,7 +278,9 @@ export function CreateForm({
                 accept="image/*"
                 className="sr-only"
                 onChange={(e) =>
-                  onFile(e.target.files?.[0])
+                  onFile(
+                    e.target.files?.[0],
+                  )
                 }
               />
             </label>
@@ -219,7 +289,9 @@ export function CreateForm({
               placeholder="URL da imagem"
               onBlur={(e) => {
                 if (
-                  e.target.value.startsWith("http")
+                  e.target.value.startsWith(
+                    "http",
+                  )
                 ) {
                   setImage(e.target.value);
                 }
@@ -229,8 +301,10 @@ export function CreateForm({
           </div>
 
           <p className="text-xs text-muted">
-            Se nenhuma imagem for enviada, será usada
-            a imagem padrão da raça.
+            Se nenhuma imagem for enviada,
+            será usada automaticamente a
+            imagem da raça correspondente
+            ao gênero escolhido.
           </p>
         </div>
 
@@ -260,6 +334,16 @@ export function CreateForm({
               const can =
                 !locked || masterOnly;
 
+              /*
+               * A miniatura também acompanha
+               * o gênero selecionado.
+               */
+              const racePreviewImage =
+                getCharacterImage(
+                  r.id,
+                  gender,
+                );
+
               return (
                 <button
                   key={r.id}
@@ -273,11 +357,12 @@ export function CreateForm({
                     "shadow-[0_0_0_1px_rgba(236,232,220,0.1)]",
                     raceId === r.id &&
                       "shadow-[0_0_0_2px_#d8d0c0]",
-                    !can && "opacity-40",
+                    !can &&
+                      "opacity-40",
                   )}
                 >
                   <img
-                    src={r.portrait}
+                    src={racePreviewImage}
                     alt=""
                     className="h-24 w-full object-cover"
                   />
@@ -379,7 +464,8 @@ export function CreateForm({
         <div>
 
           <Label>
-            Afinidade — altera a cor e o efeito do card
+            Afinidade — altera a cor e o efeito
+            do card
           </Label>
 
           <div className="mt-2 grid grid-cols-4 gap-2">
@@ -483,14 +569,16 @@ export function CreateForm({
 
         </ul>
 
-        {/* IMAGEM */}
+        {/* =====================================================
+            IMAGEM DO PERSONAGEM
+            ===================================================== */}
 
         <img
-          src={
-            image ||
-            race.portrait
+          src={characterImage}
+          alt={
+            name ||
+            `${race.name} ${gender}`
           }
-          alt=""
           className="mt-4 aspect-[3/4] w-full rounded-lg object-cover"
         />
 
