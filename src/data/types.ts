@@ -33,10 +33,28 @@ export type RaceDef = {
   id: string;
   name: string;
   tier: RaceTier;
+
+  /* Retrato padrão/legado da raça */
   portrait: string;
-  passive: { name: string; description: string };
-  extraPassives?: { name: string; description: string }[];
+
+  /* Retratos oficiais separados por gênero */
+  portraits: {
+    masculino: string;
+    feminino: string;
+  };
+
+  passive: {
+    name: string;
+    description: string;
+  };
+
+  extraPassives?: {
+    name: string;
+    description: string;
+  }[];
+
   base: Stats;
+
   unlock: "start" | "mission" | "master";
 };
 
@@ -49,7 +67,10 @@ export type ClassDef = {
   name: string;
   primary: StatKey;
   bonus: Partial<Stats>;
-  passive: { name: string; description: string };
+  passive: {
+    name: string;
+    description: string;
+  };
 };
 
 /* =========================================================
@@ -109,12 +130,15 @@ export type Skill = {
   name: string;
   description: string;
   image?: string;
+
   type: SkillType;
+
   cost: {
     hp: number;
     mp: number;
     est: number;
   };
+
   target: TargetMode;
   areaCount: number;
   areaSquares: number;
@@ -123,6 +147,7 @@ export type Skill = {
   duration: number;
   cooldown: number;
   status: SkillStatus;
+
   masterNote?: string;
 };
 
@@ -159,15 +184,21 @@ export type Character = {
   name: string;
 
   /*
-   * NOVO:
-   * Gênero escolhido durante a criação do personagem.
+   * Gênero escolhido durante a criação
+   * do personagem.
    */
   gender: Gender;
 
   /*
    * Imagem final exibida no card.
-   * Posteriormente será escolhida automaticamente
-   * de acordo com raça + gênero.
+   *
+   * O retrato oficial da raça agora pode ser
+   * determinado automaticamente através de:
+   *
+   * raceId + gender
+   *
+   * O campo é mantido para compatibilidade
+   * com personagens já existentes.
    */
   image: string;
 
@@ -290,3 +321,7 @@ export type ChatMsg = {
   text: string;
   at: number;
 };
+
+Esse já pode substituir o "types.ts" inteiro.
+
+Agora "RaceDef" e "Character" estão compatíveis com o sistema de 25 raças × 2 retratos por gênero.
