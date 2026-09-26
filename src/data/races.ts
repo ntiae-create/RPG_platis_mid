@@ -13,6 +13,47 @@ const s = (
   int: number,
 ): Stats => ({ hp, mp, est, san, atk, atkMgc, def, res, agi, int });
 
+/**
+ * =========================================================
+ * MECÂNICA DE DESESPERO
+ * =========================================================
+ *
+ * Doppelganger e Kitsune podem liberar 170% de sua capacidade
+ * quando a condição de desespero for ativada pelo sistema de
+ * combate.
+ *
+ * "Status atual + 170%" = 270% do status atual.
+ *
+ * Exemplo:
+ * 10 ATK → 27 ATK
+ * 40 HP  → 108 HP
+ *
+ * O multiplicador é aplicado sobre os status atuais, portanto
+ * acompanha automaticamente o crescimento do personagem,
+ * incluindo níveis altos e pontos distribuídos.
+ */
+
+export const DESPERATION_BONUS_PERCENT = 170;
+export const DESPERATION_MULTIPLIER = 1 + DESPERATION_BONUS_PERCENT / 100;
+
+/**
+ * Libera 170% adicionais dos status atuais.
+ *
+ * Arredondamento normal para manter os atributos inteiros.
+ */
+export const applyDesperationStats = (stats: Stats): Stats => ({
+  hp: Math.round(stats.hp * DESPERATION_MULTIPLIER),
+  mp: Math.round(stats.mp * DESPERATION_MULTIPLIER),
+  est: Math.round(stats.est * DESPERATION_MULTIPLIER),
+  san: Math.round(stats.san * DESPERATION_MULTIPLIER),
+  atk: Math.round(stats.atk * DESPERATION_MULTIPLIER),
+  atkMgc: Math.round(stats.atkMgc * DESPERATION_MULTIPLIER),
+  def: Math.round(stats.def * DESPERATION_MULTIPLIER),
+  res: Math.round(stats.res * DESPERATION_MULTIPLIER),
+  agi: Math.round(stats.agi * DESPERATION_MULTIPLIER),
+  int: Math.round(stats.int * DESPERATION_MULTIPLIER),
+});
+
 export const RACES: RaceDef[] = [
   {
     id: "humano",
@@ -108,7 +149,8 @@ export const RACES: RaceDef[] = [
     unlock: "mission",
     passive: {
       name: "Criação Indesejada",
-      description: "Ao receber dano que levaria a 0 HP: 20% chance de permanecer com 1 HP.",
+      description:
+        "Ao receber dano que levaria a 0 HP: 20% chance de permanecer com 1 HP.",
     },
     base: s(38, 22, 30, 60, 6, 6, 8, 8, 5, 12),
   },
@@ -273,7 +315,8 @@ export const RACES: RaceDef[] = [
       },
       {
         name: "Forma da Marca do Vazio",
-        description: "≤50% HP → forma de sombra por 2 turnos (incapaz de ser atacada).",
+        description:
+          "≤50% HP → forma de sombra por 2 turnos (incapaz de ser atacada).",
       },
     ],
     passive: {
@@ -304,7 +347,8 @@ export const RACES: RaceDef[] = [
     extraPassives: [
       {
         name: "Sorte Feérica",
-        description: "20% chance de transformar efeito negativo em positivo.",
+        description:
+          "20% chance de transformar efeito negativo em positivo.",
       },
       {
         name: "Travessura",
@@ -313,10 +357,17 @@ export const RACES: RaceDef[] = [
     ],
     passive: {
       name: "Frenesi Maluco",
-      description: "Ao entrar na batalha → +2 AGI e +2 ATK (mantém controle).",
+      description:
+        "Ao entrar na batalha → +2 AGI e +2 ATK (mantém controle).",
     },
     base: s(28, 38, 36, 90, 4, 10, 5, 10, 14, 16),
   },
+
+  /*
+   * =======================================================
+   * DOPPELGANGER
+   * =======================================================
+   */
   {
     id: "doppelganger",
     name: "Doppelganger",
@@ -328,8 +379,25 @@ export const RACES: RaceDef[] = [
       description:
         "1 Stack de Copy por turno. Ao 5 Stacks (1× por batalha): assimila personagem/monstro (até +10 níveis). Assume valores, classe, habilidades e passivas. Termina quando HP/MP/EST = 0. Não copia equipamentos/inventário.",
     },
-    base: s(30, 30, 40, 80, 6, 6, 6, 6, 10, 14),
+    base: s(
+      40,
+      38,
+      48,
+      100,
+      10,
+      9,
+      10,
+      9,
+      14,
+      20,
+    ),
   },
+
+  /*
+   * =======================================================
+   * KITSUNE
+   * =======================================================
+   */
   {
     id: "kitsune",
     name: "Kitsune",
@@ -339,7 +407,13 @@ export const RACES: RaceDef[] = [
     extraPassives: [
       {
         name: "Kitsune + Bufão",
-        description: "Clones também acumulam Stacks. Unidades = 1 + clones.",
+        description:
+          "Clones também acumulam Stacks. Unidades = 1 + clones.",
+      },
+      {
+        name: "Liberação de Desespero",
+        description:
+          "Quando seus companheiros entram em estado crítico, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo.",
       },
     ],
     passive: {
@@ -347,16 +421,28 @@ export const RACES: RaceDef[] = [
       description:
         "1 Stack de Ilusão por turno de ataques → ao 3 cria Ilusão (não pode ser atacada). Quando Ilusão é atacada → começa Stacks do Além. Ao 3 Stacks → imune aos próximos 2 ataques.",
     },
-    base: s(30, 36, 38, 85, 5, 10, 5, 9, 13, 16),
+    base: s(
+      38,
+      48,
+      45,
+      110,
+      8,
+      15,
+      8,
+      14,
+      18,
+      24,
+    ),
   },
 ];
 
-export const RACE_BY_ID = Object.fromEntries(RACES.map((r) => [r.id, r])) as Record<
-  string,
-  RaceDef
->;
+export const RACE_BY_ID = Object.fromEntries(
+  RACES.map((r) => [r.id, r]),
+) as Record<string, RaceDef>;
 
-export const BASIC_RACE_IDS = RACES.filter((r) => r.tier === "basic").map((r) => r.id);
+export const BASIC_RACE_IDS = RACES
+  .filter((r) => r.tier === "basic")
+  .map((r) => r.id);
 
 export const TIER_LABEL: Record<RaceDef["tier"], string> = {
   basic: "Basic",
