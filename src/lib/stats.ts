@@ -177,21 +177,87 @@ export function makeEmptySkills(
 }
 
 /* =========================================================
-   IMAGEM POR RAÇA + GÊNERO
+   IMAGENS POR RAÇA + GÊNERO
    =========================================================
 
-   Por enquanto usamos o portrait da raça como fallback.
+   Estrutura:
 
-   Depois podemos colocar as imagens reais aqui.
+   raça
+      ↓
+   gênero
+      ↓
+   imagem específica
 
    Exemplo:
 
-   kitsune + masculino
+   Kitsune + masculino
    → /character-art/races/kitsune_masculino.png
 
-   kitsune + feminino
+   Kitsune + feminino
    → /character-art/races/kitsune_feminino.png
 
+   Caso ainda não exista uma imagem específica para
+   determinada raça/gênero, usamos o portrait antigo
+   da raça como fallback.
+
+   Imagem personalizada sempre possui prioridade.
+   ========================================================= */
+
+const RACE_GENDER_IMAGES: Record<
+  string,
+  Partial<Record<Gender, string>>
+> = {
+  humano: {
+    masculino:
+      "/character-art/races/humano_masculino.png",
+
+    feminino:
+      "/character-art/races/humano_feminino.png",
+  },
+
+  "meio-elfo": {
+    masculino:
+      "/character-art/races/meio-elfo_masculino.png",
+
+    feminino:
+      "/character-art/races/meio-elfo_feminino.png",
+  },
+
+  elfo: {
+    masculino:
+      "/character-art/races/elfo_masculino.png",
+
+    feminino:
+      "/character-art/races/elfo_feminino.png",
+  },
+
+  "semi-besta": {
+    masculino:
+      "/character-art/races/semi-besta_masculino.png",
+
+    feminino:
+      "/character-art/races/semi-besta_feminino.png",
+  },
+
+  besta: {
+    masculino:
+      "/character-art/races/besta_masculino.png",
+
+    feminino:
+      "/character-art/races/besta_feminino.png",
+  },
+
+  kitsune: {
+    masculino:
+      "/character-art/races/kitsune_masculino.png",
+
+    feminino:
+      "/character-art/races/kitsune_feminino.png",
+  },
+};
+
+/* =========================================================
+   IMAGEM DO PERSONAGEM
    ========================================================= */
 
 export function getCharacterImage(
@@ -200,82 +266,35 @@ export function getCharacterImage(
   customImage?: string,
 ): string {
   /*
+   * 1. IMAGEM PERSONALIZADA
+   *
    * Se o jogador enviou uma imagem própria,
-   * ela tem prioridade.
+   * ela sempre terá prioridade.
    */
-  if (customImage) {
-    return customImage;
+  if (
+    customImage &&
+    customImage.trim()
+  ) {
+    return customImage.trim();
   }
 
   /*
-   * Aqui ficará o catálogo das imagens
-   * específicas de cada raça e gênero.
-   *
-   * Ainda estamos usando fallback porque
-   * as imagens oficiais ainda não foram
-   * cadastradas.
+   * 2. IMAGEM RAÇA + GÊNERO
    */
-  const raceImages: Record<
-    string,
-    Partial<Record<Gender, string>>
-  > = {
-    humano: {
-      masculino: "/character-art/races/humano_masculino.png",
-      feminino: "/character-art/races/humano_feminino.png",
-    },
-
-    "meio-elfo": {
-      masculino:
-        "/character-art/races/meio-elfo_masculino.png",
-      feminino:
-        "/character-art/races/meio-elfo_feminino.png",
-    },
-
-    elfo: {
-      masculino:
-        "/character-art/races/elfo_masculino.png",
-      feminino:
-        "/character-art/races/elfo_feminino.png",
-    },
-
-    "semi-besta": {
-      masculino:
-        "/character-art/races/semi-besta_masculino.png",
-      feminino:
-        "/character-art/races/semi-besta_feminino.png",
-    },
-
-    besta: {
-      masculino:
-        "/character-art/races/besta_masculino.png",
-      feminino:
-        "/character-art/races/besta_feminino.png",
-    },
-
-    kitsune: {
-      masculino:
-        "/character-art/races/kitsune_masculino.png",
-      feminino:
-        "/character-art/races/kitsune_feminino.png",
-    },
-  };
-
   const genderImage =
-    raceImages[raceId]?.[gender];
-
-  /*
-   * Se a imagem específica existir no catálogo,
-   * usamos ela.
-   *
-   * A verificação real do arquivo será feita
-   * pelo navegador. Caso ainda não exista,
-   * usamos o portrait da raça.
-   */
+    RACE_GENDER_IMAGES[raceId]?.[gender];
 
   if (genderImage) {
     return genderImage;
   }
 
+  /*
+   * 3. FALLBACK
+   *
+   * Caso ainda não exista uma imagem específica
+   * para aquela raça/gênero, usamos o portrait
+   * tradicional da raça.
+   */
   const race =
     RACE_BY_ID[raceId];
 
@@ -308,29 +327,43 @@ export function createCharacter(input: {
     RACE_BY_ID[input.raceId];
 
   /*
-   * Compatibilidade:
+   * Compatibilidade com personagens/sistemas
+   * antigos que ainda não enviam gênero.
    *
-   * Se algum lugar antigo do projeto criar
-   * um personagem sem informar gênero,
-   * ele será considerado masculino.
-   *
-   * Isso evita quebrar personagens antigos.
+   * O padrão será masculino.
    */
   const gender: Gender =
     input.gender ?? "masculino";
 
+  /*
+   * Calcula os status iniciais.
+   */
   const stats = finalStats({
     ...({} as Character),
 
-    raceId: input.raceId,
+    raceId:
+      input.raceId,
 
-    classId: input.classId,
+    classId:
+      input.classId,
 
     allocated: {},
 
     brasaoXp: 0,
   });
 
+  /*
+   * Define a imagem final.
+   *
+   * Se input.image existir:
+   *     usa a imagem personalizada.
+   *
+   * Se não existir:
+   *     usa raça + gênero.
+   *
+   * Se ainda não houver imagem específica:
+   *     usa portrait da raça.
+   */
   const characterImage =
     getCharacterImage(
       input.raceId,
@@ -383,8 +416,10 @@ export function createCharacter(input: {
 
     personalPassive: {
       name: "—",
+
       description:
         "Ainda não definida.",
+
       stacks: 0,
     },
 
