@@ -15,6 +15,37 @@ const s = (
 
 /**
  * =========================================================
+ * RETRATOS DAS RAÇAS
+ * =========================================================
+ *
+ * Cada raça possui duas imagens:
+ *
+ * /portraits/{raceId}_masculina.jpg
+ * /portraits/{raceId}_feminina.jpg
+ *
+ * Exemplo:
+ * /portraits/humano_masculina.jpg
+ * /portraits/humano_feminina.jpg
+ *
+ * O campo "portrait" continua existindo por compatibilidade
+ * com partes do projeto que ainda utilizam RaceDef.portrait.
+ * Ele aponta para a versão masculina por padrão.
+ */
+
+export type RaceGender = "masculina" | "feminina";
+
+export const getRacePortrait = (
+  raceId: string,
+  gender: RaceGender,
+): string => {
+  return `/portraits/${raceId}_${gender}.jpg`;
+};
+
+const racePortrait = (raceId: string): string =>
+  getRacePortrait(raceId, "masculina");
+
+/**
+ * =========================================================
  * MECÂNICA DE DESESPERO
  * =========================================================
  *
@@ -35,6 +66,7 @@ const s = (
  */
 
 export const DESPERATION_BONUS_PERCENT = 170;
+
 export const DESPERATION_MULTIPLIER =
   1 + DESPERATION_BONUS_PERCENT / 100;
 
@@ -65,7 +97,7 @@ export const RACES: RaceDef[] = [
     id: "humano",
     name: "Humano",
     tier: "basic",
-    portrait: "/portraits/humano.jpg",
+    portrait: racePortrait("humano"),
     unlock: "start",
     passive: {
       name: "Adaptatividade",
@@ -79,7 +111,7 @@ export const RACES: RaceDef[] = [
     id: "meio-elfo",
     name: "Meio-elfo",
     tier: "basic",
-    portrait: "/portraits/meio-elfo.jpg",
+    portrait: racePortrait("meio-elfo"),
     unlock: "start",
     passive: {
       name: "Atordoamento Élfico",
@@ -93,7 +125,7 @@ export const RACES: RaceDef[] = [
     id: "elfo",
     name: "Elfo",
     tier: "basic",
-    portrait: "/portraits/elfo.jpg",
+    portrait: racePortrait("elfo"),
     unlock: "start",
     passive: {
       name: "Atordoamento Ancestral",
@@ -107,7 +139,7 @@ export const RACES: RaceDef[] = [
     id: "semi-besta",
     name: "Semi-besta",
     tier: "basic",
-    portrait: "/portraits/semi-besta.jpg",
+    portrait: racePortrait("semi-besta"),
     unlock: "start",
     passive: {
       name: "Frenesi Controlado",
@@ -121,7 +153,7 @@ export const RACES: RaceDef[] = [
     id: "besta",
     name: "Besta",
     tier: "basic",
-    portrait: "/portraits/besta.jpg",
+    portrait: racePortrait("besta"),
     unlock: "start",
     passive: {
       name: "Frenesi",
@@ -135,7 +167,7 @@ export const RACES: RaceDef[] = [
     id: "lizard",
     name: "Lizard",
     tier: "rare",
-    portrait: "/portraits/semi-besta.jpg",
+    portrait: racePortrait("lizard"),
     unlock: "mission",
     passive: {
       name: "Escamas de Aço",
@@ -149,7 +181,7 @@ export const RACES: RaceDef[] = [
     id: "aqua",
     name: "Aqua",
     tier: "rare",
-    portrait: "/portraits/elfo.jpg",
+    portrait: racePortrait("aqua"),
     unlock: "mission",
     passive: {
       name: "Selos do Além",
@@ -163,7 +195,7 @@ export const RACES: RaceDef[] = [
     id: "morto-vivo",
     name: "Morto-vivo",
     tier: "rare",
-    portrait: "/portraits/vampiro.jpg",
+    portrait: racePortrait("morto-vivo"),
     unlock: "mission",
     passive: {
       name: "Criação Indesejada",
@@ -177,7 +209,7 @@ export const RACES: RaceDef[] = [
     id: "demonio",
     name: "Demônio",
     tier: "rare",
-    portrait: "/portraits/vampiro.jpg",
+    portrait: racePortrait("demonio"),
     unlock: "mission",
     passive: {
       name: "Injustiça Benigna",
@@ -191,7 +223,7 @@ export const RACES: RaceDef[] = [
     id: "divino",
     name: "Divino",
     tier: "rare",
-    portrait: "/portraits/elfo.jpg",
+    portrait: racePortrait("divino"),
     unlock: "mission",
     passive: {
       name: "Justiça Maldita",
@@ -205,7 +237,7 @@ export const RACES: RaceDef[] = [
     id: "driade",
     name: "Dríade",
     tier: "rare",
-    portrait: "/portraits/meio-elfo.jpg",
+    portrait: racePortrait("driade"),
     unlock: "mission",
     passive: {
       name: "Floresta da Vida",
@@ -219,7 +251,7 @@ export const RACES: RaceDef[] = [
     id: "lupino",
     name: "Lupino",
     tier: "rare",
-    portrait: "/portraits/besta.jpg",
+    portrait: racePortrait("lupino"),
     unlock: "mission",
     passive: {
       name: "Instinto de Matilha",
@@ -233,7 +265,7 @@ export const RACES: RaceDef[] = [
     id: "anao",
     name: "Anão",
     tier: "rare",
-    portrait: "/portraits/humano.jpg",
+    portrait: racePortrait("anao"),
     unlock: "mission",
     passive: {
       name: "Constituição Anã",
@@ -247,7 +279,7 @@ export const RACES: RaceDef[] = [
     id: "orc",
     name: "Orc",
     tier: "rare",
-    portrait: "/portraits/besta.jpg",
+    portrait: racePortrait("orc"),
     unlock: "mission",
     passive: {
       name: "Fúria Orc",
@@ -261,7 +293,7 @@ export const RACES: RaceDef[] = [
     id: "goblin",
     name: "Goblin",
     tier: "rare",
-    portrait: "/portraits/semi-besta.jpg",
+    portrait: racePortrait("goblin"),
     unlock: "mission",
     passive: {
       name: "Oportunista",
@@ -275,7 +307,7 @@ export const RACES: RaceDef[] = [
     id: "oni",
     name: "Oni",
     tier: "rare",
-    portrait: "/portraits/vampiro.jpg",
+    portrait: racePortrait("oni"),
     unlock: "mission",
     passive: {
       name: "Presença Demoníaca",
@@ -289,7 +321,7 @@ export const RACES: RaceDef[] = [
     id: "gigante",
     name: "Gigante",
     tier: "rare",
-    portrait: "/portraits/besta.jpg",
+    portrait: racePortrait("gigante"),
     unlock: "mission",
     passive: {
       name: "Força Colossal",
@@ -303,7 +335,7 @@ export const RACES: RaceDef[] = [
     id: "quimera",
     name: "Quimera",
     tier: "rare",
-    portrait: "/portraits/dragonoide.jpg",
+    portrait: racePortrait("quimera"),
     unlock: "mission",
     passive: {
       name: "Mutação",
@@ -317,7 +349,7 @@ export const RACES: RaceDef[] = [
     id: "homunculo",
     name: "Homúnculo",
     tier: "rare",
-    portrait: "/portraits/humano.jpg",
+    portrait: racePortrait("homunculo"),
     unlock: "mission",
     passive: {
       name: "Corpo Artificial",
@@ -335,7 +367,7 @@ export const RACES: RaceDef[] = [
     id: "dragonoide",
     name: "Dragonoide",
     tier: "legendary",
-    portrait: "/portraits/dragonoide.jpg",
+    portrait: racePortrait("dragonoide"),
     unlock: "mission",
     passive: {
       name: "Dragon's Finger",
@@ -349,7 +381,7 @@ export const RACES: RaceDef[] = [
     id: "umbral",
     name: "Umbral",
     tier: "legendary",
-    portrait: "/portraits/vampiro.jpg",
+    portrait: racePortrait("umbral"),
     unlock: "mission",
     extraPassives: [
       {
@@ -379,7 +411,7 @@ export const RACES: RaceDef[] = [
     id: "vampiro",
     name: "Vampiro",
     tier: "extreme",
-    portrait: "/portraits/vampiro.jpg",
+    portrait: racePortrait("vampiro"),
     unlock: "mission",
     passive: {
       name: "Blood Hugh",
@@ -393,7 +425,7 @@ export const RACES: RaceDef[] = [
     id: "fae",
     name: "Fae",
     tier: "extreme",
-    portrait: "/portraits/elfo.jpg",
+    portrait: racePortrait("fae"),
     unlock: "mission",
     extraPassives: [
       {
@@ -420,148 +452,84 @@ export const RACES: RaceDef[] = [
   // ========================================================
 
   {
-  id: "doppelganger",
-  name: "Doppelganger",
-  tier: "extra",
-  portrait: "/portraits/humano.jpg",
-  unlock: "master",
+    id: "doppelganger",
+    name: "Doppelganger",
+    tier: "extra",
+    portrait: racePortrait("doppelganger"),
+    unlock: "master",
 
-  extraPassives: [
-    {
-      name: "Maldito Espelho 🪞",
+    passive: {
+      name: "Assimilação",
       description:
-        "Ao assimilar alguém, o Doppelganger segue a mesma linha de combate do ser assimilado, imitando seus golpes e ações. Enquanto reproduz uma ação, não recebe o dano correspondente, mas pode reproduzi-la contra o alvo. Ao atingir 20% do HP máximo original do Doppelganger, ativa o Efeito da Morte.",
+        "Recebe 1 Stack de Assimilação por turno. Ao alcançar 5 Stacks, pode assimilar, uma vez por batalha, um personagem, jogador ou monstro válido. Pode assimilar seres de até 10 níveis acima de seu próprio nível. Durante a assimilação, assume os valores atuais, classe, habilidades e passivas do ser assimilado. A transformação termina quando HP, MP ou EST chega a 0, retornando à forma original com os atributos e recursos que possuía no momento da transformação. Não pode assimilar equipamentos ou inventário. Bosses especiais podem ser imunes.",
     },
-    {
-      name: "Liberação de Desespero",
-      description:
-        "Quando a condição de Desespero for ativada, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo.",
-    },
-    {
-      name: "doppelganger + ronin",
-      description:
-        "Ao utilizar a classe Ronin, manifesta uma Alma Ronin que cria um clone espiritual do Doppelganger. O clone luta ao seu lado e reproduz seus ataques, permitindo ataques duplos e causando 2x o dano. A combinação mantém a capacidade defensiva do Maldito Espelho.",
-    },
-  ],
 
-  passive: {
-    name: "Assimilação",
-    description:
-      "Acumula 1 Stack de Copy por turno. Ao alcançar 5 Stacks, pode, 1 vez por batalha, assimilar um personagem, jogador ou monstro válido. Pode assimilar seres até 10 níveis acima de seu próprio nível. Ao se transformar, assume os valores atuais do ser assimilado e ganha acesso à sua classe, habilidades e passivas. A transformação termina quando HP, MP ou EST chegar a 0. Ao retornar, recupera sua forma original com os atributos e recursos que possuía no momento em que iniciou a transformação. Não copia equipamentos, armas, armaduras, acessórios ou inventário. Bosses especiais podem ser imunes à Assimilação.",
+    extraPassives: [
+      {
+        name: "Maldito Espelho",
+        description:
+          "Ao assimilar alguém, o Doppelganger segue a mesma linha de combate do ser assimilado, imitando seus golpes e ações. Enquanto reproduz uma ação, não recebe o dano correspondente, mas pode reproduzi-la contra o alvo. Ao atingir 20% do HP máximo original do Doppelganger, ativa o Efeito da Morte.",
+      },
+      {
+        name: "Liberação de Desespero",
+        description:
+          "Quando a condição de desespero é ativada, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo.",
+      },
+      {
+        name: "Alma Ronin",
+        description:
+          "Quando o Doppelganger estiver utilizando a classe Ronin, manifesta um espírito Ronin que luta ao seu lado. O espírito reproduz os ataques do Doppelganger, permitindo ataques simultâneos e aumentando o dano causado para 2x. A combinação também mantém a capacidade defensiva proporcionada pelo Maldito Espelho.",
+      },
+    ],
+
+    base: s(40, 40, 40, 100, 10, 10, 10, 10, 16, 20),
   },
-
-  base: s(
-    40,
-    38,
-    48,
-    100,
-    10,
-    9,
-    10,
-    9,
-    14,
-    20,
-  ),
-},
 
   // ========================================================
   // EXTRA — KITSUNE
   // ========================================================
 
   {
-  id: "kitsune",
-  name: "Kitsune",
-  tier: "extra",
-  portrait: "/portraits/meio-elfo.jpg",
-  unlock: "master",
+    id: "kitsune",
+    name: "Kitsune",
+    tier: "extra",
+    portrait: racePortrait("kitsune"),
+    unlock: "master",
 
-  extraPassives: [
-    {
-      name: "Clones mortais",
+    passive: {
+      name: "Mestre Ilusionista, Cartas do Além",
       description:
-        "Se a Kitsune pertencer à classe Bufão, os Clones também acumulam Stacks de Ilusão e Stacks do Além. 0 clones: 1 Kitsune; 1 clone: 2 unidades; 2 clones: 3 unidades; 3 clones: 4 unidades. Cada unidade pode gerar suas próprias ilusões e efeitos de Stack do Além.",
+        "Stack de Ilusão: recebe 1 Stack de Ilusão por turno de ataques. Ao alcançar 3 Stacks, cria uma Ilusão e reinicia os Stacks. Ilusão: enquanto a Ilusão estiver ativa, a Kitsune não pode ser atacada. Quando a Ilusão for atacada, ela desaparece e a Kitsune começa a acumular Stacks do Além. Stack do Além: recebe 1 Stack do Além por turno de ataques. Ao alcançar 3 Stacks, torna-se imune aos próximos 2 ataques e os Stacks são reiniciados.",
     },
-    {
-      name: "Liberação de Desespero",
-      description:
-        "Quando seus companheiros entram em estado crítico, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo.",
-    },
-  ],
 
-  passive: {
-    name: "Mestre Ilusionista, Cartas do Além",
-    description:
-{
-  id: "doppelganger",
-  name: "Doppelganger",
-  tier: "extra",
-  portrait: "/portraits/meio-elfo.jpg",
-  unlock: "master",
+    extraPassives: [
+      {
+        name: "Encontre o Joker",
+        description:
+          "Se a Kitsune pertencer à classe Bufão, os Clones também acumulam Stacks de Ilusão e Stacks do Além. 0 clones: 1 Kitsune; 1 clone: 2 unidades; 2 clones: 3 unidades; 3 clones: 4 unidades. Cada unidade pode gerar suas próprias ilusões e efeitos de Stack do Além.",
+      },
+      {
+        name: "Liberação de Desespero",
+        description:
+          "Quando seus companheiros entram em estado crítico, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo.",
+      },
+      {
+        name: "Raposa do Caos, Caudas Vingativas",
+        description:
+          "A cada ataque recebido, a Kitsune manifesta 1 Cauda e acumula o dano sofrido. Ao manifestar a 9ª Cauda, libera todo o dano acumulado em 9 ataques, distribuídos entre os inimigos presentes. Se houver menos de 9 inimigos, os ataques restantes são distribuídos novamente entre os inimigos disponíveis. Após a liberação, as 9 Caudas desaparecem e o dano acumulado é zerado.",
+      },
+    ],
 
-  // PASSIVA PRINCIPAL — aparece primeiro no card
-  passive: {
-    name: "Assimilação",
-    description:
-      "Recebe 1 Stack de Assimilação por turno. Ao alcançar 5 Stacks, pode assimilar, uma vez por batalha, um personagem, jogador ou monstro válido. Pode assimilar seres de até 10 níveis acima de seu próprio nível. Durante a assimilação, assume os valores atuais, classe, habilidades e passivas do ser assimilado. A transformação termina quando HP, MP ou EST chega a 0, retornando à forma original com os atributos e recursos que possuía no momento da transformação. Não pode assimilar equipamentos ou inventário. Bosses especiais podem ser imunes."
+    base: s(38, 48, 45, 110, 8, 15, 8, 14, 18, 24),
   },
+];
 
-  // PASSIVAS ESPECIAIS — aparecem ao arrastar para cima
-  extraPassives: [
-    {
-      name: "Maldito Espelho",
-      description:
-        "Ao assimilar alguém, o Doppelganger segue a mesma linha de combate do ser assimilado, imitando seus golpes e ações. Enquanto reproduz uma ação, não recebe o dano correspondente, mas pode reproduzi-la contra o alvo. Ao atingir 20% do HP máximo original do Doppelganger, ativa o Efeito da Morte."
-    },
-    {
-      name: "Liberação de Desespero",
-      description:
-        "Quando a condição de desespero é ativada, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo."
-    },
-    {
-      name: "Alma Ronin",
-      description:
-        "Quando o Doppelganger estiver utilizando a classe Ronin, manifesta um espírito Ronin que luta ao seu lado. O espírito reproduz os ataques do Doppelganger, permitindo ataques simultâneos e aumentando o dano causado para 2x. A combinação também mantém a capacidade defensiva proporcionada pelo Maldito Espelho."
-    }
-  ],
+/**
+ * =========================================================
+ * ACESSO RÁPIDO
+ * =========================================================
+ */
 
-  base: s(40,40,40,100,10,10,10,10,16,20)
-},
-
-{
-  id: "kitsune",
-  name: "Kitsune",
-  tier: "extra",
-  portrait: "/portraits/meio-elfo.jpg",
-  unlock: "master",
-
-  // PASSIVA PRINCIPAL — aparece primeiro no card
-  passive: {
-    name: "Mestre Ilusionista, Cartas do Além",
-    description:
-      "Stack de Ilusão: recebe 1 Stack de Ilusão por turno de ataques. Ao alcançar 3 Stacks, cria uma Ilusão e reinicia os Stacks. Ilusão: enquanto a Ilusão estiver ativa, a Kitsune não pode ser atacada. Quando a Ilusão for atacada, ela desaparece e a Kitsune começa a acumular Stacks do Além. Stack do Além: recebe 1 Stack do Além por turno de ataques. Ao alcançar 3 Stacks, torna-se imune aos próximos 2 ataques e os Stacks são reiniciados."
-  },
-
-  // PASSIVAS ESPECIAIS — aparecem ao arrastar para cima
-  extraPassives: [
-    {
-      name: "Encontre o Joker",
-      description:
-        "Se a Kitsune pertencer à classe Bufão, os Clones também acumulam Stacks de Ilusão e Stacks do Além. 0 clones: 1 Kitsune; 1 clone: 2 unidades; 2 clones: 3 unidades; 3 clones: 4 unidades. Cada unidade pode gerar suas próprias ilusões e efeitos de Stack do Além."
-    },
-    {
-      name: "Liberação de Desespero",
-      description:
-        "Quando seus companheiros entram em estado crítico, libera 170% adicionais de sua capacidade. Todos os status atuais passam a 270% do valor original enquanto o estado permanecer ativo."
-    },
-    {
-      name: "Raposa do Caos, Caudas Vingativas",
-      description:
-        "A cada ataque recebido, a Kitsune manifesta 1 Cauda e acumula o dano sofrido. Ao manifestar a 9ª Cauda, libera todo o dano acumulado em 9 ataques, distribuídos entre os inimigos presentes. Se houver menos de 9 inimigos, os ataques restantes são distribuídos novamente entre os inimigos disponíveis. Após a liberação, as 9 Caudas desaparecem e o dano acumulado é zerado."
-    }
-  ],
-
-  base: s(38,48,45,110,8,15,8,14,18,24)
-},
 export const RACE_BY_ID = Object.fromEntries(
   RACES.map((r) => [r.id, r]),
 ) as Record<string, RaceDef>;
@@ -577,3 +545,37 @@ export const TIER_LABEL: Record<RaceDef["tier"], string> = {
   extreme: "Extreme",
   extra: "Extra",
 };
+
+Importante: esse arquivo agora contempla os 25 nomes:
+
+humano
+meio-elfo
+elfo
+semi-besta
+besta
+lizard
+aqua
+morto-vivo
+demonio
+divino
+driade
+lupino
+anao
+orc
+goblin
+oni
+gigante
+quimera
+homunculo
+dragonoide
+umbral
+vampiro
+fae
+doppelganger
+kitsune
+
+Portanto, os arquivos que você vai colocar em "public/portraits/" precisam usar exatamente esses IDs + "_masculina.jpg" ou "_feminina.jpg".
+
+Exemplo: "demonio_masculina.jpg", e não "demônio_masculino.jpg".
+
+E tem uma coisa boa: não precisamos criar 50 caminhos manualmente no código. A função "getRacePortrait()" monta os 50 automaticamente.
