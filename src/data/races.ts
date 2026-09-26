@@ -1,4 +1,4 @@
-import type { RaceDef, Stats } from "./types";
+import type { Gender, RaceDef, Stats } from "./types";
 
 const s = (
   hp: number,
@@ -15,34 +15,73 @@ const s = (
 
 /**
  * =========================================================
- * RETRATOS DAS RAÇAS
+ * RETRATOS DAS 25 RAÇAS
  * =========================================================
  *
- * Cada raça possui duas imagens:
+ * Cada raça possui:
+ *
+ * 1. portrait
+ *    → retrato padrão/legado da raça.
+ *
+ * 2. portraits.masculino
+ *    → retrato masculino oficial.
+ *
+ * 3. portraits.feminino
+ *    → retrato feminino oficial.
+ *
+ * Os retratos por gênero seguem:
  *
  * /portraits/{raceId}_masculina.jpg
  * /portraits/{raceId}_feminina.jpg
  *
  * Exemplo:
+ *
  * /portraits/humano_masculina.jpg
  * /portraits/humano_feminina.jpg
  *
- * O campo "portrait" continua existindo por compatibilidade
- * com partes do projeto que ainda utilizam RaceDef.portrait.
- * Ele aponta para a versão masculina por padrão.
+ * O personagem possui seu próprio campo "gender".
+ * Portanto, o sistema pode selecionar automaticamente
+ * o retrato correspondente à raça + gênero escolhido.
  */
 
-export type RaceGender = "masculina" | "feminina";
-
+/**
+ * Retorna o retrato específico do gênero escolhido.
+ *
+ * Esta função é a ponte entre:
+ *
+ * Character.gender
+ *       ↓
+ * RACE_BY_ID
+ *       ↓
+ * RaceDef.portraits
+ *       ↓
+ * imagem correspondente
+ */
 export const getRacePortrait = (
   raceId: string,
-  gender: RaceGender,
+  gender: Gender,
 ): string => {
-  return `/portraits/${raceId}_${gender}.jpg`;
+  const race = RACE_BY_ID[raceId];
+
+  if (!race) {
+    return "/portraits/humano.jpg";
+  }
+
+  return race.portraits[gender];
 };
 
-const racePortrait = (raceId: string): string =>
-  getRacePortrait(raceId, "masculina");
+/**
+ * Retorna o retrato padrão da raça.
+ *
+ * Usado quando não houver gênero disponível
+ * ou quando alguma parte antiga do sistema ainda
+ * precisar utilizar somente o retrato padrão.
+ */
+export const getDefaultRacePortrait = (
+  raceId: string,
+): string => {
+  return RACE_BY_ID[raceId]?.portrait ?? "/portraits/humano.jpg";
+};
 
 /**
  * =========================================================
@@ -90,14 +129,18 @@ export const applyDesperationStats = (stats: Stats): Stats => ({
 
 export const RACES: RaceDef[] = [
   // ========================================================
-  // NORMAL
+  // NORMAL — 19 RAÇAS
   // ========================================================
 
   {
     id: "humano",
     name: "Humano",
     tier: "basic",
-    portrait: racePortrait("humano"),
+    portrait: "/portraits/humano.jpg",
+    portraits: {
+      masculino: "/portraits/humano_masculina.jpg",
+      feminino: "/portraits/humano_feminina.jpg",
+    },
     unlock: "start",
     passive: {
       name: "Adaptatividade",
@@ -111,7 +154,11 @@ export const RACES: RaceDef[] = [
     id: "meio-elfo",
     name: "Meio-elfo",
     tier: "basic",
-    portrait: racePortrait("meio-elfo"),
+    portrait: "/portraits/meio-elfo.jpg",
+    portraits: {
+      masculino: "/portraits/meio-elfo_masculina.jpg",
+      feminino: "/portraits/meio-elfo_feminina.jpg",
+    },
     unlock: "start",
     passive: {
       name: "Atordoamento Élfico",
@@ -125,7 +172,11 @@ export const RACES: RaceDef[] = [
     id: "elfo",
     name: "Elfo",
     tier: "basic",
-    portrait: racePortrait("elfo"),
+    portrait: "/portraits/elfo.jpg",
+    portraits: {
+      masculino: "/portraits/elfo_masculina.jpg",
+      feminino: "/portraits/elfo_feminina.jpg",
+    },
     unlock: "start",
     passive: {
       name: "Atordoamento Ancestral",
@@ -139,7 +190,11 @@ export const RACES: RaceDef[] = [
     id: "semi-besta",
     name: "Semi-besta",
     tier: "basic",
-    portrait: racePortrait("semi-besta"),
+    portrait: "/portraits/semi-besta.jpg",
+    portraits: {
+      masculino: "/portraits/semi-besta_masculina.jpg",
+      feminino: "/portraits/semi-besta_feminina.jpg",
+    },
     unlock: "start",
     passive: {
       name: "Frenesi Controlado",
@@ -153,7 +208,11 @@ export const RACES: RaceDef[] = [
     id: "besta",
     name: "Besta",
     tier: "basic",
-    portrait: racePortrait("besta"),
+    portrait: "/portraits/besta.jpg",
+    portraits: {
+      masculino: "/portraits/besta_masculina.jpg",
+      feminino: "/portraits/besta_feminina.jpg",
+    },
     unlock: "start",
     passive: {
       name: "Frenesi",
@@ -167,7 +226,11 @@ export const RACES: RaceDef[] = [
     id: "lizard",
     name: "Lizard",
     tier: "rare",
-    portrait: racePortrait("lizard"),
+    portrait: "/portraits/lizard.jpg",
+    portraits: {
+      masculino: "/portraits/lizard_masculina.jpg",
+      feminino: "/portraits/lizard_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Escamas de Aço",
@@ -181,7 +244,11 @@ export const RACES: RaceDef[] = [
     id: "aqua",
     name: "Aqua",
     tier: "rare",
-    portrait: racePortrait("aqua"),
+    portrait: "/portraits/aqua.jpg",
+    portraits: {
+      masculino: "/portraits/aqua_masculina.jpg",
+      feminino: "/portraits/aqua_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Selos do Além",
@@ -195,7 +262,11 @@ export const RACES: RaceDef[] = [
     id: "morto-vivo",
     name: "Morto-vivo",
     tier: "rare",
-    portrait: racePortrait("morto-vivo"),
+    portrait: "/portraits/morto-vivo.jpg",
+    portraits: {
+      masculino: "/portraits/morto-vivo_masculina.jpg",
+      feminino: "/portraits/morto-vivo_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Criação Indesejada",
@@ -209,7 +280,11 @@ export const RACES: RaceDef[] = [
     id: "demonio",
     name: "Demônio",
     tier: "rare",
-    portrait: racePortrait("demonio"),
+    portrait: "/portraits/demonio.jpg",
+    portraits: {
+      masculino: "/portraits/demonio_masculina.jpg",
+      feminino: "/portraits/demonio_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Injustiça Benigna",
@@ -223,7 +298,11 @@ export const RACES: RaceDef[] = [
     id: "divino",
     name: "Divino",
     tier: "rare",
-    portrait: racePortrait("divino"),
+    portrait: "/portraits/divino.jpg",
+    portraits: {
+      masculino: "/portraits/divino_masculina.jpg",
+      feminino: "/portraits/divino_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Justiça Maldita",
@@ -237,7 +316,11 @@ export const RACES: RaceDef[] = [
     id: "driade",
     name: "Dríade",
     tier: "rare",
-    portrait: racePortrait("driade"),
+    portrait: "/portraits/driade.jpg",
+    portraits: {
+      masculino: "/portraits/driade_masculina.jpg",
+      feminino: "/portraits/driade_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Floresta da Vida",
@@ -251,7 +334,11 @@ export const RACES: RaceDef[] = [
     id: "lupino",
     name: "Lupino",
     tier: "rare",
-    portrait: racePortrait("lupino"),
+    portrait: "/portraits/lupino.jpg",
+    portraits: {
+      masculino: "/portraits/lupino_masculina.jpg",
+      feminino: "/portraits/lupino_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Instinto de Matilha",
@@ -265,7 +352,11 @@ export const RACES: RaceDef[] = [
     id: "anao",
     name: "Anão",
     tier: "rare",
-    portrait: racePortrait("anao"),
+    portrait: "/portraits/anao.jpg",
+    portraits: {
+      masculino: "/portraits/anao_masculina.jpg",
+      feminino: "/portraits/anao_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Constituição Anã",
@@ -279,7 +370,11 @@ export const RACES: RaceDef[] = [
     id: "orc",
     name: "Orc",
     tier: "rare",
-    portrait: racePortrait("orc"),
+    portrait: "/portraits/orc.jpg",
+    portraits: {
+      masculino: "/portraits/orc_masculina.jpg",
+      feminino: "/portraits/orc_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Fúria Orc",
@@ -293,7 +388,11 @@ export const RACES: RaceDef[] = [
     id: "goblin",
     name: "Goblin",
     tier: "rare",
-    portrait: racePortrait("goblin"),
+    portrait: "/portraits/goblin.jpg",
+    portraits: {
+      masculino: "/portraits/goblin_masculina.jpg",
+      feminino: "/portraits/goblin_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Oportunista",
@@ -307,7 +406,11 @@ export const RACES: RaceDef[] = [
     id: "oni",
     name: "Oni",
     tier: "rare",
-    portrait: racePortrait("oni"),
+    portrait: "/portraits/oni.jpg",
+    portraits: {
+      masculino: "/portraits/oni_masculina.jpg",
+      feminino: "/portraits/oni_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Presença Demoníaca",
@@ -321,7 +424,11 @@ export const RACES: RaceDef[] = [
     id: "gigante",
     name: "Gigante",
     tier: "rare",
-    portrait: racePortrait("gigante"),
+    portrait: "/portraits/gigante.jpg",
+    portraits: {
+      masculino: "/portraits/gigante_masculina.jpg",
+      feminino: "/portraits/gigante_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Força Colossal",
@@ -335,7 +442,11 @@ export const RACES: RaceDef[] = [
     id: "quimera",
     name: "Quimera",
     tier: "rare",
-    portrait: racePortrait("quimera"),
+    portrait: "/portraits/quimera.jpg",
+    portraits: {
+      masculino: "/portraits/quimera_masculina.jpg",
+      feminino: "/portraits/quimera_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Mutação",
@@ -349,7 +460,11 @@ export const RACES: RaceDef[] = [
     id: "homunculo",
     name: "Homúnculo",
     tier: "rare",
-    portrait: racePortrait("homunculo"),
+    portrait: "/portraits/homunculo.jpg",
+    portraits: {
+      masculino: "/portraits/homunculo_masculina.jpg",
+      feminino: "/portraits/homunculo_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Corpo Artificial",
@@ -360,14 +475,18 @@ export const RACES: RaceDef[] = [
   },
 
   // ========================================================
-  // LEGENDARY
+  // LEGENDARY — 2 RAÇAS
   // ========================================================
 
   {
     id: "dragonoide",
     name: "Dragonoide",
     tier: "legendary",
-    portrait: racePortrait("dragonoide"),
+    portrait: "/portraits/dragonoide.jpg",
+    portraits: {
+      masculino: "/portraits/dragonoide_masculina.jpg",
+      feminino: "/portraits/dragonoide_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Dragon's Finger",
@@ -381,7 +500,11 @@ export const RACES: RaceDef[] = [
     id: "umbral",
     name: "Umbral",
     tier: "legendary",
-    portrait: racePortrait("umbral"),
+    portrait: "/portraits/umbral.jpg",
+    portraits: {
+      masculino: "/portraits/umbral_masculina.jpg",
+      feminino: "/portraits/umbral_feminina.jpg",
+    },
     unlock: "mission",
     extraPassives: [
       {
@@ -404,14 +527,18 @@ export const RACES: RaceDef[] = [
   },
 
   // ========================================================
-  // EXTREME
+  // EXTREME — 2 RAÇAS
   // ========================================================
 
   {
     id: "vampiro",
     name: "Vampiro",
     tier: "extreme",
-    portrait: racePortrait("vampiro"),
+    portrait: "/portraits/vampiro.jpg",
+    portraits: {
+      masculino: "/portraits/vampiro_masculina.jpg",
+      feminino: "/portraits/vampiro_feminina.jpg",
+    },
     unlock: "mission",
     passive: {
       name: "Blood Hugh",
@@ -425,7 +552,11 @@ export const RACES: RaceDef[] = [
     id: "fae",
     name: "Fae",
     tier: "extreme",
-    portrait: racePortrait("fae"),
+    portrait: "/portraits/fae.jpg",
+    portraits: {
+      masculino: "/portraits/fae_masculina.jpg",
+      feminino: "/portraits/fae_feminina.jpg",
+    },
     unlock: "mission",
     extraPassives: [
       {
@@ -448,14 +579,18 @@ export const RACES: RaceDef[] = [
   },
 
   // ========================================================
-  // EXTRA — DOPPELGANGER
+  // EXTRA — 2 RAÇAS
   // ========================================================
 
   {
     id: "doppelganger",
     name: "Doppelganger",
     tier: "extra",
-    portrait: racePortrait("doppelganger"),
+    portrait: "/portraits/doppelganger.jpg",
+    portraits: {
+      masculino: "/portraits/doppelganger_masculina.jpg",
+      feminino: "/portraits/doppelganger_feminina.jpg",
+    },
     unlock: "master",
 
     passive: {
@@ -485,15 +620,15 @@ export const RACES: RaceDef[] = [
     base: s(40, 40, 40, 100, 10, 10, 10, 10, 16, 20),
   },
 
-  // ========================================================
-  // EXTRA — KITSUNE
-  // ========================================================
-
   {
     id: "kitsune",
     name: "Kitsune",
     tier: "extra",
-    portrait: racePortrait("kitsune"),
+    portrait: "/portraits/kitsune.jpg",
+    portraits: {
+      masculino: "/portraits/kitsune_masculina.jpg",
+      feminino: "/portraits/kitsune_feminina.jpg",
+    },
     unlock: "master",
 
     passive: {
@@ -546,36 +681,13 @@ export const TIER_LABEL: Record<RaceDef["tier"], string> = {
   extra: "Extra",
 };
 
-Importante: esse arquivo agora contempla os 25 nomes:
+Atenção a um detalhe: para esse "races.ts" compilar, o "RaceDef" do seu "types.ts" também precisa receber:
 
-humano
-meio-elfo
-elfo
-semi-besta
-besta
-lizard
-aqua
-morto-vivo
-demonio
-divino
-driade
-lupino
-anao
-orc
-goblin
-oni
-gigante
-quimera
-homunculo
-dragonoide
-umbral
-vampiro
-fae
-doppelganger
-kitsune
+portraits: {
+  masculino: string;
+  feminino: string;
+};
 
-Portanto, os arquivos que você vai colocar em "public/portraits/" precisam usar exatamente esses IDs + "_masculina.jpg" ou "_feminina.jpg".
+O "Gender" que você já tem está correto.
 
-Exemplo: "demonio_masculina.jpg", e não "demônio_masculino.jpg".
-
-E tem uma coisa boa: não precisamos criar 50 caminhos manualmente no código. A função "getRacePortrait()" monta os 50 automaticamente.
+Depois disso, o próximo arquivo que precisa ser alterado é justamente o "CharacterCard.tsx", para ele usar "character.gender" em vez de continuar usando "character.image". Só então o gênero escolhido pelo jogador terá efeito visual real no card.
