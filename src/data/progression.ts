@@ -34,7 +34,7 @@ export const BRASAO_ALL_PCT: Record<number, number> = {
 };
 
 export function brasaoLevelFromXp(xp: number): (typeof BRASAO_LEVELS)[number] {
-  let current = BRASAO_LEVELS[0];
+  let current: (typeof BRASAO_LEVELS)[number] = BRASAO_LEVELS[0];
   for (const b of BRASAO_LEVELS) {
     if (xp >= b.xp) current = b;
   }
@@ -64,7 +64,7 @@ export const STAT_LABELS: Record<StatKey, string> = {
 
 export const COMBAT_DICE = [4, 6, 8, 10, 12, 15, 20, 50, 100] as const;
 
-export const BRONZE_PER_SILVER = 100;
-export const SILVER_PER_GOLD = 100;
+export const BRONZE_PER_SILVER = 80;
+export const SILVER_PER_GOLD = 105;
 export const GOLD_PER_PLATINUM = 1000;
 export const MYSTERY_BOX_SILVER = 40;

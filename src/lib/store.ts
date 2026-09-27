@@ -107,6 +107,8 @@ type AppState = {
   sendChat: (text: string) => void;
   buyMysteryBox: () => void;
   equipItem: (itemId: string) => void;
+  unequipItem: (slot: "arma" | "armadura" | "botas" | "reliquia" | "colar") => void;
+  discardItem: (itemId: string) => void;
   disarmTrap: () => void;
 };
 
@@ -423,7 +425,7 @@ export const usePlatis = create<AppState>()(
               {
                 id: uid("lg"),
                 at: Date.now(),
-                kind: "xp",
+                kind: "xp" as const,
                 text: `${ch.name} sobe ${gained} nível(is) → Nv. ${next.level}.`,
               },
               ...get().combatLog,
@@ -647,7 +649,7 @@ export const usePlatis = create<AppState>()(
               {
                 id: uid("lg"),
                 at: Date.now(),
-                kind: "counter",
+                kind: "counter" as const,
                 text: `${def.name} esquiva / defende (0 EST).`,
               },
               ...s.combatLog,
@@ -674,7 +676,7 @@ export const usePlatis = create<AppState>()(
             {
               id: uid("lg"),
               at: Date.now(),
-              kind: "counter",
+              kind: "counter" as const,
               text: `${def.name} contra-ataca (−3 EST, sem crítico).`,
             },
             ...res.log,
@@ -698,7 +700,7 @@ export const usePlatis = create<AppState>()(
             {
               id: uid("lg"),
               at: Date.now(),
-              kind: "roll",
+              kind: "roll" as const,
               text: `${self?.name ?? "Mesa"} rola D${sides} = ${value}.`,
             },
             ...get().combatLog,
@@ -718,7 +720,7 @@ export const usePlatis = create<AppState>()(
             {
               id: uid("lg"),
               at: Date.now(),
-              kind: "xp",
+              kind: "xp" as const,
               text: `O Mestre concede ${s.combatXpAward} XP de combate a todos os jogadores na mesa.`,
             },
             ...s.combatLog,
@@ -754,13 +756,37 @@ export const usePlatis = create<AppState>()(
         if (sil >= 40) sil -= 40;
         else if (gold > 0) {
           gold -= 1;
-          sil += 60;
+          sil += 105;
         } else return;
         const loot = [
-          { name: "Poção menor", desc: "Recupera 8 HP." },
-          { name: "Pó de prata", desc: "Material alquímico." },
-          { name: "Adaga gasta", desc: "Arma simples.", slot: "arma" as const },
-          { name: "Amuleto opaco", desc: "Colar sem afinidade.", slot: "colar" as const },
+          {
+            name: "Poção menor",
+            desc: "Recupera 8 HP.",
+            tier: "basic" as const,
+            price: 30,
+          },
+          {
+            name: "Pó de prata",
+            desc: "Material alquímico.",
+            tier: "basic" as const,
+            price: 30,
+          },
+          {
+            name: "Adaga gasta",
+            desc: "Arma simples. +1 ATK.",
+            slot: "arma" as const,
+            tier: "basic" as const,
+            price: 30,
+            bonus: { atk: 1 },
+          },
+          {
+            name: "Amuleto opaco",
+            desc: "Colar sem afinidade. +3 HP e +3 MP.",
+            slot: "colar" as const,
+            tier: "basic" as const,
+            price: 30,
+            bonus: { hp: 3, mp: 3 },
+          },
         ][Math.floor(Math.random() * 4)];
         get().patchCharacter(id, {
           currency: { ...ch.currency, silver: sil, gold },
@@ -788,6 +814,23 @@ export const usePlatis = create<AppState>()(
         get().patchCharacter(id, { equipment });
       },
 
+      unequipItem: (slot) => {
+        const id = get().selfId;
+        if (!id) return;
+        const ch = get().characters[id];
+        if (!ch) return;
+        const equipment = { ...ch.equipment };
+        delete equipment[slot];
+        get().patchCharacter(id, { equipment });
+      },
+      discardItem: (itemId) => {
+        const id = get().selfId;
+        if (!id) return;
+        const ch = get().characters[id];
+        if (!ch) return;
+        const inventory = ch.inventory.filter((item) => item.id !== itemId);
+        get().patchCharacter(id, { inventory });
+      },
       disarmTrap: () => set({ trap: null }),
     }),
     {

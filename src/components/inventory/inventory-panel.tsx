@@ -9,6 +9,8 @@ export function InventoryPanel() {
   const ch = usePlatis((s) => (s.selfId ? s.characters[s.selfId] : null));
   const buy = usePlatis((s) => s.buyMysteryBox);
   const equip = usePlatis((s) => s.equipItem);
+  const unequip = usePlatis((s) => s.unequipItem);
+  const discard = usePlatis((s) => s.discardItem);
   const spend = usePlatis((s) => s.spendAttr);
   if (!ch) return null;
   const cap = inventorySlots(ch.level);
@@ -24,7 +26,7 @@ export function InventoryPanel() {
           {EQUIP.map((k) => (
             <li key={k} className="flex justify-between rounded-md bg-raised px-3 py-2 text-sm">
               <span className="capitalize text-muted">{k}</span>
-              <span>{ch.equipment[k]?.name ?? "—"}</span>
+              <div className="flex items-center gap-2"><span>{ch.equipment[k]?.name ?? "—"}</span>{ch.equipment[k] && <Button size="sm" variant="outline" onClick={() => unequip(k)}>Tirar</Button>}</div>
             </li>
           ))}
         </ul>
@@ -43,7 +45,7 @@ export function InventoryPanel() {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-muted">1 Gold = 100 Silver = 10.000 Bronze · 1 Platinum = 1.000 Gold</p>
+        <p className="mt-2 text-[11px] text-muted">1 Silver = 80 Bronze · 1 Gold = 105 Silver · 1 Platinum = 1.000 Gold</p>
         <Button className="mt-3" variant="secondary" onClick={buy}>
           Mystery Box · {MYSTERY_BOX_SILVER} Silver
         </Button>
@@ -62,11 +64,14 @@ export function InventoryPanel() {
                 <div className="text-sm">{it.name}</div>
                 <div className="text-[11px] text-muted">{it.desc}</div>
               </div>
-              {it.slot && (
+              <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" onClick={() => equip(it.id)}>
                   Equipar
                 </Button>
-              )}
+                <Button size="sm" variant="outline" onClick={() => { if (window.confirm(`Descartar "${it.name}"?`)) discard(it.id); }}>
+                  Descartar
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

@@ -159,8 +159,19 @@ export type InventoryItem = {
   id: string;
   name: string;
   slot?: "arma" | "armadura" | "botas" | "reliquia" | "colar";
+  tier?: "basic" | "medium" | "rare";
   desc: string;
   qty: number;
+  price?: number;
+  bonus?: Partial<{
+    hp: number;
+    mp: number;
+    atk: number;
+    atkMgc: number;
+    def: number;
+    agi: number;
+    int: number;
+  }>;
 };
 
 /* =========================================================
@@ -322,6 +333,4 @@ export type ChatMsg = {
   at: number;
 };
 
-Esse já pode substituir o "types.ts" inteiro.
 
-Agora "RaceDef" e "Character" estão compatíveis com o sistema de 25 raças × 2 retratos por gênero.

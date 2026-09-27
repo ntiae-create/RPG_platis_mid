@@ -52,7 +52,7 @@ export function addStats(
 export function finalStats(
   ch: Pick<
     Character,
-    "raceId" | "classId" | "brasaoXp"
+    "raceId" | "classId" | "brasaoXp" | "equipment"
   > & {
     allocated?: Partial<Stats>;
   },
@@ -70,24 +70,26 @@ export function finalStats(
     ch.allocated ?? {},
   );
 
-  const brasao = brasaoLevelFromXp(
-    ch.brasaoXp,
-  );
+  /* Bônus dos equipamentos equipados */
+  if (ch.equipment) {
+    for (const item of Object.values(ch.equipment)) {
+      if (item?.bonus) {
+        stats = addStats(stats, item.bonus);
+      }
+    }
+  }
 
-  const allPct =
-    BRASAO_ALL_PCT[brasao.level] ?? 0;
+  const brasao = brasaoLevelFromXp(ch.brasaoXp);
 
-  const primPct =
-    BRASAO_PRIMARY_PCT[brasao.level] ?? 0;
+  const allPct = BRASAO_ALL_PCT[brasao.level] ?? 0;
+  const primPct = BRASAO_PRIMARY_PCT[brasao.level] ?? 0;
 
   if (allPct) {
-    (Object.keys(stats) as StatKey[]).forEach(
-      (k) => {
-        stats[k] = Math.round(
-          stats[k] * (1 + allPct),
-        );
-      },
-    );
+    (Object.keys(stats) as StatKey[]).forEach((k) => {
+      stats[k] = Math.round(
+        stats[k] * (1 + allPct),
+      );
+    });
   } else if (primPct && cls) {
     const key = cls.primary;
 
