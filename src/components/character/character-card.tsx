@@ -51,7 +51,7 @@ export function CharacterCard({
         <button
           type="button"
           onClick={onImageClick}
-          className="relative aspect-[3/4] w-full overflow-hidden rounded-lg"
+          className="relative aspect-[2/3] w-full overflow-hidden rounded-lg"
         >
           <img
             src={character.image?.trim() || racePortrait}
@@ -267,7 +267,7 @@ function Passive({
   stacks?: number;
 }) {
   return (
-    <div className="rounded-md bg-bg/35 px-2 py-1.5">
+    <div className="rounded-md bg-bg/35 px-2 py-1.5 max-h-28 overflow-y-auto pr-1">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{title}</span>
 
