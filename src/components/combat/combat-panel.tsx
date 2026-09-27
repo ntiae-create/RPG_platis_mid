@@ -73,14 +73,18 @@ export function CombatPanel() {
               Ataque mágico
             </Button>
             {attacker?.skills
-              .filter((s) => s.status === "approved" && s.name)
+              .filter((sk) => sk.status === "approved" && sk.name)
+              .sort((a, b) => a.slot - b.slot)
               .map((sk) => (
                 <Button
                   key={sk.id}
                   variant="outline"
                   disabled={!defender}
                   onClick={() =>
-                    rollCombat(sk.type === "ataque-magico" ? "magical" : "physical", sk.id)
+                    rollCombat(
+                      sk.type === "ataque-magico" ? "magical" : "physical",
+                      sk.id,
+                    )
                   }
                 >
                   {sk.name}

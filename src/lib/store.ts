@@ -29,6 +29,44 @@ export type MesaTab =
 
 export type LayerFrame = { x: number; y: number };
 
+export type MasterEventType =
+  | "cte"
+  | "emboscada"
+  | "escolha"
+  | "puzzle"
+  | "teste"
+  | "narrativo";
+
+export type MasterEventStatus =
+  | "rascunho"
+  | "ativo"
+  | "resolvido"
+  | "cancelado";
+
+export type MasterEventChoice = {
+  id: string;
+  label: string;
+  consequence?: string;
+};
+
+export type MasterEvent = {
+  id: string;
+  type: MasterEventType;
+  title: string;
+  description: string;
+  status: MasterEventStatus;
+  createdAt: number;
+  targetCharacterIds: string[];
+  timerSeconds?: number;
+  choices?: MasterEventChoice[];
+  puzzleAnswer?: string;
+  testAttribute?: string;
+  testDifficulty?: number;
+  rewardXp?: number;
+  rewardBrasao?: number;
+};
+
+
 type AppState = {
   version: number;
   role: Role | null;
@@ -49,6 +87,9 @@ type AppState = {
   combatActive: boolean;
   attackerId: string | null;
   defenderId: string | null;
+  combatOrder: string[];
+  combatTurnIndex: number;
+  combatRound: number;
   combatLog: CombatLogEntry[];
   lastRoll: {
     sides: number;
@@ -62,9 +103,16 @@ type AppState = {
   chat: ChatMsg[];
   tab: MesaTab;
   trap: { cell: string; remaining: number; armed: boolean } | null;
+  masterEvents: MasterEvent[];
+  activeMasterEventId: string | null;
 
   setRole: (role: Role) => void;
   setTab: (tab: MesaTab) => void;
+  createMasterEvent: (event: MasterEvent) => void;
+  activateMasterEvent: (id: string) => void;
+  resolveMasterEvent: (id: string) => void;
+  cancelMasterEvent: (id: string) => void;
+  clearActiveMasterEvent: () => void;
   addCharacter: (ch: Character, asSelf?: boolean) => void;
   updateSelf: (patch: Partial<Character>) => void;
   patchCharacter: (id: string, patch: Partial<Character>) => void;
@@ -99,6 +147,9 @@ type AppState = {
   centerOn: (characterId: string) => void;
 
   selectFighter: (which: "attacker" | "defender", id: string | null) => void;
+  startCombat: () => void;
+  nextTurn: () => void;
+  endCombat: () => void;
   rollCombat: (kind: CombatKind, skillId?: string) => void;
   resolveCounter: (mode: "attack" | "defend") => void;
   rollLoose: (sides: number) => void;
@@ -146,6 +197,9 @@ function empty(): Pick<
   | "entities"
   | "hiddenEntities"
   | "combatActive"
+  | "combatOrder"
+  | "combatTurnIndex"
+  | "combatRound"
   | "attackerId"
   | "defenderId"
   | "combatLog"
@@ -155,6 +209,8 @@ function empty(): Pick<
   | "chat"
   | "tab"
   | "trap"
+  | "masterEvents"
+  | "activeMasterEventId"
 > {
   return {
     version: SAVE_VERSION,
@@ -176,6 +232,9 @@ function empty(): Pick<
     combatActive: false,
     attackerId: null,
     defenderId: null,
+    combatOrder: [],
+    combatTurnIndex: 0,
+    combatRound: 0,
     combatLog: [],
     lastRoll: null,
     pendingCounter: null,
@@ -183,6 +242,8 @@ function empty(): Pick<
     chat: [],
     tab: "personagem",
     trap: null,
+    masterEvents: [],
+    activeMasterEventId: null,
   };
 }
 
@@ -272,6 +333,53 @@ export const usePlatis = create<AppState>()(
 
       setRole: (role) => set({ role, tab: role === "mestre" ? "mesa" : "personagem" }),
       setTab: (tab) => set({ tab }),
+
+      createMasterEvent: (event) =>
+        set((s) => ({
+          masterEvents: [...s.masterEvents, event],
+        })),
+
+      activateMasterEvent: (id) =>
+        set((s) => ({
+          masterEvents: s.masterEvents.map((event) =>
+            event.id === id
+              ? { ...event, status: "ativo" }
+              : event,
+          ),
+          activeMasterEventId: id,
+        })),
+
+      resolveMasterEvent: (id) =>
+        set((s) => ({
+          masterEvents: s.masterEvents.map((event) =>
+            event.id === id
+              ? { ...event, status: "resolvido" }
+              : event,
+          ),
+          activeMasterEventId:
+            s.activeMasterEventId === id
+              ? null
+              : s.activeMasterEventId,
+        })),
+
+      cancelMasterEvent: (id) =>
+        set((s) => ({
+          masterEvents: s.masterEvents.map((event) =>
+            event.id === id
+              ? { ...event, status: "cancelado" }
+              : event,
+          ),
+          activeMasterEventId:
+            s.activeMasterEventId === id
+              ? null
+              : s.activeMasterEventId,
+        })),
+
+      clearActiveMasterEvent: () =>
+        set({
+          activeMasterEventId: null,
+        }),
+
 
       addCharacter: (ch, asSelf = true) => {
         const s = get();
@@ -580,6 +688,103 @@ export const usePlatis = create<AppState>()(
         });
       },
 
+      startCombat: () => {
+        const s = get();
+
+        const order = s.slots
+          .filter((id): id is string => Boolean(id))
+          .filter((id) => Boolean(s.characters[id]))
+          .sort((a, b) => {
+            const aStats = finalStats(s.characters[a]);
+            const bStats = finalStats(s.characters[b]);
+
+            if (bStats.agi !== aStats.agi) {
+              return bStats.agi - aStats.agi;
+            }
+
+            if (bStats.int !== aStats.int) {
+              return bStats.int - aStats.int;
+            }
+
+            return a.localeCompare(b);
+          });
+
+        if (order.length === 0) return;
+
+        const firstId = order[0];
+
+        set({
+          combatActive: true,
+          combatOrder: order,
+          combatTurnIndex: 0,
+          combatRound: 1,
+          attackerId: firstId,
+          defenderId: order.length > 1 ? order[1] : null,
+          pendingCounter: null,
+          combatLog: [
+            {
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "system" as const,
+              text: `Combate iniciado. ${s.characters[firstId].name} começa pela iniciativa.`,
+            },
+          ],
+        });
+      },
+
+      nextTurn: () => {
+        const s = get();
+
+        if (!s.combatActive || s.combatOrder.length === 0) return;
+
+        const nextIndex = s.combatTurnIndex + 1;
+        const wrapped = nextIndex >= s.combatOrder.length;
+        const index = wrapped ? 0 : nextIndex;
+        const nextId = s.combatOrder[index];
+
+        if (!nextId || !s.characters[nextId]) return;
+
+        set({
+          combatTurnIndex: index,
+          combatRound: wrapped ? s.combatRound + 1 : s.combatRound,
+          attackerId: nextId,
+          defenderId: null,
+          pendingCounter: null,
+          combatLog: [
+            {
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "system" as const,
+              text: `Rodada ${wrapped ? s.combatRound + 1 : s.combatRound}: turno de ${s.characters[nextId].name}.`,
+            },
+            ...s.combatLog,
+          ].slice(0, 80),
+        });
+      },
+
+      endCombat: () => {
+        const s = get();
+
+        set({
+          combatActive: false,
+          combatOrder: [],
+          combatTurnIndex: 0,
+          combatRound: 0,
+          attackerId: null,
+          defenderId: null,
+          pendingCounter: null,
+          combatLog: [
+            {
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "system" as const,
+              text: "Combate encerrado.",
+            },
+            ...s.combatLog,
+          ].slice(0, 80),
+        });
+      },
+
       selectFighter: (which, id) => {
         if (which === "attacker") set({ attackerId: id, combatActive: true });
         else set({ defenderId: id, combatActive: true });
@@ -590,6 +795,15 @@ export const usePlatis = create<AppState>()(
         const atk = s.attackerId ? s.characters[s.attackerId] : null;
         const def = s.defenderId ? s.characters[s.defenderId] : null;
         if (!atk || !def) return;
+
+        if (
+          s.combatActive &&
+          s.combatOrder.length > 0 &&
+          s.combatOrder[s.combatTurnIndex] !== atk.id
+        ) {
+          return;
+        }
+
         const skill = skillId ? atk.skills.find((k) => k.id === skillId) : undefined;
         if (skill && skill.status !== "approved") return;
         if (skill) {

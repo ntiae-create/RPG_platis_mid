@@ -6,7 +6,7 @@ import { InventoryPanel } from "@/components/inventory/inventory-panel";
 import { ContinentGrid } from "@/components/map/continent-grid";
 import { WorldMap } from "@/components/map/world-map";
 import { ChatPanel } from "@/components/mesa/chat-panel";
-import { PlayerSlots } from "@/components/mesa/player-slots";
+import { MasterPanel } from "@/components/mesa/master-panel";
 import { MesaShell } from "@/components/mesa/shell";
 import { PersistGate } from "@/components/persist-gate";
 import { SkillPanel } from "@/components/skills/skill-panel";
@@ -69,7 +69,7 @@ function Mesa() {
       {tab === "habilidades" && <SkillPanel />}
       {tab === "inventario" && <InventoryPanel />}
       {tab === "mundo" && <WorldPanel />}
-      {tab === "mesa" && role === "mestre" && <PlayerSlots />}
+      {tab === "mesa" && role === "mestre" && <MasterPanel />}
     </MesaShell>
   );
 }
