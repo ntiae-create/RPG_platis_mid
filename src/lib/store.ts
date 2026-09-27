@@ -806,22 +806,46 @@ export const usePlatis = create<AppState>()(
       equipItem: (itemId) => {
         const id = get().selfId;
         if (!id) return;
+
         const ch = get().characters[id];
         if (!ch) return;
+
         const item = ch.inventory.find((i) => i.id === itemId);
         if (!item?.slot) return;
-        const equipment = { ...ch.equipment, [item.slot]: item };
-        get().patchCharacter(id, { equipment });
+
+        const equipment = { ...ch.equipment };
+        const previous = equipment[item.slot];
+
+        // Se já existe um item nesse slot, ele volta para a mochila.
+        const inventory = ch.inventory
+          .filter((i) => i.id !== itemId)
+          .concat(previous ? [previous] : []);
+
+        equipment[item.slot] = item;
+
+        get().patchCharacter(id, {
+          equipment,
+          inventory,
+        });
       },
 
       unequipItem: (slot) => {
         const id = get().selfId;
         if (!id) return;
+
         const ch = get().characters[id];
         if (!ch) return;
+
+        const item = ch.equipment[slot];
+        if (!item) return;
+
         const equipment = { ...ch.equipment };
         delete equipment[slot];
-        get().patchCharacter(id, { equipment });
+
+        get().patchCharacter(id, {
+          equipment,
+          inventory: [...ch.inventory, item],
+        });
       },
       discardItem: (itemId) => {
         const id = get().selfId;
