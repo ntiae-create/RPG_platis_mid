@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
-import type { AreaDir, Skill, SkillType, TargetMode } from "@/data/types";
+import type { AreaDir, Skill, SkillAffinity, SkillType, TargetMode } from "@/data/types";
 import { skillSlots } from "@/lib/stats";
 import { usePlatis } from "@/lib/store";
 
@@ -43,6 +43,7 @@ export function SkillPanel() {
             name: String(fd.get("name")),
             description: String(fd.get("description")),
             type: String(fd.get("type")) as SkillType,
+            affinity: String(fd.get("affinity") || "fisico") as SkillAffinity,
             cost: {
               hp: Number(fd.get("hp")) || 0,
               mp: Number(fd.get("mp")) || 0,
@@ -89,6 +90,16 @@ export function SkillPanel() {
               </option>
             ))}
           </select>
+          <Label>Afinidade</Label>
+          <select
+            name="affinity"
+            value={ch.affinityId}
+            disabled
+            className="h-11 rounded-md bg-raised px-3 text-sm opacity-80"
+          >
+            <option value={ch.affinityId}>{ch.affinityId}</option>
+          </select>
+
           <div className="grid grid-cols-3 gap-2">
             <div>
               <Label>HP</Label>

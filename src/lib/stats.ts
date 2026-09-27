@@ -151,6 +151,8 @@ export function makeEmptySkills(
 
       description: "",
 
+      affinity: "fisico",
+
       type: "ataque",
 
       cost: {

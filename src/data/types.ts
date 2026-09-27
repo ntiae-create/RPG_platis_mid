@@ -124,10 +124,21 @@ export type AreaDir =
   | "diagonal"
   | "personalizado";
 
+export type SkillAffinity =
+  | "agua"
+  | "luz"
+  | "terra"
+  | "trevas"
+  | "vento"
+  | "fogo"
+  | "fisico"
+  | "magico";
+
 export type Skill = {
   id: string;
   slot: 0 | 1 | 2 | 3;
   name: string;
+  affinity: SkillAffinity;
   description: string;
   image?: string;
 
