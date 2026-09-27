@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   Character,
+  InventoryItem,
   ChatMsg,
   CombatLogEntry,
   MapEntity,
@@ -109,6 +110,7 @@ type AppState = {
   equipItem: (itemId: string) => void;
   unequipItem: (slot: "arma" | "armadura" | "botas" | "reliquia" | "colar") => void;
   discardItem: (itemId: string) => void;
+  grantItem: (characterId: string, item: InventoryItem) => void;
   disarmTrap: () => void;
 };
 
@@ -854,6 +856,28 @@ export const usePlatis = create<AppState>()(
         if (!ch) return;
         const inventory = ch.inventory.filter((item) => item.id !== itemId);
         get().patchCharacter(id, { inventory });
+      },
+
+      grantItem: (characterId, item) => {
+        const ch = get().characters[characterId];
+        if (!ch) return;
+
+        const inventory = [...ch.inventory];
+
+        const existing = inventory.find(
+          (invItem) => invItem.id === item.id,
+        );
+
+        if (existing) {
+          existing.qty += Math.max(1, item.qty);
+        } else {
+          inventory.push({
+            ...item,
+            qty: Math.max(1, item.qty),
+          });
+        }
+
+        get().patchCharacter(characterId, { inventory });
       },
       disarmTrap: () => set({ trap: null }),
     }),
