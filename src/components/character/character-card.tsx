@@ -54,7 +54,7 @@ export function CharacterCard({
           className="relative aspect-[3/4] w-full overflow-hidden rounded-lg"
         >
           <img
-            src={racePortrait}
+            src={character.image?.trim() || racePortrait}
             alt={`${character.name} — ${race?.name ?? "Raça"} ${character.gender}`}
             className="size-full object-contain"
             crossOrigin="anonymous"
