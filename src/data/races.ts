@@ -681,13 +681,3 @@ export const TIER_LABEL: Record<RaceDef["tier"], string> = {
   extra: "Extra",
 };
 
-Atenção a um detalhe: para esse "races.ts" compilar, o "RaceDef" do seu "types.ts" também precisa receber:
-
-portraits: {
-  masculino: string;
-  feminino: string;
-};
-
-O "Gender" que você já tem está correto.
-
-Depois disso, o próximo arquivo que precisa ser alterado é justamente o "CharacterCard.tsx", para ele usar "character.gender" em vez de continuar usando "character.image". Só então o gênero escolhido pelo jogador terá efeito visual real no card.
