@@ -168,6 +168,15 @@ export function CharacterCard({
                 }
               />
 
+              {race?.extraPassives?.map((passive, index) => (
+                <Passive
+                  key={`${race.id}-extra-${index}`}
+                  title={passive.name}
+                  body={passive.description}
+                  tag="Raça · Extra"
+                />
+              ))}
+
               <Passive
                 title={character.personalPassive.name}
                 body={character.personalPassive.description}
@@ -267,18 +276,20 @@ function Passive({
   stacks?: number;
 }) {
   return (
-    <div className="rounded-md bg-bg/35 px-2 py-1.5 max-h-28 overflow-y-auto pr-1">
+    <div className="rounded-md bg-bg/35 px-2 py-1.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{title}</span>
 
-        <span className="text-[10px] tracking-wide text-faint uppercase">
+        <span className="shrink-0 text-[10px] tracking-wide text-faint uppercase">
           {tag}
         </span>
       </div>
 
-      <p className="mt-0.5 text-[11px] leading-snug text-muted">
-        {body}
-      </p>
+      <div className="mt-0.5 max-h-28 overflow-y-auto pr-1">
+        <p className="text-[11px] leading-snug text-muted">
+          {body}
+        </p>
+      </div>
 
       {typeof stacks === "number" && (
         <div className="mt-1.5 flex gap-1">
