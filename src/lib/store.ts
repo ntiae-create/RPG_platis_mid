@@ -43,10 +43,47 @@ export type MasterEventStatus =
   | "resolvido"
   | "cancelado";
 
+export type MasterEventCteStatus =
+  | "aguardando"
+  | "executado";
+
+export type MasterEventCteResult =
+  | "sucesso"
+  | "falha";
+
+export type MasterEventTarget =
+  | "todos"
+  | "jogadores"
+  | "especificos";
+
 export type MasterEventChoice = {
   id: string;
   label: string;
   consequence?: string;
+};
+
+export type MasterEventEncounter = {
+  name: string;
+  description: string;
+  level?: number;
+  quantity?: number;
+};
+
+export type MasterEventTrap = {
+  name: string;
+  description: string;
+  difficulty?: number;
+  trigger?: "manual" | "entrada" | "movimento";
+};
+
+export type MasterEventReward = {
+  xp?: number;
+  brasao?: number;
+  bronze?: number;
+  silver?: number;
+  gold?: number;
+  platinum?: number;
+  itemIds?: string[];
 };
 
 export type MasterEvent = {
@@ -56,16 +93,30 @@ export type MasterEvent = {
   description: string;
   status: MasterEventStatus;
   createdAt: number;
+
+  target: MasterEventTarget;
   targetCharacterIds: string[];
-  timerSeconds?: number;
+
+  timerMs?: number;
+
+  cteStatus?: MasterEventCteStatus;
+  cteResult?: MasterEventCteResult;
+  cteExecutedAt?: number;
+
+
   choices?: MasterEventChoice[];
+
   puzzleAnswer?: string;
+
   testAttribute?: string;
   testDifficulty?: number;
-  rewardXp?: number;
-  rewardBrasao?: number;
-};
 
+  encounter?: MasterEventEncounter;
+
+  trap?: MasterEventTrap;
+
+  reward?: MasterEventReward;
+};
 
 type AppState = {
   version: number;
@@ -112,6 +163,7 @@ type AppState = {
   activateMasterEvent: (id: string) => void;
   resolveMasterEvent: (id: string) => void;
   cancelMasterEvent: (id: string) => void;
+  respondToCte: (id: string, result: "sucesso" | "falha") => void;
   clearActiveMasterEvent: () => void;
   addCharacter: (ch: Character, asSelf?: boolean) => void;
   updateSelf: (patch: Partial<Character>) => void;
@@ -375,6 +427,14 @@ export const usePlatis = create<AppState>()(
               : s.activeMasterEventId,
         })),
 
+      respondToCte: (id, result) =>
+        set((s) => ({
+          masterEvents: s.masterEvents.map((event) =>
+            event.id === id
+              ? { ...event, cteStatus: "executado", cteResult: result, cteExecutedAt: Date.now() }
+              : event,
+          ),
+        })),
       clearActiveMasterEvent: () =>
         set({
           activeMasterEventId: null,

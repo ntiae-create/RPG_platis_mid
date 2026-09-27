@@ -31,6 +31,11 @@ function Mesa() {
   const tab = usePlatis((s) => s.tab);
   const continentId = usePlatis((s) => s.continentId);
   const role = usePlatis((s) => s.role);
+  const activeMasterEventId = usePlatis((s) => s.activeMasterEventId);
+  const activeMasterEvent = usePlatis((s) =>
+    activeMasterEventId ? s.masterEvents.find((event) => event.id === activeMasterEventId) ?? null : null,
+  );
+  const respondToCte = usePlatis((s) => s.respondToCte);
 
   useEffect(() => {
     if (!selfId) nav({ to: "/criar" });
@@ -69,7 +74,40 @@ function Mesa() {
       {tab === "habilidades" && <SkillPanel />}
       {tab === "inventario" && <InventoryPanel />}
       {tab === "mundo" && <WorldPanel />}
-      {tab === "mesa" && role === "mestre" && <MasterPanel />}
+      {tab === "mesa" && (
+        <div className="space-y-4">
+          {activeMasterEvent && (
+            <div className="panel space-y-2 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Evento ativo</p>
+              <h2 className="font-display text-2xl">{activeMasterEvent.title}</h2>
+              <p className="text-sm text-muted">{activeMasterEvent.description}</p>
+              {activeMasterEvent.type === "cte" && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted">
+                    Status: {activeMasterEvent.cteStatus === "executado" ? "Executado" : "Aguardando reação"}
+                  </p>
+                  {activeMasterEvent.cteStatus !== "executado" && role !== "mestre" && (
+                    <div className="flex gap-2">
+                      <Button type="button" onClick={() => respondToCte(activeMasterEvent.id, "sucesso")}>
+                        Sucesso
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => respondToCte(activeMasterEvent.id, "falha")}>
+                        Falha
+                      </Button>
+                    </div>
+                  )}
+                  {activeMasterEvent.cteStatus === "executado" && (
+                    <p className="text-sm font-semibold">
+                      Resultado: {activeMasterEvent.cteResult === "sucesso" ? "Sucesso" : "Falha"}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {role === "mestre" && <MasterPanel />}
+        </div>
+      )}
     </MesaShell>
   );
 }

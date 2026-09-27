@@ -65,6 +65,7 @@ export function MasterPanel() {
   const [eventType, setEventType] = useState<string | null>(null);
 
   const createMasterEvent = usePlatis((s) => s.createMasterEvent);
+  const activateMasterEvent = usePlatis((s) => s.activateMasterEvent);
   const masterEvents = usePlatis((s) => s.masterEvents);
 
   if (section === "jogadores") {
@@ -153,10 +154,13 @@ export function MasterPanel() {
                     "Evento criado pelo Mestre.",
                   status: "rascunho" as const,
                   createdAt: Date.now(),
+                  target: "todos" as const,
                   targetCharacterIds: [],
+                  ...(eventType === "cte" ? { cteStatus: "aguardando" as const } : {}),
                 };
 
                 createMasterEvent(event);
+                activateMasterEvent(event.id);
                 setEventType(null);
               }}
             >
