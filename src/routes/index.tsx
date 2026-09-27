@@ -2,6 +2,7 @@ import { PersistGate } from "@/components/persist-gate";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RACES } from "@/data/races";
 import { CLASSES } from "@/data/classes";
 import { CONTINENTS, TOTAL_DUNGEON_COUNT, BOSSES } from "@/data/world";
@@ -21,9 +22,18 @@ function Landing() {
   const setRole = usePlatis((s) => s.setRole);
   const selfId = usePlatis((s) => s.selfId);
   const resetAll = usePlatis((s) => s.resetAll);
+  const { user, isPending } = useCurrentUserState();
 
   function enter(role: "jogador" | "mestre") {
     setRole(role);
+
+    if (isPending) return;
+
+    if (!user) {
+      nav({ to: "/login" });
+      return;
+    }
+
     nav({ to: selfId ? "/mesa" : "/criar" });
   }
 

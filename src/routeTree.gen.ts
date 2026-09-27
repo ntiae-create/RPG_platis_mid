@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CriarRouteImport } from './routes/criar'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MesaRouteImport } from './routes/mesa'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const CriarRoute = CriarRouteImport.update({
   path: '/criar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MesaRoute = MesaRouteImport.update({
   id: '/mesa',
   path: '/mesa',
@@ -32,30 +38,34 @@ const MesaRoute = MesaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/criar': typeof CriarRoute
+  '/login': typeof LoginRoute
   '/mesa': typeof MesaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/criar': typeof CriarRoute
+  '/login': typeof LoginRoute
   '/mesa': typeof MesaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/criar': typeof CriarRoute
+  '/login': typeof LoginRoute
   '/mesa': typeof MesaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/criar' | '/mesa'
+  fullPaths: '/' | '/criar' | '/login' | '/mesa'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/criar' | '/mesa'
-  id: '__root__' | '/' | '/criar' | '/mesa'
+  to: '/' | '/criar' | '/login' | '/mesa'
+  id: '__root__' | '/' | '/criar' | '/login' | '/mesa'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CriarRoute: typeof CriarRoute
+  LoginRoute: typeof LoginRoute
   MesaRoute: typeof MesaRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CriarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mesa': {
       id: '/mesa'
       path: '/mesa'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CriarRoute: CriarRoute,
+  LoginRoute: LoginRoute,
   MesaRoute: MesaRoute,
 }
 export const routeTree = rootRouteImport
