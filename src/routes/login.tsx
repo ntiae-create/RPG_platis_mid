@@ -33,7 +33,7 @@ function LoginPage() {
 
         if (result.error) {
           setError(
-            result.error.message || "Não foi possível criar a conta.",
+            result.error.message || JSON.stringify(result.error) || "Não foi possível criar a conta.",
           );
           return;
         }
