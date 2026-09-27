@@ -122,6 +122,7 @@ const trustedOrigins: string[] = explicitBaseURL
       ...previewAllowedHosts,
       // Full-origin wildcards (matched against Origin)
       ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
+      "https://rpg-platis-mid.vercel.app",
       ...LOCAL_DEV_ORIGINS,
     ];
 
