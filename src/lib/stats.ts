@@ -208,27 +208,27 @@ const RACE_GENDER_IMAGES: Record<
   Partial<Record<Gender, string>>
 > = {
   humano: {
-    masculino: "/portraits/humano.jpg",
-    feminino: "/portraits/humano.jpg",
+    masculino: "/portraits/humano_masculino.jpg",
+    feminino: "/portraits/humano_feminino.jpg",
   },
 
   "meio-elfo": {
-    masculino: "/portraits/meio-elfo.jpg",
-    feminino: "/portraits/meio-elfo.jpg",
+    masculino: "/portraits/meio-elfo_masculino.jpg",
+    feminino: "/portraits/meio-elfo_feminino.jpg",
   },
 
   elfo: {
-    masculino: "/portraits/elfo.jpg",
-    feminino: "/portraits/elfo.jpg",
+    masculino: "/portraits/elfo_masculino.jpg",
+    feminino: "/portraits/elfo_feminino.jpg",
   },
 
   "semi-besta": {
-    masculino: "/portraits/semi-besta.jpg",
+    masculino: "/portraits/semi-besta_masculina.jpg",
     feminino: "/portraits/semi-besta_feminina.jpg",
   },
 
   besta: {
-    masculino: "/portraits/besta.jpg",
+    masculino: "/portraits/besta_masculina.jpg",
     feminino: "/portraits/besta_feminina.jpg",
   },
 
