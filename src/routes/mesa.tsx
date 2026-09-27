@@ -6,6 +6,7 @@ import { InventoryPanel } from "@/components/inventory/inventory-panel";
 import { ContinentGrid } from "@/components/map/continent-grid";
 import { WorldMap } from "@/components/map/world-map";
 import { ChatPanel } from "@/components/mesa/chat-panel";
+import { CtePanel } from "@/components/mesa/cte-panel";
 import { MasterPanel } from "@/components/mesa/master-panel";
 import { MesaShell } from "@/components/mesa/shell";
 import { PersistGate } from "@/components/persist-gate";
@@ -76,35 +77,7 @@ function Mesa() {
       {tab === "mundo" && <WorldPanel />}
       {tab === "mesa" && (
         <div className="space-y-4">
-          {activeMasterEvent && (
-            <div className="panel space-y-2 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Evento ativo</p>
-              <h2 className="font-display text-2xl">{activeMasterEvent.title}</h2>
-              <p className="text-sm text-muted">{activeMasterEvent.description}</p>
-              {activeMasterEvent.type === "cte" && (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted">
-                    Status: {activeMasterEvent.cteStatus === "executado" ? "Executado" : "Aguardando reação"}
-                  </p>
-                  {activeMasterEvent.cteStatus !== "executado" && role !== "mestre" && (
-                    <div className="flex gap-2">
-                      <Button type="button" onClick={() => respondToCte(activeMasterEvent.id, "sucesso")}>
-                        Sucesso
-                      </Button>
-                      <Button type="button" variant="ghost" onClick={() => respondToCte(activeMasterEvent.id, "falha")}>
-                        Falha
-                      </Button>
-                    </div>
-                  )}
-                  {activeMasterEvent.cteStatus === "executado" && (
-                    <p className="text-sm font-semibold">
-                      Resultado: {activeMasterEvent.cteResult === "sucesso" ? "Sucesso" : "Falha"}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <CtePanel />
           {role === "mestre" && <MasterPanel />}
         </div>
       )}

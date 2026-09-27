@@ -63,6 +63,7 @@ const EVENT_TYPES = [
 export function MasterPanel() {
   const [section, setSection] = useState<MasterSection | null>(null);
   const [eventType, setEventType] = useState<string | null>(null);
+  const [cteTimerMs, setCteTimerMs] = useState(3000);
 
   const createMasterEvent = usePlatis((s) => s.createMasterEvent);
   const activateMasterEvent = usePlatis((s) => s.activateMasterEvent);
@@ -139,6 +140,20 @@ export function MasterPanel() {
               {EVENT_TYPES.find((event) => event.id === eventType)?.desc}
             </p>
 
+            {eventType === "cte" && (
+              <label className="block space-y-1">
+                <span className="text-xs font-medium text-muted">Tempo de reação (segundos)</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={cteTimerMs / 1000}
+                  onChange={(e) => setCteTimerMs(Math.max(1, Number(e.target.value) || 1) * 1000)}
+                  className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+                />
+              </label>
+            )}
+
             <Button
               onClick={() => {
                 if (!eventType) return;
@@ -156,7 +171,7 @@ export function MasterPanel() {
                   createdAt: Date.now(),
                   target: "todos" as const,
                   targetCharacterIds: [],
-                  ...(eventType === "cte" ? { cteStatus: "aguardando" as const } : {}),
+                  ...(eventType === "cte" ? { timerMs: cteTimerMs, cteStatus: "aguardando" as const } : {}),
                 };
 
                 createMasterEvent(event);
