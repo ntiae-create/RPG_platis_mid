@@ -208,51 +208,36 @@ const RACE_GENDER_IMAGES: Record<
   Partial<Record<Gender, string>>
 > = {
   humano: {
-    masculino:
-      "/character-art/races/humano_masculino.png",
-
-    feminino:
-      "/character-art/races/humano_feminino.png",
+    masculino: "/portraits/humano.jpg",
+    feminino: "/portraits/humano.jpg",
   },
 
   "meio-elfo": {
-    masculino:
-      "/character-art/races/meio-elfo_masculino.png",
-
-    feminino:
-      "/character-art/races/meio-elfo_feminino.png",
+    masculino: "/portraits/meio-elfo.jpg",
+    feminino: "/portraits/meio-elfo.jpg",
   },
 
   elfo: {
-    masculino:
-      "/character-art/races/elfo_masculino.png",
-
-    feminino:
-      "/character-art/races/elfo_feminino.png",
+    masculino: "/portraits/elfo.jpg",
+    feminino: "/portraits/elfo.jpg",
   },
 
   "semi-besta": {
-    masculino:
-      "/character-art/races/semi-besta_masculino.png",
-
-    feminino:
-      "/character-art/races/semi-besta_feminino.png",
+    masculino: "/portraits/semi-besta.jpg",
+    feminino: "/portraits/semi-besta_feminina.jpg",
   },
 
   besta: {
-    masculino:
-      "/character-art/races/besta_masculino.png",
-
-    feminino:
-      "/character-art/races/besta_feminino.png",
+    masculino: "/portraits/besta.jpg",
+    feminino: "/portraits/besta_feminina.jpg",
   },
 
-  kitsune: {
-    masculino:
-      "/character-art/races/kitsune_masculino.png",
+  doppelganger: {
+    feminino: "/portraits/doppelganger_feminina.jpg",
+  },
 
-    feminino:
-      "/character-art/races/kitsune_feminino.png",
+  umbral: {
+    feminino: "/portraits/umbrall_feminina.jpg",
   },
 };
 
