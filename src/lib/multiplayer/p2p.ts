@@ -324,6 +324,7 @@ export class P2PRoom {
     if (channel.label === "state") slot.state = channel;
     else slot.reliable = channel;
     channel.onopen = () => {
+    console.log("[p2p] CANAL ABERTO:", channel.label, slot.info.id);
       slot.lastProgressAt = Date.now();
 
       if (channel.label === "reliable") {
