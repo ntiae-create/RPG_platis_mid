@@ -133,6 +133,9 @@ function Mesa() {
         <p className="text-sm text-muted">Canais reliable prontos: {peerReadyCount}</p>
         <p className="text-sm text-muted">Envios de personagem: {characterSendCount}</p>
   <p className="text-sm text-muted">Personagens recebidos: {Object.keys(remoteCharacters).length}</p>
+        <p className="text-xs text-muted">
+          IDs: {Object.keys(remoteCharacters).join(", ") || "nenhum"}
+        </p>
         {p2pPeers.map((peer) => (
           <div key={peer.id} className="text-sm">
             {peer.name || peer.id} — {peer.role} — {peer.connectionState}
