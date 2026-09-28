@@ -33,6 +33,7 @@ function Mesa() {
   const [p2pPeers, setP2pPeers] = useState<{ id: string; name: string; role: "mestre" | "jogador"; connectionState: string }[]>([]);
   const [remoteCharacters, setRemoteCharacters] = useState<Record<string, Character>>({});
   const [peerReadyCount, setPeerReadyCount] = useState(0);
+  const [characterSendCount, setCharacterSendCount] = useState(0);
   const nav = useNavigate();
   const selfId = usePlatis((s) => s.selfId);
   const ch = usePlatis((s) => (s.selfId ? s.characters[s.selfId] : null));
@@ -65,6 +66,7 @@ function Mesa() {
         setPeerReadyCount((count) => count + 1);
         console.log("[Mesa P2P] canal reliable pronto:", peerId);
         if (ch) {
+          setCharacterSendCount((count) => count + 1);
           p2pRef.current?.send(
             { type: "character", character: ch },
             peerId,
@@ -129,6 +131,7 @@ function Mesa() {
         <p className="font-bold">P2P: {p2pConnected ? "CONECTADO" : "CONECTANDO..."}</p>
         <p className="text-sm text-muted">Peers encontrados: {p2pPeers.length}</p>
         <p className="text-sm text-muted">Canais reliable prontos: {peerReadyCount}</p>
+        <p className="text-sm text-muted">Envios de personagem: {characterSendCount}</p>
   <p className="text-sm text-muted">Personagens recebidos: {Object.keys(remoteCharacters).length}</p>
         {p2pPeers.map((peer) => (
           <div key={peer.id} className="text-sm">
