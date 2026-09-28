@@ -115,6 +115,7 @@ function Mesa() {
       <div className="panel space-y-2 border border-line p-4">
         <p className="font-bold">P2P: {p2pConnected ? "CONECTADO" : "CONECTANDO..."}</p>
         <p className="text-sm text-muted">Peers encontrados: {p2pPeers.length}</p>
+  <p className="text-sm text-muted">Personagens recebidos: {Object.keys(remoteCharacters).length}</p>
         {p2pPeers.map((peer) => (
           <div key={peer.id} className="text-sm">
             {peer.name || peer.id} — {peer.role} — {peer.connectionState}
