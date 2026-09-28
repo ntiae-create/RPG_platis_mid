@@ -13,6 +13,7 @@ import { PersistGate } from "@/components/persist-gate";
 import { SkillPanel } from "@/components/skills/skill-panel";
 import { WorldPanel } from "@/components/world/world-panel";
 import { usePlatis } from "@/lib/store";
+import type { Character } from "@/data/types";
 import { P2PRoom } from "@/lib/multiplayer";
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +31,7 @@ function Mesa() {
   const p2pRef = useRef<P2PRoom | null>(null);
   const [p2pConnected, setP2pConnected] = useState(false);
   const [p2pPeers, setP2pPeers] = useState<{ id: string; name: string; role: "mestre" | "jogador"; connectionState: string }[]>([]);
+  const [remoteCharacters, setRemoteCharacters] = useState<Record<string, Character>>({});
   const nav = useNavigate();
   const selfId = usePlatis((s) => s.selfId);
   const ch = usePlatis((s) => (s.selfId ? s.characters[s.selfId] : null));
@@ -56,12 +58,20 @@ function Mesa() {
       role: role ?? "jogador",
       onConnected: () => { setP2pConnected(true); console.log("[Mesa P2P] conectado à sala"); },
       onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
-      onMessage: (from, data, channel) =>
-        console.log("[Mesa P2P] mensagem:", from, channel, data),
+      onMessage: (from, data, channel) => {
+        console.log("[Mesa P2P] mensagem:", from, channel, data);
+        if (channel === "reliable" && typeof data === "object" && data !== null && "type" in data && "character" in data) {
+          const message = data as { type: string; character: Character };
+          if (message.type === "character") {
+            setRemoteCharacters((current) => ({ ...current, [from]: message.character }));
+          }
+        }
+      },
     });
 
     p2pRef.current = room;
     void room.join();
+    if (ch) room.send({ type: "character", character: ch });
 
     return () => {
       room.close();
