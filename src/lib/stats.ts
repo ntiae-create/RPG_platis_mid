@@ -241,7 +241,16 @@ const RACE_GENDER_IMAGES: Record<
   },
 
   umbral: {
-    feminino: "/portraits/umbrall_feminina.jpg",
+    masculino: "/portraits/umbral_masculino.jpg",
+    feminino: "/portraits/umbral_feminina.jpg",
+  },
+
+  kitsune: {
+    feminino: "/portraits/kitsune_feminina.jpg",
+  },
+
+  divino: {
+    feminino: "/portraits/divino_feminino.jpg",
   },
 };
 
