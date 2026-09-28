@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CharacterCard } from "@/components/character/character-card";
 import { CombatPanel } from "@/components/combat/combat-panel";
 import { InventoryPanel } from "@/components/inventory/inventory-panel";
@@ -28,6 +28,8 @@ function MesaPage() {
 
 function Mesa() {
   const p2pRef = useRef<P2PRoom | null>(null);
+  const [p2pConnected, setP2pConnected] = useState(false);
+  const [p2pPeers, setP2pPeers] = useState<{ id: string; name: string; role: "mestre" | "jogador"; connectionState: string }[]>([]);
   const nav = useNavigate();
   const selfId = usePlatis((s) => s.selfId);
   const ch = usePlatis((s) => (s.selfId ? s.characters[s.selfId] : null));
@@ -52,8 +54,8 @@ function Mesa() {
       selfId,
       name: ch?.name ?? "",
       role: role ?? "jogador",
-      onConnected: () => console.log("[Mesa P2P] conectado à sala"),
-      onPeersChanged: (peers) => console.log("[Mesa P2P] peers:", peers),
+      onConnected: () => { setP2pConnected(true); console.log("[Mesa P2P] conectado à sala"); },
+      onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
       onMessage: (from, data, channel) =>
         console.log("[Mesa P2P] mensagem:", from, channel, data),
     });
@@ -100,6 +102,15 @@ function Mesa() {
       {tab === "habilidades" && <SkillPanel />}
       {tab === "inventario" && <InventoryPanel />}
       {tab === "mundo" && <WorldPanel />}
+      <div className="panel space-y-2 border border-line p-4">
+        <p className="font-bold">P2P: {p2pConnected ? "CONECTADO" : "CONECTANDO..."}</p>
+        <p className="text-sm text-muted">Peers encontrados: {p2pPeers.length}</p>
+        {p2pPeers.map((peer) => (
+          <div key={peer.id} className="text-sm">
+            {peer.name || peer.id} — {peer.role} — {peer.connectionState}
+          </div>
+        ))}
+      </div>
       <CtePanel />
 
       {tab === "mesa" && (
