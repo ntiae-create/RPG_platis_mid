@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { CharacterCard } from "@/components/character/character-card";
 import { CombatPanel } from "@/components/combat/combat-panel";
 import { InventoryPanel } from "@/components/inventory/inventory-panel";
@@ -13,6 +13,7 @@ import { PersistGate } from "@/components/persist-gate";
 import { SkillPanel } from "@/components/skills/skill-panel";
 import { WorldPanel } from "@/components/world/world-panel";
 import { usePlatis } from "@/lib/store";
+import { P2PRoom } from "@/lib/multiplayer";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/mesa")({ component: MesaPage });
@@ -26,6 +27,7 @@ function MesaPage() {
 }
 
 function Mesa() {
+  const p2pRef = useRef<P2PRoom | null>(null);
   const nav = useNavigate();
   const selfId = usePlatis((s) => s.selfId);
   const ch = usePlatis((s) => (s.selfId ? s.characters[s.selfId] : null));
@@ -41,6 +43,29 @@ function Mesa() {
   useEffect(() => {
     if (!selfId) nav({ to: "/criar" });
   }, [selfId, nav]);
+
+  useEffect(() => {
+    if (!selfId || p2pRef.current) return;
+
+    const room = new P2PRoom({
+      room: "platis-main",
+      selfId,
+      name: ch?.name ?? "",
+      role: role ?? "jogador",
+      onConnected: () => console.log("[Mesa P2P] conectado à sala"),
+      onPeersChanged: (peers) => console.log("[Mesa P2P] peers:", peers),
+      onMessage: (from, data, channel) =>
+        console.log("[Mesa P2P] mensagem:", from, channel, data),
+    });
+
+    p2pRef.current = room;
+    void room.join();
+
+    return () => {
+      room.close();
+      p2pRef.current = null;
+    };
+  }, [selfId, ch?.name, role]);
 
   if (!ch) return null;
 

@@ -19,6 +19,7 @@ export type SignalKind = "offer" | "answer" | "ice";
 export interface PeerRow {
   id: string;
   name: string;
+  role: "mestre" | "jogador";
 }
 export interface SignalRow {
   id: number;
@@ -34,6 +35,7 @@ export interface RtcPollResponse {
 export interface PeerInfo {
   id: string;
   name: string;
+  role: "mestre" | "jogador";
   connectionState: RTCPeerConnectionState;
   /** Selected local ICE candidate type: host | srflx | prflx | relay. */
   candidateType: string | null;
@@ -45,6 +47,7 @@ export interface P2PRoomOptions {
   room: string;
   selfId: string;
   name?: string;
+  role?: "mestre" | "jogador";
   /** Defaults to VITE_STUN_URLS (comma-separated) or Google public STUN. */
   iceServers?: RTCIceServer[];
   onPeersChanged?: (peers: PeerInfo[]) => void;
@@ -190,6 +193,7 @@ export class P2PRoom {
       room: this.opts.room,
       peer: this.opts.selfId,
       name: this.opts.name ?? "",
+      role: this.opts.role ?? "jogador",
       since: String(this.cursor),
     });
     const res = await fetch(`/api/rtc?${params}`);
@@ -220,16 +224,17 @@ export class P2PRoom {
     this.schedulePoll(this.anyPairConnecting() ? FAST_POLL_MS : IDLE_POLL_MS);
   }
 
-  private reconcileRoster(peers: { id: string; name: string }[]): void {
+  private reconcileRoster(peers: PeerRow[]): void {
     const alive = new Set(peers.map((p) => p.id));
     for (const p of peers) {
       if (p.id === this.opts.selfId) continue;
       const existing = this.peers.get(p.id);
       if (existing) {
         existing.info.name = p.name;
+        existing.info.role = p.role;
       } else {
         // Exactly one side dials each pair; the other waits for the offer.
-        this.connectTo(p.id, p.name, this.opts.selfId > p.id);
+        this.connectTo(p.id, p.name, p.role, this.opts.selfId > p.id);
       }
     }
     for (const [id, slot] of this.peers) {
@@ -243,7 +248,7 @@ export class P2PRoom {
 
   // ── per-pair connection ────────────────────────────────────────────────────
 
-  private connectTo(peerId: string, name: string, initiator: boolean): PeerSlot | null {
+  private connectTo(peerId: string, name: string, role: "mestre" | "jogador", initiator: boolean): PeerSlot | null {
     if (this.closed) return null;
     const pc = new RTCPeerConnection({
       iceServers: this.opts.iceServers ?? defaultIceServers(),
@@ -258,6 +263,7 @@ export class P2PRoom {
       info: {
         id: peerId,
         name,
+        role,
         connectionState: pc.connectionState,
         candidateType: null,
         rttMs: null,
@@ -370,7 +376,7 @@ export class P2PRoom {
       // New peers dial us in the same poll that adds them to the roster.
       // Signals outlive membership, so drop senders the roster doesn't vouch for.
       if (!roster.has(from)) return;
-      const created = this.connectTo(from, "", false);
+      const created = this.connectTo(from, "", "jogador", false);
       if (!created) return;
       slot = created;
     }
@@ -392,9 +398,10 @@ export class P2PRoom {
           if (kind !== "offer" || slot.recreatedForOffer) throw err;
           const attempts = slot.recoveryAttempts;
           const name = slot.info.name;
+          const role = slot.info.role;
           slot.pc.close();
           this.peers.delete(from);
-          const fresh = this.connectTo(from, name, false);
+          const fresh = this.connectTo(from, name, role, false);
           if (!fresh) return;
           fresh.recoveryAttempts = attempts;
           fresh.recreatedForOffer = true;
@@ -522,11 +529,11 @@ export class P2PRoom {
       slot.lastProgressAt = now; // re-arm the stall window
       if (this.opts.selfId > peerId) {
         // We are the dialer: rebuild the pair from scratch.
-        const { name } = slot.info;
+        const { name, role } = slot.info;
         const attempts = slot.recoveryAttempts;
         slot.pc.close();
         this.peers.delete(peerId);
-        const fresh = this.connectTo(peerId, name, true);
+        const fresh = this.connectTo(peerId, name, role, true);
         if (fresh) fresh.recoveryAttempts = attempts;
         this.schedulePoll(FAST_POLL_MS);
       }

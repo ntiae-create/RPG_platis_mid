@@ -55,10 +55,17 @@ function ensureSchema(sql: Sql): Promise<void> {
          room TEXT NOT NULL,
          peer_id TEXT NOT NULL,
          name TEXT NOT NULL DEFAULT '',
+         role TEXT NOT NULL DEFAULT 'jogador',
          last_seen TIMESTAMPTZ NOT NULL DEFAULT now(),
          PRIMARY KEY (room, peer_id)
        )`,
     );
+
+    await sql.query(
+      `ALTER TABLE webrtc_peers
+       ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'jogador'`,
+    );
+
     await sql.query(
       `CREATE TABLE IF NOT EXISTS webrtc_signals (
          id BIGSERIAL PRIMARY KEY,
@@ -70,35 +77,36 @@ function ensureSchema(sql: Sql): Promise<void> {
          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
        )`,
     );
+
     await sql.query(
       `CREATE INDEX IF NOT EXISTS webrtc_signals_inbox
-         ON webrtc_signals (room, to_peer, id)`,
+       ON webrtc_signals (room, to_peer, id)`,
     );
   })().catch((err) => {
     globalRef.__rtcSchemaPromise__ = undefined;
     throw err;
   });
+
   return globalRef.__rtcSchemaPromise__;
 }
-
 async function roster(sql: Sql, room: string): Promise<PeerRow[]> {
   // LIMIT bounds the blast radius of room-stuffing; the mesh caps out ~8.
-  const rows = await sql.query<{ peer_id: string; name: string }>(
-    `SELECT peer_id, name FROM webrtc_peers
+  const rows = await sql.query<{ peer_id: string; name: string; role: "mestre" | "jogador" }>(
+    `SELECT peer_id, name, role FROM webrtc_peers
      WHERE room = $1 AND last_seen > now() - make_interval(secs => $2)
      ORDER BY peer_id LIMIT 32`,
     [room, PEER_TTL_SECONDS],
   );
-  return rows.map((r) => ({ id: r.peer_id, name: r.name }));
+  return rows.map((r) => ({ id: r.peer_id, name: r.name, role: r.role }));
 }
 
-async function touchPeer(sql: Sql, room: string, peer: string, name: string) {
+async function touchPeer(sql: Sql, room: string, peer: string, name: string, role: "mestre" | "jogador") {
   await sql.query(
-    `INSERT INTO webrtc_peers (room, peer_id, name, last_seen)
-     VALUES ($1, $2, $3, now())
+    `INSERT INTO webrtc_peers (room, peer_id, name, role, last_seen)
+     VALUES ($1, $2, $3, $4, now())
      ON CONFLICT (room, peer_id)
-     DO UPDATE SET last_seen = now(), name = EXCLUDED.name`,
-    [room, peer, name],
+     DO UPDATE SET last_seen = now(), name = EXCLUDED.name, role = EXCLUDED.role`,
+    [room, peer, name, role],
   );
 }
 
@@ -133,21 +141,23 @@ async function handleGet(url: URL): Promise<Response> {
       room: ID,
       peer: ID,
       name: z.string().max(64).default(""),
+      role: z.enum(["mestre", "jogador"]).default("jogador"),
       since: z.coerce.number().int().min(0).default(0),
     })
     .safeParse({
       room: url.searchParams.get("room"),
       peer: url.searchParams.get("peer"),
       name: url.searchParams.get("name") ?? "",
+      role: url.searchParams.get("role") ?? "jogador",
       since: url.searchParams.get("since") ?? 0,
     });
   if (!parsed.success) return json({ error: "invalid query" }, 400);
-  const { room, peer, name, since } = parsed.data;
+  const { room, peer, name, role, since } = parsed.data;
 
   const sql = await getSql();
   await ensureSchema(sql);
   if (since === 0 || Math.random() < 0.02) await prune(sql);
-  await touchPeer(sql, room, peer, name);
+  await touchPeer(sql, room, peer, name, role);
   const rows = await sql.query<{
     id: number;
     from_peer: string;
