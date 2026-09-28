@@ -257,6 +257,7 @@ export function PlayerSlots() {
   const grantXp = usePlatis((s) => s.grantXp);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
   const unlockRace = usePlatis((s) => s.unlockRace);
+  const removeCharacter = usePlatis((s) => s.removeCharacter);
   const centerOn = usePlatis((s) => s.centerOn);
   const selectFighter = usePlatis((s) => s.selectFighter);
   const seedDemo = usePlatis((s) => s.seedDemo);
@@ -297,6 +298,11 @@ export function PlayerSlots() {
                       Defensor
                     </Button>
                     <GiveItem characterId={ch.id} />
+                    {ch.isDemo && (
+                      <Button size="sm" variant="outline" onClick={() => removeCharacter(ch.id)}>
+                        Remover Demo
+                      </Button>
+                    )}
                   </div>
                   <select
                     className="h-11 w-full rounded-md bg-raised px-2 text-sm"

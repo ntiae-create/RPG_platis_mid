@@ -10,6 +10,7 @@ export function CtePanel() {
       : null,
   );
   const role = usePlatis((s) => s.role);
+  const selfId = usePlatis((s) => s.selfId);
   const respondToCte = usePlatis((s) => s.respondToCte);
   const [remainingMs, setRemainingMs] = useState(0);
 
@@ -45,8 +46,15 @@ export function CtePanel() {
     return null;
   }
 
+  const isTargeted =
+    activeMasterEvent.target === "todos" ||
+    (activeMasterEvent.target === "especificos" &&
+      !!selfId &&
+      activeMasterEvent.targetCharacterIds.includes(selfId));
+
   const canReact =
     role !== "mestre" &&
+    isTargeted &&
     activeMasterEvent.cteStatus !== "executado" &&
     remainingMs > 0;
 

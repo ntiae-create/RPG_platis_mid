@@ -166,6 +166,7 @@ type AppState = {
   respondToCte: (id: string, result: "sucesso" | "falha") => void;
   clearActiveMasterEvent: () => void;
   addCharacter: (ch: Character, asSelf?: boolean) => void;
+  removeCharacter: (characterId: string) => void;
   updateSelf: (patch: Partial<Character>) => void;
   patchCharacter: (id: string, patch: Partial<Character>) => void;
   seedDemo: () => void;
@@ -474,6 +475,20 @@ export const usePlatis = create<AppState>()(
         });
       },
 
+      removeCharacter: (characterId) => {
+        const s = get();
+        const characters = { ...s.characters };
+        delete characters[characterId];
+        const slots = s.slots.map((id) => (id === characterId ? null : id));
+        const entities = s.entities.filter((e) => e.id !== characterId);
+        set({
+          characters,
+          slots,
+          entities,
+          selfId: s.selfId === characterId ? null : s.selfId,
+          masterId: s.masterId === characterId ? null : s.masterId,
+        });
+      },
       updateSelf: (patch) => {
         const id = get().selfId;
         if (!id) return;

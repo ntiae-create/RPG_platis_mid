@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CriarRouteImport } from './routes/criar'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MesaRouteImport } from './routes/mesa'
+import { Route as ApiRtcRouteImport } from './routes/api/rtc'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const MesaRoute = MesaRouteImport.update({
   path: '/mesa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRtcRoute = ApiRtcRouteImport.update({
+  id: '/api/rtc',
+  path: '/api/rtc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/criar': typeof CriarRoute
   '/login': typeof LoginRoute
   '/mesa': typeof MesaRoute
+  '/api/rtc': typeof ApiRtcRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/criar': typeof CriarRoute
   '/login': typeof LoginRoute
   '/mesa': typeof MesaRoute
+  '/api/rtc': typeof ApiRtcRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,22 @@ export interface FileRoutesById {
   '/criar': typeof CriarRoute
   '/login': typeof LoginRoute
   '/mesa': typeof MesaRoute
+  '/api/rtc': typeof ApiRtcRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/criar' | '/login' | '/mesa' | '/api/auth/$'
+  fullPaths: '/' | '/criar' | '/login' | '/mesa' | '/api/rtc' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/criar' | '/login' | '/mesa' | '/api/auth/$'
-  id: '__root__' | '/' | '/criar' | '/login' | '/mesa' | '/api/auth/$'
+  to: '/' | '/criar' | '/login' | '/mesa' | '/api/rtc' | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/criar'
+    | '/login'
+    | '/mesa'
+    | '/api/rtc'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +92,7 @@ export interface RootRouteChildren {
   CriarRoute: typeof CriarRoute
   LoginRoute: typeof LoginRoute
   MesaRoute: typeof MesaRoute
+  ApiRtcRoute: typeof ApiRtcRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -109,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MesaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rtc': {
+      id: '/api/rtc'
+      path: '/api/rtc'
+      fullPath: '/api/rtc'
+      preLoaderRoute: typeof ApiRtcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -124,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   CriarRoute: CriarRoute,
   LoginRoute: LoginRoute,
   MesaRoute: MesaRoute,
+  ApiRtcRoute: ApiRtcRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

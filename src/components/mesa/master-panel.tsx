@@ -64,10 +64,14 @@ export function MasterPanel() {
   const [section, setSection] = useState<MasterSection | null>(null);
   const [eventType, setEventType] = useState<string | null>(null);
   const [cteTimerMs, setCteTimerMs] = useState(3000);
+  const [cteTarget, setCteTarget] = useState<"todos" | "especificos">("todos");
+  const [cteTargetCharacterIds, setCteTargetCharacterIds] = useState<string[]>([]);
 
   const createMasterEvent = usePlatis((s) => s.createMasterEvent);
   const activateMasterEvent = usePlatis((s) => s.activateMasterEvent);
   const masterEvents = usePlatis((s) => s.masterEvents);
+  const slots = usePlatis((s) => s.slots);
+  const characters = usePlatis((s) => s.characters);
 
   if (section === "jogadores") {
     return (
@@ -141,17 +145,62 @@ export function MasterPanel() {
             </p>
 
             {eventType === "cte" && (
-              <label className="block space-y-1">
-                <span className="text-xs font-medium text-muted">Tempo de reação (segundos)</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={cteTimerMs / 1000}
-                  onChange={(e) => setCteTimerMs(Math.max(1, Number(e.target.value) || 1) * 1000)}
-                  className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
-                />
-              </label>
+              <div className="space-y-3">
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Tempo de reação (segundos)</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={cteTimerMs / 1000}
+                    onChange={(e) => setCteTimerMs(Math.max(1, Number(e.target.value) || 1) * 1000)}
+                    className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <div className="space-y-2">
+                  <span className="text-xs font-medium text-muted">Alvo do CTE</span>
+                  <select
+                    className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+                    value={cteTarget}
+                    onChange={(e) => setCteTarget(e.target.value as "todos" | "especificos")}
+                  >
+                    <option value="todos">Todos os jogadores</option>
+                    <option value="especificos">Jogadores específicos</option>
+                  </select>
+
+                  {cteTarget === "especificos" && (
+                    <div className="space-y-2 rounded-md border border-line p-3">
+                      <span className="text-xs font-medium text-muted">Selecione os jogadores</span>
+
+                      {slots.map((slotId) => {
+                        if (!slotId) return null;
+                        const character = characters[slotId];
+                        if (!character) return null;
+
+                        const selected = cteTargetCharacterIds.includes(character.id);
+
+                        return (
+                          <label key={character.id} className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() =>
+                                setCteTargetCharacterIds((current) =>
+                                  selected
+                                    ? current.filter((id) => id !== character.id)
+                                    : [...current, character.id],
+                                )
+                              }
+                            />
+                            <span>{character.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             <Button
@@ -169,8 +218,8 @@ export function MasterPanel() {
                     "Evento criado pelo Mestre.",
                   status: "rascunho" as const,
                   createdAt: Date.now(),
-                  target: "todos" as const,
-                  targetCharacterIds: [],
+                  target: eventType === "cte" ? cteTarget : "todos",
+                  targetCharacterIds: eventType === "cte" ? cteTargetCharacterIds : [],
                   ...(eventType === "cte" ? { timerMs: cteTimerMs, cteStatus: "aguardando" as const } : {}),
                 };
 

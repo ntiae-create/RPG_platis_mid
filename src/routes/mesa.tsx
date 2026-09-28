@@ -75,9 +75,10 @@ function Mesa() {
       {tab === "habilidades" && <SkillPanel />}
       {tab === "inventario" && <InventoryPanel />}
       {tab === "mundo" && <WorldPanel />}
+      <CtePanel />
+
       {tab === "mesa" && (
         <div className="space-y-4">
-          <CtePanel />
           {role === "mestre" && <MasterPanel />}
         </div>
       )}
