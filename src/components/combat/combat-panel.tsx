@@ -5,6 +5,9 @@ import { CharacterCard } from "@/components/character/character-card";
 import type { Character } from "@/data/types";
 
 export function CombatPanel() {
+  const combatActive = usePlatis((s) => s.combatActive);
+  const startCombat = usePlatis((s) => s.startCombat);
+  const endCombat = usePlatis((s) => s.endCombat);
   const characters = usePlatis((s) => s.characters);
   const slots = usePlatis((s) => s.slots);
   const attackerId = usePlatis((s) => s.attackerId);
@@ -51,6 +54,16 @@ export function CombatPanel() {
             habilidades ofensivas 2 + D[atributo]. Contra-ataque se o D20 do defensor for 17 ou mais e maior
             que o do atacante.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button disabled={combatActive} onClick={startCombat}>
+              {combatActive ? "Combate em andamento" : "Iniciar combate"}
+            </Button>
+            {combatActive && (
+              <Button variant="secondary" onClick={() => endCombat()}>
+                Encerrar combate
+              </Button>
+            )}
+          </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <FighterPick
               label="Atacante"

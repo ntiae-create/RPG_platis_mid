@@ -87,6 +87,7 @@ function Mesa() {
           const message = data as { type: string; character: Character };
           if (message.type === "character") {
             setRemoteCharacters((current) => ({ ...current, [from]: message.character }));
+          usePlatis.getState().addCharacter(message.character, false);
           }
         }
       },
