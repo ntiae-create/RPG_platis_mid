@@ -115,7 +115,7 @@ function Mesa() {
 
       {tab === "mesa" && (
         <div className="space-y-4">
-          {role === "mestre" && <MasterPanel />}
+          {role === "mestre" && <MasterPanel p2pPeers={p2pPeers} />}
         </div>
       )}
     </MesaShell>

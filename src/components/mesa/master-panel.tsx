@@ -60,7 +60,16 @@ const EVENT_TYPES = [
   { id: "narrativo", label: "Evento narrativo", desc: "Acontecimento conduzido pelo Mestre." },
 ] as const;
 
-export function MasterPanel() {
+export function MasterPanel({
+  p2pPeers,
+}: {
+  p2pPeers: {
+    id: string;
+    name: string;
+    role: "mestre" | "jogador";
+    connectionState: string;
+  }[];
+}) {
   const [section, setSection] = useState<MasterSection | null>(null);
   const [eventType, setEventType] = useState<string | null>(null);
   const [cteTimerMs, setCteTimerMs] = useState(3000);
@@ -83,7 +92,7 @@ export function MasterPanel() {
           ← Menu do Mestre
         </Button>
 
-        <PlayerSlots />
+        <PlayerSlots p2pPeers={p2pPeers} />
       </div>
     );
   }

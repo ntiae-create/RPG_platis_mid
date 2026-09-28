@@ -251,7 +251,16 @@ function GiveItem({ characterId }: { characterId: string }) {
   );
 }
 
-export function PlayerSlots() {
+export function PlayerSlots({
+  p2pPeers,
+}: {
+  p2pPeers: {
+    id: string;
+    name: string;
+    role: "mestre" | "jogador";
+    connectionState: string;
+  }[];
+}) {
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
   const grantXp = usePlatis((s) => s.grantXp);
@@ -273,6 +282,7 @@ export function PlayerSlots() {
       <div className="grid gap-3 sm:grid-cols-2">
         {slots.map((id, i) => {
           const ch = id ? characters[id] : null;
+          const peer = ch ? null : p2pPeers[i];
           return (
             <div key={i} className="panel p-2">
               <p className="px-1 pb-2 text-[10px] tracking-wide text-muted uppercase">
@@ -318,6 +328,11 @@ export function PlayerSlots() {
                       </option>
                     ))}
                   </select>
+                </div>
+              ) : peer ? (
+                <div className="rounded-md border border-line p-4">
+                  <p className="font-medium">{peer.name || "Jogador conectado"}</p>
+                  <p className="text-xs text-muted">{peer.role} · {peer.connectionState}</p>
                 </div>
               ) : (
                 <p className="px-1 py-6 text-center text-sm text-muted">Vazio</p>
