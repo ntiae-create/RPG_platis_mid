@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePlatis } from "@/lib/store";
 
-export function ChatPanel() {
+export function ChatPanel({ onSend }: { onSend?: (text: string) => void }) {
   const chat = usePlatis((s) => s.chat);
   const send = usePlatis((s) => s.sendChat);
   const [text, setText] = useState("");
@@ -24,6 +24,7 @@ export function ChatPanel() {
         onSubmit={(e) => {
           e.preventDefault();
           send(text);
+          onSend?.(text);
           setText("");
         }}
       >

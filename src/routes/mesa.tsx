@@ -76,6 +76,13 @@ function Mesa() {
       onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
       onMessage: (from, data, channel) => {
         console.log("[Mesa P2P] mensagem:", from, channel, data);
+        if (channel === "state" && typeof data === "object" && data !== null && "type" in data && "text" in data) {
+          const message = data as { type: string; text: string };
+          if (message.type === "chat") {
+            usePlatis.getState().sendChat(message.text);
+          }
+        }
+
         if (channel === "reliable" && typeof data === "object" && data !== null && "type" in data && "character" in data) {
           const message = data as { type: string; character: Character };
           if (message.type === "character") {
@@ -101,7 +108,7 @@ function Mesa() {
       sidebar={
         <div className="space-y-3">
           <CharacterCard character={ch} />
-          <ChatPanel />
+          <ChatPanel onSend={(text) => { p2pRef.current?.broadcast({ type: "chat", text }); }} />
           <Button variant="ghost" className="w-full text-muted" onClick={() => nav({ to: "/" })}>
             Sair para o átrio
           </Button>
