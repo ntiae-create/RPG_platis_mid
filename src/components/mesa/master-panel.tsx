@@ -19,6 +19,7 @@ import { useState } from "react";
 import { usePlatis } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
+import type { Character } from "@/data/types";
 
 type MasterSection =
   | "eventos"
@@ -62,6 +63,7 @@ const EVENT_TYPES = [
 
 export function MasterPanel({
   p2pPeers,
+  remoteCharacters,
 }: {
   p2pPeers: {
     id: string;
@@ -69,6 +71,7 @@ export function MasterPanel({
     role: "mestre" | "jogador";
     connectionState: string;
   }[];
+  remoteCharacters: Record<string, Character>;
 }) {
   const [section, setSection] = useState<MasterSection | null>(null);
   const [eventType, setEventType] = useState<string | null>(null);
@@ -92,7 +95,7 @@ export function MasterPanel({
           ← Menu do Mestre
         </Button>
 
-        <PlayerSlots p2pPeers={p2pPeers} />
+        <PlayerSlots p2pPeers={p2pPeers} remoteCharacters={remoteCharacters} />
       </div>
     );
   }

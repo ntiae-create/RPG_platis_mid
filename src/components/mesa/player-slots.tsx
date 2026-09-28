@@ -2,7 +2,7 @@ import { CharacterCard } from "@/components/character/character-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RACES } from "@/data/races";
-import type { InventoryItem } from "@/data/types";
+import type { Character, InventoryItem } from "@/data/types";
 import { usePlatis } from "@/lib/store";
 import { Gift, UserPlus } from "lucide-react";
 import { useState } from "react";
@@ -253,6 +253,7 @@ function GiveItem({ characterId }: { characterId: string }) {
 
 export function PlayerSlots({
   p2pPeers,
+  remoteCharacters = {},
 }: {
   p2pPeers: {
     id: string;
@@ -260,6 +261,7 @@ export function PlayerSlots({
     role: "mestre" | "jogador";
     connectionState: string;
   }[];
+  remoteCharacters?: Record<string, Character>;
 }) {
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
@@ -283,6 +285,7 @@ export function PlayerSlots({
         {slots.map((id, i) => {
           const ch = id ? characters[id] : null;
           const peer = ch ? null : p2pPeers[i];
+          const remoteCharacter = peer ? remoteCharacters[peer.id] ?? null : null;
           return (
             <div key={i} className="panel p-2">
               <p className="px-1 pb-2 text-[10px] tracking-wide text-muted uppercase">
@@ -330,10 +333,17 @@ export function PlayerSlots({
                   </select>
                 </div>
               ) : peer ? (
-                <div className="rounded-md border border-line p-4">
-                  <p className="font-medium">{peer.name || "Jogador conectado"}</p>
-                  <p className="text-xs text-muted">{peer.role} · {peer.connectionState}</p>
-                </div>
+                remoteCharacter ? (
+                  <div className="space-y-2">
+                    <CharacterCard character={remoteCharacter} compact />
+                    <p className="text-xs text-muted">Online · {peer.connectionState}</p>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-line p-4">
+                    <p className="font-medium">{peer.name || "Jogador conectado"}</p>
+                    <p className="text-xs text-muted">{peer.role} · {peer.connectionState}</p>
+                  </div>
+                )
               ) : (
                 <p className="px-1 py-6 text-center text-sm text-muted">Vazio</p>
               )}
