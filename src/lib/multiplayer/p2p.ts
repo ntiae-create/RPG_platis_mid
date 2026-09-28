@@ -55,6 +55,8 @@ export interface P2PRoomOptions {
   onMessage?: (from: string, data: unknown, channel: "state" | "reliable") => void;
   /** Fires once, on the first successful signaling poll (registration). */
   onConnected?: () => void;
+  /** Fires when a peer reliable channel is ready. */
+  onPeerReady?: (peerId: string) => void;
 }
 
 interface PeerSlot {
@@ -323,6 +325,10 @@ export class P2PRoom {
     else slot.reliable = channel;
     channel.onopen = () => {
       slot.lastProgressAt = Date.now();
+
+      if (channel.label === "reliable") {
+        this.opts.onPeerReady?.(slot.info.id);
+      }
     };
     channel.onmessage = (e) => {
       let msg: { t: string; d?: unknown };
