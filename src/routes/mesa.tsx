@@ -56,7 +56,7 @@ function Mesa() {
       selfId,
       name: ch?.name ?? "",
       role: role ?? "jogador",
-      onConnected: () => { setP2pConnected(true); console.log("[Mesa P2P] conectado à sala"); },
+      onConnected: () => { setP2pConnected(true); console.log("[Mesa P2P] conectado à sala"); if (ch) p2pRef.current?.send({ type: "character", character: ch }); },
       onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
       onMessage: (from, data, channel) => {
         console.log("[Mesa P2P] mensagem:", from, channel, data);
@@ -71,7 +71,6 @@ function Mesa() {
 
     p2pRef.current = room;
     void room.join();
-    if (ch) room.send({ type: "character", character: ch });
 
     return () => {
       room.close();
