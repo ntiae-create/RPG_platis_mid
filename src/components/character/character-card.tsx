@@ -123,7 +123,7 @@ export function CharacterCard({
             return (
               <div
                 key={k}
-                className="rounded-md bg-bg/35 px-2 py-1.5"
+                className={cn("passive-affinity-card", "aff-" + character.affinityId, "rounded-md bg-bg/35 px-2 py-1.5")}
               >
                 <div className="text-[10px] tracking-wide text-muted">
                   {STAT_LABELS[k]}
@@ -196,7 +196,7 @@ export function CharacterCard({
               {character.skills.slice(0, slots).map((sk) => (
                 <div
                   key={sk.id}
-                  className="flex items-center justify-between gap-2 rounded-md bg-bg/35 px-2 py-1.5"
+                  className={cn("skill-affinity-card", "skill-affinity-" + sk.affinity, "skill-level-" + (sk.slot + 1), "flex items-center justify-between gap-2 rounded-md bg-bg/35 px-2 py-1.5")}
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm">

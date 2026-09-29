@@ -469,3 +469,413 @@
       inset 0 0 34px rgba(255, 255, 255, 0.2);
   }
 }
+
+/* =========================================================
+   SKILL / PASSIVE AFFINITY CARDS
+   Visual only — no gameplay changes
+   ========================================================= */
+
+.skill-affinity-card,
+.passive-affinity-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    border-color 250ms ease,
+    box-shadow 250ms ease,
+    background 250ms ease;
+}
+
+.skill-affinity-card::before,
+.skill-affinity-card::after,
+.passive-affinity-card::before,
+.passive-affinity-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.skill-affinity-card > *,
+.passive-affinity-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Intensidade por slot */
+.skill-level-1 {
+  --skill-power: 0.35;
+}
+
+.skill-level-2 {
+  --skill-power: 0.55;
+}
+
+.skill-level-3 {
+  --skill-power: 0.8;
+}
+
+.skill-level-4 {
+  --skill-power: 1;
+}
+
+/* Passivas: efeito controlado */
+.passive-affinity-card {
+  --skill-power: 0.45;
+}
+
+/* Camada de brilho comum */
+.skill-affinity-card::before,
+.passive-affinity-card::before {
+  opacity: calc(0.18 + (var(--skill-power) * 0.32));
+  mix-blend-mode: screen;
+}
+
+.skill-affinity-card::after,
+.passive-affinity-card::after {
+  opacity: calc(0.12 + (var(--skill-power) * 0.28));
+}
+
+
+/* =========================================================
+   AFFINITY EFFECTS — SKILL / PASSIVE CARDS
+   ========================================================= */
+
+/* ÁGUA — ondulações e reflexos */
+.skill-affinity-agua,
+.passive-affinity-card.aff-agua {
+  border-color: rgba(70, 190, 230, 0.55);
+  box-shadow: 0 0 12px rgba(40, 170, 220, 0.18);
+}
+
+.skill-affinity-agua::before,
+.passive-affinity-card.aff-agua::before {
+  background:
+    repeating-radial-gradient(
+      ellipse at 20% 120%,
+      transparent 0 10px,
+      rgba(80, 210, 240, 0.16) 11px 12px,
+      transparent 13px 22px
+    );
+  animation: skill-water 4s ease-in-out infinite;
+}
+
+.skill-affinity-agua::after,
+.passive-affinity-card.aff-agua::after {
+  background:
+    linear-gradient(
+      115deg,
+      transparent 20%,
+      rgba(150, 240, 255, 0.18) 48%,
+      transparent 62%
+    );
+  animation: skill-water-reflection 3.5s ease-in-out infinite;
+}
+
+
+/* LUZ — feixes cruzando o card */
+.skill-affinity-luz,
+.passive-affinity-card.aff-luz {
+  border-color: rgba(255, 225, 145, 0.65);
+  box-shadow: 0 0 14px rgba(255, 220, 120, 0.2);
+}
+
+.skill-affinity-luz::before,
+.passive-affinity-card.aff-luz::before {
+  background:
+    linear-gradient(
+      118deg,
+      transparent 35%,
+      rgba(255, 245, 190, 0.42) 48%,
+      transparent 54%
+    );
+  background-size: 180% 180%;
+  animation: skill-light 3s linear infinite;
+}
+
+.skill-affinity-luz::after,
+.passive-affinity-card.aff-luz::after {
+  background:
+    linear-gradient(
+      62deg,
+      transparent 42%,
+      rgba(255, 255, 220, 0.3) 49%,
+      transparent 56%
+    );
+  animation: skill-light-cross 4.2s ease-in-out infinite;
+}
+
+
+/* TERRA — partículas minerais e pulsação pesada */
+.skill-affinity-terra,
+.passive-affinity-card.aff-terra {
+  border-color: rgba(170, 135, 75, 0.62);
+  box-shadow: 0 0 13px rgba(150, 110, 50, 0.2);
+}
+
+.skill-affinity-terra::before,
+.passive-affinity-card.aff-terra::before {
+  background-image:
+    radial-gradient(
+      circle,
+      rgba(210, 175, 105, 0.5) 0 1px,
+      transparent 1.5px
+    );
+  background-size: 17px 17px;
+  animation: skill-earth 5s linear infinite;
+}
+
+.skill-affinity-terra::after,
+.passive-affinity-card.aff-terra::after {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 46%,
+      rgba(190, 155, 90, 0.16) 50%,
+      transparent 54%
+    );
+  animation: skill-earth-pulse 3.8s ease-in-out infinite;
+}
+
+
+/* TREVAS — regiões negras avançando e recuando */
+.skill-affinity-trevas,
+.passive-affinity-card.aff-trevas {
+  border-color: rgba(125, 75, 165, 0.65);
+  box-shadow: 0 0 15px rgba(80, 35, 125, 0.28);
+}
+
+.skill-affinity-trevas::before,
+.passive-affinity-card.aff-trevas::before {
+  background:
+    radial-gradient(
+      ellipse at 10% 30%,
+      rgba(0, 0, 0, 0.85),
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 90% 75%,
+      rgba(20, 0, 35, 0.9),
+      transparent 52%
+    );
+  animation: skill-darkness 4.5s ease-in-out infinite;
+}
+
+.skill-affinity-trevas::after,
+.passive-affinity-card.aff-trevas::after {
+  background:
+    radial-gradient(
+      circle at 70% 20%,
+      rgba(150, 80, 210, 0.18),
+      transparent 45%
+    );
+  animation: skill-dark-glow 3.8s ease-in-out infinite;
+}
+
+
+/* VENTO — correntes curvas e partículas */
+.skill-affinity-vento,
+.passive-affinity-card.aff-vento {
+  border-color: rgba(170, 225, 205, 0.58);
+  box-shadow: 0 0 14px rgba(100, 205, 175, 0.18);
+}
+
+.skill-affinity-vento::before,
+.passive-affinity-card.aff-vento::before {
+  background:
+    repeating-linear-gradient(
+      -22deg,
+      transparent 0 13px,
+      rgba(205, 250, 230, 0.18) 14px 15px,
+      transparent 16px 28px
+    );
+  animation: skill-wind 3s linear infinite;
+}
+
+.skill-affinity-vento::after,
+.passive-affinity-card.aff-vento::after {
+  background:
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(200, 255, 230, 0.28) 0 1px,
+      transparent 2px
+    );
+  background-size: 32px 20px;
+  animation: skill-wind-particles 3.5s linear infinite;
+}
+
+
+/* FOGO — brasas, calor e movimento */
+.skill-affinity-fogo,
+.passive-affinity-card.aff-fogo {
+  border-color: rgba(255, 105, 50, 0.7);
+  box-shadow: 0 0 15px rgba(230, 65, 25, 0.28);
+}
+
+.skill-affinity-fogo::before,
+.passive-affinity-card.aff-fogo::before {
+  background:
+    radial-gradient(
+      circle at 20% 100%,
+      rgba(255, 80, 25, 0.5),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 80% 100%,
+      rgba(255, 180, 50, 0.34),
+      transparent 30%
+    );
+  animation: skill-fire 2.2s ease-in-out infinite;
+}
+
+.skill-affinity-fogo::after,
+.passive-affinity-card.aff-fogo::after {
+  background-image:
+    radial-gradient(
+      circle,
+      rgba(255, 190, 80, 0.8) 0 1px,
+      transparent 2px
+    );
+  background-size: 23px 27px;
+  animation: skill-embers 2.8s linear infinite;
+}
+
+
+/* FÍSICO — impacto, corte e energia bruta */
+.skill-affinity-fisico,
+.passive-affinity-card.aff-fisico {
+  border-color: rgba(215,
+
+/* =========================================================
+   HABILIDADE 4 — UR MAX STYLE
+   ========================================================= */
+
+.skill-affinity-card.skill-level-4 {
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 16px rgba(180, 120, 255, 0.65),
+    0 0 34px rgba(60, 210, 220, 0.45),
+    0 0 58px rgba(255, 220, 100, 0.3),
+    inset 0 0 24px rgba(255, 255, 255, 0.12);
+  animation: skill-ur-max 5s ease-in-out infinite;
+}
+
+.skill-affinity-card.skill-level-4::before {
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      rgba(255, 255, 255, 0.9) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 72% 14%,
+      rgba(255, 255, 255, 0.85) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 88% 62%,
+      rgba(255, 255, 255, 0.8) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 30% 82%,
+      rgba(255, 255, 255, 0.75) 0 1px,
+      transparent 2px
+    ),
+    linear-gradient(
+      125deg,
+      rgba(120, 60, 255, 0.22),
+      rgba(40, 220, 190, 0.18),
+      rgba(255, 220, 70, 0.16),
+      rgba(255, 80, 150, 0.18),
+      rgba(60, 140, 255, 0.22)
+    );
+  background-size:
+    auto,
+    auto,
+    auto,
+    auto,
+    400% 400%;
+  animation: skill-ur-max-bg 5s ease-in-out infinite;
+}
+
+.skill-affinity-card.skill-level-4::after {
+  background:
+    linear-gradient(
+      120deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.22) 50%,
+      transparent 80%
+    );
+  animation: skill-ur-max-shine 3s ease-in-out infinite;
+}
+
+@keyframes skill-ur-max {
+  0%, 100% {
+    box-shadow:
+      0 0 16px rgba(180, 120, 255, 0.65),
+      0 0 34px rgba(60, 210, 220, 0.45),
+      0 0 58px rgba(255, 220, 100, 0.3),
+      inset 0 0 24px rgba(255, 255, 255, 0.12);
+  }
+
+  50% {
+    box-shadow:
+      0 0 22px rgba(180, 120, 255, 0.8),
+      0 0 42px rgba(60, 210, 220, 0.6),
+      0 0 70px rgba(255, 220, 100, 0.42),
+      inset 0 0 30px rgba(255, 255, 255, 0.18);
+  }
+}
+
+@keyframes skill-ur-max-bg {
+  0%, 100% {
+    background-position:
+      0 0,
+      0 0,
+      0 0,
+      0 0,
+      0% 50%;
+  }
+
+  50% {
+    background-position:
+      0 0,
+      0 0,
+      0 0,
+      0 0,
+      100% 50%;
+  }
+}
+
+@keyframes skill-ur-max-shine {
+  0%, 100% {
+    transform: translateX(-80%);
+    opacity: 0.15;
+  }
+
+  50% {
+    transform: translateX(80%);
+    opacity: 0.75;
+  }
+}
+
+/* Intensidade visual adicional */
+.skill-level-1 {
+  filter: none;
+}
+
+.skill-level-2 {
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.08),
+    0 0 18px rgba(120, 160, 220, 0.08);
+}
+
+.skill-level-3 {
+  box-shadow:
+    0 0 14px rgba(255, 255, 255, 0.12),
+    0 0 28px rgba(120, 160, 220, 0.14);
+}
+
