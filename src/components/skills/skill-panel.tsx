@@ -35,7 +35,7 @@ export function SkillPanel() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <form
-        className="panel space-y-3 p-4"
+        className={`panel skill-affinity-card skill-affinity-${ch.affinityId} skill-level-${slot + 1} space-y-3 p-4`}
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
@@ -156,7 +156,7 @@ export function SkillPanel() {
       </form>
 
       <div className="space-y-4">
-        <div className="panel space-y-2 p-4">
+        <div className={`panel passive-affinity-card aff-${ch.affinityId} space-y-2 p-4`}>
           <h3 className="font-display text-xl">Passiva do personagem</h3>
           <Input value={pName} onChange={(e) => setPName(e.target.value)} placeholder="Nome" />
           <Textarea value={pDesc} onChange={(e) => setPDesc(e.target.value)} placeholder="Descrição" />
