@@ -340,6 +340,8 @@ export function MasterPanel({
 
       </div>
     );
+  }
+
   if (section === "xp-mestre") {
     if (!masterCharacter) return null;
     return (
@@ -381,7 +383,6 @@ export function MasterPanel({
     );
   }
 
-  }
 
   if (section) {
     const current = SECTIONS.find((item) => item.id === section);
