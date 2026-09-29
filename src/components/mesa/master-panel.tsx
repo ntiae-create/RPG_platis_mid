@@ -89,6 +89,7 @@ export function MasterPanel({
 
   const [xpTargetId, setXpTargetId] = useState<string>("");
   const [xpAmount, setXpAmount] = useState(100);
+  const [masterXpAmount, setMasterXpAmount] = useState(100);
 
   if (section === "jogadores") {
     return (
@@ -287,12 +288,6 @@ export function MasterPanel({
             >
               <option value="">Selecione um personagem</option>
 
-              {masterId && characters[masterId] && (
-                <option value={masterId}>
-                  {characters[masterId].name} — Mestre — Nv. {characters[masterId].level}
-                </option>
-              )}
-
               {slots.map((slotId) => {
                 if (!slotId) return null;
                 const character = characters[slotId];
@@ -328,9 +323,48 @@ export function MasterPanel({
               grantXp(xpTargetId, xpAmount);
             }}
           >
-            Conceder XP
+            Conceder XP ao jogador
           </Button>
         </div>
+
+        {masterId && characters[masterId] && (
+          <div className="panel space-y-4 p-4">
+            <div>
+              <p className="font-medium">XP do Mestre</p>
+              <p className="mt-1 text-xs text-muted">
+                Progressão exclusiva do personagem do Mestre.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-line p-3">
+              <p className="font-medium">{characters[masterId].name}</p>
+              <p className="mt-1 text-xs text-muted">
+                Nível {characters[masterId].level}
+              </p>
+            </div>
+
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted">
+                Quantidade de XP
+              </span>
+              <input
+                type="number"
+                min="1"
+                value={masterXpAmount}
+                onChange={(e) =>
+                  setMasterXpAmount(Math.max(1, Number(e.target.value) || 1))
+                }
+                className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+              />
+            </label>
+
+            <Button
+              onClick={() => grantXp(masterId, masterXpAmount)}
+            >
+              Conceder XP ao Mestre
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

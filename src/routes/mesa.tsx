@@ -65,10 +65,14 @@ function Mesa() {
       onPeerReady: (peerId) => {
         setPeerReadyCount((count) => count + 1);
         console.log("[Mesa P2P] canal reliable pronto:", peerId);
-        if (ch) {
+        const currentCharacter = selfId
+          ? usePlatis.getState().characters[selfId]
+          : null;
+
+        if (currentCharacter) {
           setCharacterSendCount((count) => count + 1);
           p2pRef.current?.send(
-            { type: "character", character: ch },
+            { type: "character", character: currentCharacter },
             peerId,
           );
         }
@@ -76,6 +80,32 @@ function Mesa() {
       onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
       onMessage: (from, data, channel) => {
         console.log("[Mesa P2P] mensagem:", from, channel, data);
+        if (
+          channel === "state" &&
+          typeof data === "object" &&
+          data !== null &&
+          "type" in data &&
+          data.type === "character" &&
+          "character" in data
+        ) {
+          const message = data as { type: "character"; character: Character };
+          const existing = usePlatis.getState().characters[message.character.id];
+
+          if (existing) {
+            usePlatis.getState().patchCharacter(
+              message.character.id,
+              message.character,
+            );
+          } else {
+            usePlatis.getState().addCharacter(message.character, false);
+          }
+
+          setRemoteCharacters((current) => ({
+            ...current,
+            [from]: message.character,
+          }));
+        }
+
         if (channel === "state" && typeof data === "object" && data !== null && "type" in data && "text" in data) {
           const message = data as { type: string; text: string };
           if (message.type === "chat") {
@@ -101,6 +131,29 @@ function Mesa() {
       p2pRef.current = null;
     };
   }, [selfId, ch?.name, role]);
+
+  const slots = usePlatis((s) => s.slots);
+  const characters = usePlatis((s) => s.characters);
+
+  useEffect(() => {
+    if (role !== "mestre" || !ch || !p2pRef.current) return;
+
+    p2pRef.current.broadcast({
+      type: "character",
+      character: ch,
+    });
+
+    for (const slotId of slots) {
+      if (!slotId || slotId === ch.id) continue;
+      const character = characters[slotId];
+      if (!character) continue;
+
+      p2pRef.current.broadcast({
+        type: "character",
+        character,
+      });
+    }
+  }, [ch, role, slots, characters]);
 
   if (!ch) return null;
 
