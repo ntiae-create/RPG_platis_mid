@@ -1003,16 +1003,22 @@ export const usePlatis = create<AppState>()(
       setCombatXpAward: (n) => set({ combatXpAward: Math.max(0, n) }),
       awardCombatXp: () => {
         const s = get();
+
         s.slots.forEach((id) => {
           if (id) s.grantXp(id, s.combatXpAward);
         });
+
+        if (s.masterId) {
+          s.grantXp(s.masterId, s.combatXpAward);
+        }
+
         set({
           combatLog: [
             {
               id: uid("lg"),
               at: Date.now(),
               kind: "xp" as const,
-              text: `O Mestre concede ${s.combatXpAward} XP de combate a todos os jogadores na mesa.`,
+              text: `O Mestre concede ${s.combatXpAward} XP de combate a todos os personagens na mesa.`,
             },
             ...s.combatLog,
           ],

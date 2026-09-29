@@ -84,6 +84,11 @@ export function MasterPanel({
   const masterEvents = usePlatis((s) => s.masterEvents);
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
+  const masterId = usePlatis((s) => s.masterId);
+  const grantXp = usePlatis((s) => s.grantXp);
+
+  const [xpTargetId, setXpTargetId] = useState<string>("");
+  const [xpAmount, setXpAmount] = useState(100);
 
   if (section === "jogadores") {
     return (
@@ -244,6 +249,88 @@ export function MasterPanel({
             </Button>
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (section === "economia") {
+    return (
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          onClick={() => setSection(null)}
+        >
+          ← Menu do Mestre
+        </Button>
+
+        <div>
+          <h2 className="font-display text-3xl">Economia</h2>
+          <p className="mt-1 text-sm text-muted">
+            Recompensas, XP e progressão dos personagens.
+          </p>
+        </div>
+
+        <div className="panel space-y-4 p-4">
+          <div>
+            <p className="font-medium">Conceder XP</p>
+            <p className="mt-1 text-xs text-muted">
+              Escolha um personagem e conceda XP diretamente.
+            </p>
+          </div>
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted">Personagem</span>
+            <select
+              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+              value={xpTargetId}
+              onChange={(e) => setXpTargetId(e.target.value)}
+            >
+              <option value="">Selecione um personagem</option>
+
+              {masterId && characters[masterId] && (
+                <option value={masterId}>
+                  {characters[masterId].name} — Mestre — Nv. {characters[masterId].level}
+                </option>
+              )}
+
+              {slots.map((slotId) => {
+                if (!slotId) return null;
+                const character = characters[slotId];
+                if (!character) return null;
+
+                return (
+                  <option key={character.id} value={character.id}>
+                    {character.name} — Nv. {character.level}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted">Quantidade de XP</span>
+            <input
+              type="number"
+              min="1"
+              value={xpAmount}
+              onChange={(e) =>
+                setXpAmount(Math.max(1, Number(e.target.value) || 1))
+              }
+              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+            />
+          </label>
+
+          <Button
+            disabled={!xpTargetId}
+            onClick={() => {
+              if (!xpTargetId) return;
+
+              grantXp(xpTargetId, xpAmount);
+            }}
+          >
+            Conceder XP
+          </Button>
+        </div>
       </div>
     );
   }
