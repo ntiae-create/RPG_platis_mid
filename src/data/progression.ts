@@ -1,6 +1,6 @@
 import type { StatKey } from "./types";
 
-export const MAX_LEVEL = 150;
+export const MAX_LEVEL = 999;
 export const XP_PER_LEVEL = 100;
 export const ATTR_PER_LEVEL = 3;
 export const SAN_PER_LEVEL = 2;

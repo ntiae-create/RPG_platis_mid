@@ -554,12 +554,14 @@ export function applyLevelUp(
     ...ch,
   };
 
+  const maxLevel = next.isMaster ? 999 : 150;
+
   for (
     let i = 0;
     i < levels;
     i++
   ) {
-    if (next.level >= 150) {
+    if (next.level >= maxLevel) {
       break;
     }
 

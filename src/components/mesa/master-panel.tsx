@@ -89,6 +89,7 @@ export function MasterPanel({
   const masterId = usePlatis((s) => s.masterId);
   const grantXp = usePlatis((s) => s.grantXp);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
+  const masterCharacter = masterId ? characters[masterId] : Object.values(characters).find((character) => character.isMaster);
 
   const [xpTargetId, setXpTargetId] = useState<string>("");
   const [xpAmount, setXpAmount] = useState(100);
@@ -335,7 +336,7 @@ export function MasterPanel({
           </Button>
         </div>
 
-        {masterId && characters[masterId] && (
+        {masterCharacter && (
           <div className="panel space-y-4 p-4">
             <div>
               <p className="font-medium">XP do Mestre</p>
@@ -345,9 +346,9 @@ export function MasterPanel({
             </div>
 
             <div className="rounded-md border border-line p-3">
-              <p className="font-medium">{characters[masterId].name}</p>
+              <p className="font-medium">{masterCharacter.name}</p>
               <p className="mt-1 text-xs text-muted">
-                Nível {characters[masterId].level}
+                Nível {masterCharacter.level}
               </p>
             </div>
 
@@ -367,7 +368,7 @@ export function MasterPanel({
             </label>
 
             <Button
-              onClick={() => grantXp(masterId, masterXpAmount)}
+              onClick={() => grantXp(masterCharacter.id, masterXpAmount)}
             >
               Conceder XP ao Mestre
             </Button>
@@ -385,7 +386,7 @@ export function MasterPanel({
 
             <Button
               variant="secondary"
-              onClick={() => grantBrasao(masterId, masterBrasaoAmount)}
+              onClick={() => grantBrasao(masterCharacter.id, masterBrasaoAmount)}
             >
               Conceder XP de Brasão ao Mestre
             </Button>
