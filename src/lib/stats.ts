@@ -217,17 +217,16 @@ const RACE_GENDER_IMAGES: Record<
   },
 
   "meio-elfo": {
-    masculino: "/portraits/meio-elfo_masculino.jpg",
-    feminino: "/portraits/meio-elfo_feminino.jpg",
+  feminino: "/portraits/meio-elfo.jpg",
   },
 
   elfo: {
-    masculino: "/portraits/elfo_masculino.jpg",
+    masculino: "/portraits/elfo.jpg",
     feminino: "/portraits/elfo_feminino.jpg",
   },
 
   "semi-besta": {
-    masculino: "/portraits/semi-besta_masculina.jpg",
+    masculino: "/portraits/semi-besta.jpg",
     feminino: "/portraits/semi-besta_feminina.jpg",
   },
 
@@ -236,8 +235,70 @@ const RACE_GENDER_IMAGES: Record<
     feminino: "/portraits/besta_feminina.jpg",
   },
 
-  doppelganger: {
-    feminino: "/portraits/doppelganger_feminina.jpg",
+  lizard: {
+    feminino: "/portraits/lizard_feminino.jpg",
+  },
+
+  aqua: {
+    masculino: "/portraits/aqua_masculino.jpg",
+    feminino: "/portraits/aqua_feminino.jpg",
+  },
+
+  "morto-vivo": {
+    masculino: "/portraits/morto-vivo_masculino.jpg",
+  },
+
+  demonio: {
+    masculino: "/portraits/demonio_masculino.jpg",
+    feminino: "/portraits/demonio_feminino.jpg",
+  },
+
+  divino: {
+    masculino: "/portraits/divino_masculino.jpg",
+    feminino: "/portraits/divino_feminino.jpg",
+  },
+
+  driade: {
+    masculino: "/portraits/driade_masculino.jpg",
+    feminino: "/portraits/driade_feminino.jpg",
+  },
+
+  lupino: {
+    masculino: "/portraits/lupino_maaculino.jpg",
+    feminino: "/portraits/lupino_feminino.jpg",
+  },
+
+  anao: {},
+
+  orc: {
+    masculino: "/portraits/orc_masculino.jpg",
+    feminino: "/portraits/orc_feminino.jpg",
+  },
+
+  goblin: {
+    masculino: "/portraits/goblin_masculino.jpg",
+    feminino: "/portraits/goblin_feminino.jpg",
+  },
+
+  oni: {
+    masculino: "/portraits/oni_masculino.jpg",
+    feminino: "/portraits/oni_feminino.jpg",
+  },
+
+  gigante: {},
+
+  quimera: {
+    masculino: "/portraits/quimera_masculino.jpg",
+    feminino: "/portraits/quimera_feminino.jpg",
+  },
+
+  homunculo: {
+    feminino: "/portraits/homunculo_feminino.jpg",
+    masculino: "/portraits/homúnculo_masculino.jpg",
+  },
+
+  dragonoide: {
+    masculino: "/portraits/dragonoide.jpg",
   },
 
   umbral: {
@@ -245,12 +306,20 @@ const RACE_GENDER_IMAGES: Record<
     feminino: "/portraits/umbral_feminina.jpg",
   },
 
-  kitsune: {
-    feminino: "/portraits/kitsune_feminina.jpg",
+  vampiro: {
+    masculino: "/portraits/vampiro_masculino.jpg",
+    feminino: "/portraits/vampiro_feminino.jpg",
   },
 
-  divino: {
-    feminino: "/portraits/divino_feminino.jpg",
+  fae: {},
+
+  doppelganger: {
+    masculino: "/portraits/doppelganger_masculino.jpg",
+    feminino: "/portraits/doppelganger_feminino.jpg",
+  },
+
+  kitsune: {
+    feminino: "/portraits/kitsune_feminina.jpg",
   },
 };
 
