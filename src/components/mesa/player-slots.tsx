@@ -313,9 +313,13 @@ export function PlayerSlots({
                       Defensor
                     </Button>
                     <GiveItem characterId={ch.id} />
-                    {ch.isDemo && (
+                    {ch.isDemo ? (
                       <Button size="sm" variant="outline" onClick={() => removeCharacter(ch.id)}>
                         Remover Demo
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="danger" onClick={() => removeCharacter(ch.id)}>
+                        Excluir jogador
                       </Button>
                     )}
                   </div>
