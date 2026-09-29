@@ -297,10 +297,16 @@ export function PlayerSlots({
                 <div className="space-y-2">
                   <CharacterCard character={ch} compact />
                   <div className="flex flex-wrap gap-1.5">
-                    <Button size="sm" variant="secondary" onClick={() => grantXp(ch.id, 100)}>
-                      +100 XP
-                    </Button>
-                    <BrasaoXpTools characterId={ch.id} />
+                    {ch.isMaster ? (
+                      <MasterXpTools characterId={ch.id} />
+                    ) : (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => grantXp(ch.id, 100)}>
+                          +100 XP
+                        </Button>
+                        <BrasaoXpTools characterId={ch.id} />
+                      </>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => centerOn(ch.id)}>
                       Centralizar
                     </Button>
@@ -370,6 +376,50 @@ export function PlayerSlots({
         })}
       </div>
       <XpTools />
+    </div>
+  );
+}
+
+function MasterXpTools({ characterId }: { characterId: string }) {
+  const grantXp = usePlatis((s) => s.grantXp);
+  const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
+  const [xpAmount, setXpAmount] = useState(100);
+  const [brasaoAmount, setBrasaoAmount] = useState(3000);
+
+  return (
+    <div className="flex w-full flex-wrap items-end gap-1.5">
+      <div className="flex items-end gap-1.5">
+        <Input
+          type="number"
+          min={1}
+          value={xpAmount}
+          onChange={(e) => setXpAmount(Math.max(1, Number(e.target.value) || 1))}
+          className="h-9 w-24"
+        />
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => grantXp(characterId, xpAmount)}
+        >
+          + XP Mestre
+        </Button>
+      </div>
+      <div className="flex items-end gap-1.5">
+        <Input
+          type="number"
+          min={0}
+          value={brasaoAmount}
+          onChange={(e) => setBrasaoAmount(Math.max(0, Number(e.target.value) || 0))}
+          className="h-9 w-24"
+        />
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => grantBrasao(characterId, brasaoAmount)}
+        >
+          + Brasão XP
+        </Button>
+      </div>
     </div>
   );
 }
