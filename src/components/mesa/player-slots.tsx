@@ -346,6 +346,13 @@ export function PlayerSlots({
                     >
                       Expulsar da mesa
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => removeCharacter(remoteCharacter.id)}
+                    >
+                      Excluir jogador
+                    </Button>
                   </div>
                 ) : (
                   <div className="rounded-md border border-line p-4">
