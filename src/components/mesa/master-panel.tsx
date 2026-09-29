@@ -64,6 +64,7 @@ const EVENT_TYPES = [
 export function MasterPanel({
   p2pPeers,
   remoteCharacters,
+  onKickPeer,
 }: {
   p2pPeers: {
     id: string;
@@ -72,6 +73,7 @@ export function MasterPanel({
     connectionState: string;
   }[];
   remoteCharacters: Record<string, Character>;
+  onKickPeer: (peerId: string) => void;
 }) {
   const [section, setSection] = useState<MasterSection | null>(null);
   const [eventType, setEventType] = useState<string | null>(null);
@@ -101,7 +103,11 @@ export function MasterPanel({
           ← Menu do Mestre
         </Button>
 
-        <PlayerSlots p2pPeers={p2pPeers} remoteCharacters={remoteCharacters} />
+        <PlayerSlots
+          p2pPeers={p2pPeers}
+          remoteCharacters={remoteCharacters}
+          onKickPeer={onKickPeer}
+        />
       </div>
     );
   }

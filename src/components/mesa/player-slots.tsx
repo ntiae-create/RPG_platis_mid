@@ -254,6 +254,7 @@ function GiveItem({ characterId }: { characterId: string }) {
 export function PlayerSlots({
   p2pPeers,
   remoteCharacters = {},
+  onKickPeer,
 }: {
   p2pPeers: {
     id: string;
@@ -262,6 +263,7 @@ export function PlayerSlots({
     connectionState: string;
   }[];
   remoteCharacters?: Record<string, Character>;
+  onKickPeer: (peerId: string) => void;
 }) {
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
@@ -284,7 +286,7 @@ export function PlayerSlots({
       <div className="grid gap-3 sm:grid-cols-2">
         {slots.map((id, i) => {
           const ch = id ? characters[id] : null;
-          const peer = ch ? null : p2pPeers[i];
+          const peer = ch ? null : p2pPeers.find((p) => remoteCharacters[p.id]?.id === id);
           const remoteCharacter = peer ? remoteCharacters[peer.id] ?? null : null;
           return (
             <div key={i} className="panel p-2">
@@ -337,6 +339,13 @@ export function PlayerSlots({
                   <div className="space-y-2">
                     <CharacterCard character={remoteCharacter} compact />
                     <p className="text-xs text-muted">Online · {peer.connectionState}</p>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => onKickPeer(peer.id)}
+                    >
+                      Expulsar da mesa
+                    </Button>
                   </div>
                 ) : (
                   <div className="rounded-md border border-line p-4">

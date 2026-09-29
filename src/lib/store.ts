@@ -447,12 +447,17 @@ export const usePlatis = create<AppState>()(
         const characters = { ...s.characters, [ch.id]: ch };
         const slots = [...s.slots];
         let masterId = s.masterId;
+
         if (ch.isMaster) {
           masterId = ch.id;
         } else {
-          const emptyIdx = slots.findIndex((x) => x === null);
-          if (emptyIdx >= 0) slots[emptyIdx] = ch.id;
+          const existingIdx = slots.findIndex((id) => id === ch.id);
+          if (existingIdx < 0) {
+            const emptyIdx = slots.findIndex((id) => id === null);
+            if (emptyIdx >= 0) slots[emptyIdx] = ch.id;
+          }
         }
+
         const entities = [
           ...s.entities.filter((e) => e.id !== ch.id),
           {
@@ -466,6 +471,7 @@ export const usePlatis = create<AppState>()(
             image: ch.image,
           },
         ];
+
         set({
           characters,
           slots,

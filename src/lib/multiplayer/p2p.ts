@@ -168,6 +168,18 @@ export class P2PRoom {
     }
   }
 
+  kick(peerId: string): void {
+    const slot = this.peers.get(peerId);
+    if (slot?.reliable?.readyState !== "open") return;
+
+    slot.reliable.send(
+      JSON.stringify({
+        t: "d",
+        d: { type: "kick" },
+      }),
+    );
+  }
+
   peerList(): PeerInfo[] {
     return [...this.peers.values()].map((s) => ({ ...s.info }));
   }
@@ -348,6 +360,14 @@ export class P2PRoom {
           slot.pingSentAt = undefined;
           this.emitPeers();
         }
+      } else if (
+        msg.d &&
+        typeof msg.d === "object" &&
+        "type" in msg.d &&
+        msg.d.type === "kick"
+      ) {
+        this.close();
+        return;
       } else {
         this.opts.onMessage?.(
           slot.info.id,

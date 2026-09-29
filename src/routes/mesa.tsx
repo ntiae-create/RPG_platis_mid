@@ -211,6 +211,7 @@ function Mesa() {
           <MasterPanel
             p2pPeers={p2pPeers}
             remoteCharacters={remoteCharacters}
+            onKickPeer={(peerId) => p2pRef.current?.kick(peerId)}
           />
         )}
         </div>
