@@ -746,7 +746,34 @@
 /* FÍSICO — impacto, corte e energia bruta */
 .skill-affinity-fisico,
 .passive-affinity-card.aff-fisico {
-  border-color: rgba(215,
+  border-color: rgba(215, 215, 215, 0.55);
+  box-shadow: 0 0 13px rgba(220, 220, 220, 0.16);
+}
+
+.skill-affinity-fisico::before,
+.passive-affinity-card.aff-fisico::before {
+  background:
+    linear-gradient(
+      125deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.3) 48%,
+      transparent 55%
+    );
+  animation: skill-impact 2.5s ease-in-out infinite;
+}
+
+.skill-affinity-fisico::after,
+.passive-affinity-card.aff-fisico::after {
+  background:
+    linear-gradient(
+      155deg,
+      transparent 44%,
+      rgba(255, 255, 255, 0.18) 48%,
+      transparent 52%
+    );
+  animation: skill-slash 3.2s ease-in-out infinite;
+}
+
 
 /* =========================================================
    HABILIDADE 4 — UR MAX STYLE
