@@ -88,10 +88,12 @@ export function MasterPanel({
   const characters = usePlatis((s) => s.characters);
   const masterId = usePlatis((s) => s.masterId);
   const grantXp = usePlatis((s) => s.grantXp);
+  const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
 
   const [xpTargetId, setXpTargetId] = useState<string>("");
   const [xpAmount, setXpAmount] = useState(100);
   const [masterXpAmount, setMasterXpAmount] = useState(100);
+  const [masterBrasaoAmount, setMasterBrasaoAmount] = useState(3000);
 
   if (section === "jogadores") {
     return (
@@ -368,6 +370,24 @@ export function MasterPanel({
               onClick={() => grantXp(masterId, masterXpAmount)}
             >
               Conceder XP ao Mestre
+            </Button>
+
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted">Quantidade de XP de Brasão</span>
+              <input
+                type="number"
+                min="0"
+                value={masterBrasaoAmount}
+                onChange={(e) => setMasterBrasaoAmount(Math.max(0, Number(e.target.value) || 0))}
+                className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+              />
+            </label>
+
+            <Button
+              variant="secondary"
+              onClick={() => grantBrasao(masterId, masterBrasaoAmount)}
+            >
+              Conceder XP de Brasão ao Mestre
             </Button>
           </div>
         )}

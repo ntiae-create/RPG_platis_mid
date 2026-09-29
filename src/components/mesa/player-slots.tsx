@@ -300,9 +300,7 @@ export function PlayerSlots({
                     <Button size="sm" variant="secondary" onClick={() => grantXp(ch.id, 100)}>
                       +100 XP
                     </Button>
-                    <Button size="sm" variant="secondary" onClick={() => grantBrasao(ch.id, 3000)}>
-                      +3k Brasão
-                    </Button>
+                    <BrasaoXpTools characterId={ch.id} />
                     <Button size="sm" variant="outline" onClick={() => centerOn(ch.id)}>
                       Centralizar
                     </Button>
@@ -372,6 +370,30 @@ export function PlayerSlots({
         })}
       </div>
       <XpTools />
+    </div>
+  );
+}
+
+function BrasaoXpTools({ characterId }: { characterId: string }) {
+  const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
+  const [amount, setAmount] = useState(3000);
+
+  return (
+    <div className="flex flex-wrap items-end gap-1.5">
+      <Input
+        type="number"
+        min={0}
+        value={amount}
+        onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
+        className="h-9 w-28"
+      />
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => grantBrasao(characterId, amount)}
+      >
+        + Brasão XP
+      </Button>
     </div>
   );
 }
