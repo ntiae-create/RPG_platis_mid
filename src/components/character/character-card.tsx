@@ -7,6 +7,7 @@ import { BRASAO_LEVELS, STAT_LABELS, brasaoLevelFromXp } from "@/data/progressio
 import type { Character, StatKey } from "@/data/types";
 import { finalStats, skillSlots } from "@/lib/stats";
 import { cn } from "@/lib/utils";
+import { getCardRarity } from "@/lib/card-rarity";
 
 const ATTRS: StatKey[] = ["atk", "atkMgc", "def", "res", "agi", "int"];
 
@@ -27,6 +28,7 @@ export function CharacterCard({
   const nextBrasao = BRASAO_LEVELS[Math.min(8, brasao.level + 1)];
   const slots = skillSlots(character.brasaoXp);
   const xpNeed = character.level * 100;
+  const cardRarity = getCardRarity(character.level);
 
   // Retrato oficial da raça de acordo com o gênero escolhido.
   const racePortrait =
@@ -38,6 +40,7 @@ export function CharacterCard({
     <article
       className={cn(
         "aff-card aff-" + character.affinityId,
+        "card-rarity-" + cardRarity.toLowerCase(),
         "rounded-xl p-3 text-ink",
         compact ? "p-2" : "p-3",
       )}

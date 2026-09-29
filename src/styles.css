@@ -313,3 +313,30 @@
     filter: none;
   }
 }
+
+/* Card rarity — SR */
+.card-rarity-sr {
+  border: 1px solid rgba(220, 200, 150, 0.75);
+  box-shadow:
+    0 0 8px rgba(255, 215, 80, 0.45),
+    0 0 18px rgba(255, 215, 80, 0.25),
+    0 0 8px rgba(220, 230, 240, 0.35);
+  animation: rarity-sr-glow 3s ease-in-out infinite;
+}
+
+@keyframes rarity-sr-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px rgba(255, 215, 80, 0.45),
+      0 0 18px rgba(255, 215, 80, 0.25),
+      0 0 8px rgba(220, 230, 240, 0.35);
+  }
+
+  50% {
+    box-shadow:
+      0 0 14px rgba(255, 215, 80, 0.7),
+      0 0 30px rgba(255, 215, 80, 0.4),
+      0 0 14px rgba(220, 230, 240, 0.55);
+  }
+}
