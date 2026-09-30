@@ -480,22 +480,9 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition:
-    border-color 250ms ease,
-    box-shadow 250ms ease,
-    background 250ms ease;
-}
-
-.skill-affinity-card::before,
-.skill-affinity-card::after,
-.passive-affinity-card::before,
-.passive-affinity-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-size: 100% 100%;
+  transition: border-color 250ms ease, box-shadow 250ms ease;
 }
 
 .skill-affinity-card > *,
@@ -504,856 +491,231 @@
   z-index: 2;
 }
 
-/* Intensidade por slot */
 .skill-level-1 {
-  --skill-power: 0.35;
+  --skill-power: 0.45;
+  background-size: 180% 180%;
+  animation: platis-h1 7s ease-in-out infinite;
 }
 
 .skill-level-2 {
-  --skill-power: 0.55;
+  --skill-power: 0.65;
 }
 
 .skill-level-3 {
-  --skill-power: 0.8;
+  --skill-power: 0.85;
 }
 
 .skill-level-4 {
   --skill-power: 1;
 }
 
-/* Passivas: efeito controlado */
 .passive-affinity-card {
-  --skill-power: 0.45;
-}
-
-/* Camada de brilho comum */
-.skill-affinity-card::before,
-.passive-affinity-card::before {
-  opacity: calc(0.18 + (var(--skill-power) * 0.32));
-  mix-blend-mode: screen;
-}
-
-.skill-affinity-card::after,
-.passive-affinity-card::after {
-  opacity: calc(0.12 + (var(--skill-power) * 0.28));
-}
-
-
-/* =========================================================
-   AFFINITY EFFECTS — SKILL / PASSIVE CARDS
-   ========================================================= */
-
-/* ÁGUA — ondulações e reflexos */
-.skill-affinity-agua,
-.passive-affinity-card.aff-agua {
-  border-color: rgba(70, 190, 230, 0.55);
-  box-shadow: 0 0 12px rgba(40, 170, 220, 0.18);
-}
-
-.skill-affinity-agua::before,
-.passive-affinity-card.aff-agua::before {
-  background:
-    repeating-radial-gradient(
-      ellipse at 20% 120%,
-      transparent 0 10px,
-      rgba(80, 210, 240, 0.16) 11px 12px,
-      transparent 13px 22px
-    );
-  animation: skill-water 4s ease-in-out infinite;
-}
-
-.skill-affinity-agua::after,
-.passive-affinity-card.aff-agua::after {
-  background:
-    linear-gradient(
-      115deg,
-      transparent 20%,
-      rgba(150, 240, 255, 0.18) 48%,
-      transparent 62%
-    );
-  animation: skill-water-reflection 3.5s ease-in-out infinite;
-}
-
-
-/* LUZ — feixes cruzando o card */
-.skill-affinity-luz,
-.passive-affinity-card.aff-luz {
-  border-color: rgba(255, 225, 145, 0.65);
-  box-shadow: 0 0 14px rgba(255, 220, 120, 0.2);
-}
-
-.skill-affinity-luz::before,
-.passive-affinity-card.aff-luz::before {
-  background:
-    linear-gradient(
-      118deg,
-      transparent 35%,
-      rgba(255, 245, 190, 0.42) 48%,
-      transparent 54%
-    );
-  background-size: 180% 180%;
-  animation: skill-light 3s linear infinite;
-}
-
-.skill-affinity-luz::after,
-.passive-affinity-card.aff-luz::after {
-  background:
-    linear-gradient(
-      62deg,
-      transparent 42%,
-      rgba(255, 255, 220, 0.3) 49%,
-      transparent 56%
-    );
-  animation: skill-light-cross 4.2s ease-in-out infinite;
-}
-
-
-/* TERRA — partículas minerais e pulsação pesada */
-.skill-affinity-terra,
-.passive-affinity-card.aff-terra {
-  border-color: rgba(170, 135, 75, 0.62);
-  box-shadow: 0 0 13px rgba(150, 110, 50, 0.2);
-}
-
-.skill-affinity-terra::before,
-.passive-affinity-card.aff-terra::before {
-  background-image:
-    radial-gradient(
-      circle,
-      rgba(210, 175, 105, 0.5) 0 1px,
-      transparent 1.5px
-    );
-  background-size: 17px 17px;
-  animation: skill-earth 5s linear infinite;
-}
-
-.skill-affinity-terra::after,
-.passive-affinity-card.aff-terra::after {
-  background:
-    linear-gradient(
-      90deg,
-      transparent 46%,
-      rgba(190, 155, 90, 0.16) 50%,
-      transparent 54%
-    );
-  animation: skill-earth-pulse 3.8s ease-in-out infinite;
-}
-
-
-/* TREVAS — regiões negras avançando e recuando */
-.skill-affinity-trevas,
-.passive-affinity-card.aff-trevas {
-  border-color: rgba(125, 75, 165, 0.65);
-  box-shadow: 0 0 15px rgba(80, 35, 125, 0.28);
-}
-
-.skill-affinity-trevas::before,
-.passive-affinity-card.aff-trevas::before {
-  background:
-    radial-gradient(
-      ellipse at 10% 30%,
-      rgba(0, 0, 0, 0.85),
-      transparent 48%
-    ),
-    radial-gradient(
-      ellipse at 90% 75%,
-      rgba(20, 0, 35, 0.9),
-      transparent 52%
-    );
-  animation: skill-darkness 4.5s ease-in-out infinite;
-}
-
-.skill-affinity-trevas::after,
-.passive-affinity-card.aff-trevas::after {
-  background:
-    radial-gradient(
-      circle at 70% 20%,
-      rgba(150, 80, 210, 0.18),
-      transparent 45%
-    );
-  animation: skill-dark-glow 3.8s ease-in-out infinite;
-}
-
-
-/* VENTO — correntes curvas e partículas */
-.skill-affinity-vento,
-.passive-affinity-card.aff-vento {
-  border-color: rgba(170, 225, 205, 0.58);
-  box-shadow: 0 0 14px rgba(100, 205, 175, 0.18);
-}
-
-.skill-affinity-vento::before,
-.passive-affinity-card.aff-vento::before {
-  background:
-    repeating-linear-gradient(
-      -22deg,
-      transparent 0 13px,
-      rgba(205, 250, 230, 0.18) 14px 15px,
-      transparent 16px 28px
-    );
-  animation: skill-wind 3s linear infinite;
-}
-
-.skill-affinity-vento::after,
-.passive-affinity-card.aff-vento::after {
-  background:
-    radial-gradient(
-      circle at 20% 50%,
-      rgba(200, 255, 230, 0.28) 0 1px,
-      transparent 2px
-    );
-  background-size: 32px 20px;
-  animation: skill-wind-particles 3.5s linear infinite;
-}
-
-
-/* FOGO — brasas, calor e movimento */
-.skill-affinity-fogo,
-.passive-affinity-card.aff-fogo {
-  border-color: rgba(255, 105, 50, 0.7);
-  box-shadow: 0 0 15px rgba(230, 65, 25, 0.28);
-}
-
-.skill-affinity-fogo::before,
-.passive-affinity-card.aff-fogo::before {
-  background:
-    radial-gradient(
-      circle at 20% 100%,
-      rgba(255, 80, 25, 0.5),
-      transparent 35%
-    ),
-    radial-gradient(
-      circle at 80% 100%,
-      rgba(255, 180, 50, 0.34),
-      transparent 30%
-    );
-  animation: skill-fire 2.2s ease-in-out infinite;
-}
-
-.skill-affinity-fogo::after,
-.passive-affinity-card.aff-fogo::after {
-  background-image:
-    radial-gradient(
-      circle,
-      rgba(255, 190, 80, 0.8) 0 1px,
-      transparent 2px
-    );
-  background-size: 23px 27px;
-  animation: skill-embers 2.8s linear infinite;
-}
-
-
-/* FÍSICO — impacto, corte e energia bruta */
-.skill-affinity-fisico,
-.passive-affinity-card.aff-fisico {
-  border-color: rgba(215, 215, 215, 0.55);
-  box-shadow: 0 0 13px rgba(220, 220, 220, 0.16);
-}
-
-.skill-affinity-fisico::before,
-.passive-affinity-card.aff-fisico::before {
-  background:
-    linear-gradient(
-      125deg,
-      transparent 38%,
-      rgba(255, 255, 255, 0.3) 48%,
-      transparent 55%
-    );
-  animation: skill-impact 2.5s ease-in-out infinite;
-}
-
-.skill-affinity-fisico::after,
-.passive-affinity-card.aff-fisico::after {
-  background:
-    linear-gradient(
-      155deg,
-      transparent 44%,
-      rgba(255, 255, 255, 0.18) 48%,
-      transparent 52%
-    );
-  animation: skill-slash 3.2s ease-in-out infinite;
-}
-
-
-/* =========================================================
-   HABILIDADE 4 — UR MAX STYLE
-   ========================================================= */
-
-.skill-affinity-card.skill-level-4 {
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow:
-    0 0 16px rgba(180, 120, 255, 0.65),
-    0 0 34px rgba(60, 210, 220, 0.45),
-    0 0 58px rgba(255, 220, 100, 0.3),
-    inset 0 0 24px rgba(255, 255, 255, 0.12);
-  animation: skill-ur-max 5s ease-in-out infinite;
-}
-
-.skill-affinity-card.skill-level-4::before {
-  background:
-    radial-gradient(
-      circle at 15% 20%,
-      rgba(255, 255, 255, 0.9) 0 1px,
-      transparent 2px
-    ),
-    radial-gradient(
-      circle at 72% 14%,
-      rgba(255, 255, 255, 0.85) 0 1px,
-      transparent 2px
-    ),
-    radial-gradient(
-      circle at 88% 62%,
-      rgba(255, 255, 255, 0.8) 0 1px,
-      transparent 2px
-    ),
-    radial-gradient(
-      circle at 30% 82%,
-      rgba(255, 255, 255, 0.75) 0 1px,
-      transparent 2px
-    ),
-    linear-gradient(
-      125deg,
-      rgba(120, 60, 255, 0.22),
-      rgba(40, 220, 190, 0.18),
-      rgba(255, 220, 70, 0.16),
-      rgba(255, 80, 150, 0.18),
-      rgba(60, 140, 255, 0.22)
-    );
-  background-size:
-    auto,
-    auto,
-    auto,
-    auto,
-    400% 400%;
-  animation: skill-ur-max-bg 5s ease-in-out infinite;
-}
-
-.skill-affinity-card.skill-level-4::after {
-  background:
-    linear-gradient(
-      120deg,
-      transparent 20%,
-      rgba(255, 255, 255, 0.22) 50%,
-      transparent 80%
-    );
-  animation: skill-ur-max-shine 3s ease-in-out infinite;
-}
-
-@keyframes skill-ur-max {
-  0%, 100% {
-    box-shadow:
-      0 0 16px rgba(180, 120, 255, 0.65),
-      0 0 34px rgba(60, 210, 220, 0.45),
-      0 0 58px rgba(255, 220, 100, 0.3),
-      inset 0 0 24px rgba(255, 255, 255, 0.12);
-  }
-
-  50% {
-    box-shadow:
-      0 0 22px rgba(180, 120, 255, 0.8),
-      0 0 42px rgba(60, 210, 220, 0.6),
-      0 0 70px rgba(255, 220, 100, 0.42),
-      inset 0 0 30px rgba(255, 255, 255, 0.18);
-  }
-}
-
-@keyframes skill-ur-max-bg {
-  0%, 100% {
-    background-position:
-      0 0,
-      0 0,
-      0 0,
-      0 0,
-      0% 50%;
-  }
-
-  50% {
-    background-position:
-      0 0,
-      0 0,
-      0 0,
-      0 0,
-      100% 50%;
-  }
-}
-
-@keyframes skill-ur-max-shine {
-  0%, 100% {
-    transform: translateX(-80%);
-    opacity: 0.15;
-  }
-
-  50% {
-    transform: translateX(80%);
-    opacity: 0.75;
-  }
-}
-
-/* Intensidade visual adicional */
-.skill-affinity-card.skill-level-1 {
-  --skill-speed: 1.35;
-  --effect-opacity: 0.45;
-  filter: none;
-}
-
-.skill-affinity-card.skill-level-2 {
-  --skill-speed: 0.95;
-  --effect-opacity: 0.7;
-  box-shadow:
-    0 0 12px rgba(255,255,255,0.10),
-    0 0 24px rgba(120,160,220,0.14);
-}
-
-.skill-affinity-card.skill-level-3 {
-  --skill-speed: 0.65;
-  --effect-opacity: 1;
-  box-shadow:
-    0 0 16px rgba(255,255,255,0.16),
-    0 0 34px rgba(120,160,220,0.22),
-    0 0 52px rgba(255,255,255,0.08);
-}
-
-.passive-affinity-card {
-  --skill-speed: 1.1;
-  --effect-opacity: 0.55;
-}
-
-.skill-affinity-card::before,
-.skill-affinity-card::after,
-.passive-affinity-card::before,
-.passive-affinity-card::after {
-  animation-duration: calc(1s * var(--skill-speed, 1));
-}
-
-.skill-affinity-card.skill-level-2::before,
-.skill-affinity-card.skill-level-2::after {
-  opacity: calc(var(--effect-opacity) * 0.9);
-}
-
-.skill-affinity-card.skill-level-3::before,
-.skill-affinity-card.skill-level-3::after {
-  opacity: var(--effect-opacity);
-}
-
-/* =========================================================
-   GRADIENTE INTERNO — 8 AFINIDADES
-   ========================================================= */
-
-.skill-affinity-card,
-.passive-affinity-card {
-  background-size: 220% 220%;
+  --skill-power: 0.5;
 }
 
 /* ÁGUA */
 .skill-affinity-agua,
 .passive-affinity-card.aff-agua {
-  background:
-    radial-gradient(circle at 15% 20%, rgba(70, 210, 245, 0.24), transparent 42%),
-    radial-gradient(circle at 85% 80%, rgba(20, 100, 190, 0.3), transparent 48%),
-    linear-gradient(135deg, #081b27 0%, #0b3040 45%, #07151f 100%);
-  animation: affinity-gradient-agua 6s ease-in-out infinite;
+  background: linear-gradient(135deg, #071923 0%, #0b3548 50%, #06131d 100%);
+  border-color: rgba(70, 205, 245, 0.55);
+  box-shadow: 0 0 calc(10px * var(--skill-power)) rgba(40, 180, 235, 0.28);
 }
 
 /* LUZ */
 .skill-affinity-luz,
 .passive-affinity-card.aff-luz {
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255, 245, 190, 0.34), transparent 42%),
-    radial-gradient(circle at 15% 85%, rgba(255, 205, 80, 0.18), transparent 45%),
-    linear-gradient(135deg, #211c0d 0%, #403718 45%, #17150c 100%);
-  animation: affinity-gradient-luz 5s ease-in-out infinite;
+  background: linear-gradient(135deg, #211c0b 0%, #51451c 50%, #171308 100%);
+  border-color: rgba(255, 225, 140, 0.62);
+  box-shadow: 0 0 calc(10px * var(--skill-power)) rgba(255, 220, 110, 0.3);
 }
 
 /* TERRA */
 .skill-affinity-terra,
 .passive-affinity-card.aff-terra {
-  background:
-    radial-gradient(circle at 20% 75%, rgba(190, 145, 70, 0.24), transparent 42%),
-    radial-gradient(circle at 85% 20%, rgba(100, 80, 45, 0.25), transparent 45%),
-    linear-gradient(135deg, #17130c 0%, #302516 48%, #11110d 100%);
-  animation: affinity-gradient-terra 7s ease-in-out infinite;
+  background: linear-gradient(135deg, #17120b 0%, #3b2c18 50%, #100e09 100%);
+  border-color: rgba(190, 150, 80, 0.58);
+  box-shadow: 0 0 calc(10px * var(--skill-power)) rgba(170, 125, 55, 0.27);
 }
 
 /* TREVAS */
 .skill-affinity-trevas,
 .passive-affinity-card.aff-trevas {
-  background:
-    radial-gradient(circle at 15% 25%, rgba(20, 0, 35, 0.9), transparent 46%),
-    radial-gradient(circle at 85% 75%, rgba(105, 40, 150, 0.2), transparent 44%),
-    linear-gradient(135deg, #08070c 0%, #170c20 45%, #030305 100%);
-  animation: affinity-gradient-trevas 5.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #050509 0%, #1b0b29 50%, #020205 100%);
+  border-color: rgba(135, 75, 185, 0.62);
+  box-shadow: 0 0 calc(11px * var(--skill-power)) rgba(105, 45, 165, 0.32);
 }
 
 /* VENTO */
 .skill-affinity-vento,
 .passive-affinity-card.aff-vento {
-  background:
-    radial-gradient(circle at 10% 30%, rgba(170, 245, 215, 0.2), transparent 40%),
-    radial-gradient(circle at 90% 75%, rgba(70, 175, 145, 0.2), transparent 45%),
-    linear-gradient(135deg, #0b1815 0%, #19352b 45%, #08110e 100%);
-  animation: affinity-gradient-vento 5s ease-in-out infinite;
+  background: linear-gradient(135deg, #091713 0%, #214638 50%, #07100d 100%);
+  border-color: rgba(145, 225, 195, 0.55);
+  box-shadow: 0 0 calc(10px * var(--skill-power)) rgba(80, 190, 155, 0.28);
 }
 
 /* FOGO */
 .skill-affinity-fogo,
 .passive-affinity-card.aff-fogo {
-  background:
-    radial-gradient(circle at 20% 100%, rgba(255, 70, 20, 0.38), transparent 44%),
-    radial-gradient(circle at 80% 20%, rgba(255, 185, 45, 0.2), transparent 42%),
-    linear-gradient(135deg, #220b07 0%, #51200d 45%, #130908 100%);
-  animation: affinity-gradient-fogo 3.8s ease-in-out infinite;
+  background: linear-gradient(135deg, #200805 0%, #64200c 50%, #120605 100%);
+  border-color: rgba(255, 100, 45, 0.65);
+  box-shadow: 0 0 calc(11px * var(--skill-power)) rgba(235, 65, 25, 0.34);
 }
 
 /* FÍSICO */
 .skill-affinity-fisico,
 .passive-affinity-card.aff-fisico {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.12),
-      transparent 28%,
-      rgba(190, 190, 190, 0.18) 52%,
-      transparent 72%
-    ),
-    linear-gradient(135deg, #101010 0%, #303030 48%, #0c0c0c 100%);
-  animation: affinity-gradient-fisico 4s ease-in-out infinite;
+  background: linear-gradient(135deg, #0d0d0d 0%, #3b3b3b 50%, #090909 100%);
+  border-color: rgba(215, 215, 215, 0.5);
+  box-shadow: 0 0 calc(10px * var(--skill-power)) rgba(220, 220, 220, 0.22);
 }
 
 /* MÁGICO */
 .skill-affinity-magico,
 .passive-affinity-card.aff-magico {
-  background:
-    radial-gradient(circle at 20% 25%, rgba(200, 100, 255, 0.28), transparent 42%),
-    radial-gradient(circle at 80% 75%, rgba(70, 130, 255, 0.22), transparent 45%),
-    linear-gradient(135deg, #130c1d 0%, #32184a 45%, #0a0a15 100%);
-  animation: affinity-gradient-magico 5s ease-in-out infinite;
+  background: linear-gradient(135deg, #11091b 0%, #3d1d59 50%, #080812 100%);
+  border-color: rgba(190, 105, 255, 0.62);
+  box-shadow: 0 0 calc(11px * var(--skill-power)) rgba(145, 75, 235, 0.32);
 }
 
-
-/* =========================================================
-   MOVIMENTO DOS GRADIENTES
-   ========================================================= */
-
-@keyframes affinity-gradient-agua {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+/* H2 — brilho intermediário */
+.skill-affinity-card.skill-level-2 {
+  filter: brightness(1.06);
+  background-size: 220% 220%;
+  animation: platis-h2 5s ease-in-out infinite;
 }
 
-@keyframes affinity-gradient-luz {
-  0%, 100% { background-position: 50% 0%; }
-  50% { background-position: 50% 100%; }
+/* H3 — brilho forte */
+.skill-affinity-card.skill-level-3 {
+  filter: brightness(1.12);
+  background-size: 260% 260%;
+  animation: platis-h3 3.8s ease-in-out infinite;
 }
 
-@keyframes affinity-gradient-terra {
-  0%, 100% { background-position: 0% 100%; }
-  50% { background-position: 100% 0%; }
-}
-
-@keyframes affinity-gradient-trevas {
-  0%, 100% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-}
-
-@keyframes affinity-gradient-vento {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-@keyframes affinity-gradient-fogo {
-  0%, 100% { background-position: 50% 100%; }
-  50% { background-position: 50% 0%; }
-}
-
-@keyframes affinity-gradient-fisico {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-@keyframes affinity-gradient-magico {
-  0%, 100% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-}
-
-
-/* =========================================================
-   H4 — GRADIENTE ESPECIAL UR MAX
-   ========================================================= */
-
+/* H4 — UR MAX + afinidade */
 .skill-affinity-card.skill-level-4 {
+  border: 1px solid rgba(255, 255, 255, 0.92);
   background:
-    radial-gradient(circle at 15% 20%, rgba(255,255,255,0.16), transparent 20%),
-    radial-gradient(circle at 85% 75%, rgba(255,255,255,0.12), transparent 22%),
-    linear-gradient(125deg, rgba(120,60,255,0.32), rgba(40,220,190,0.25), rgba(255,220,70,0.23), rgba(255,80,150,0.25), rgba(60,140,255,0.32));
-  background-size: auto, auto, 400% 400%;
-  animation: skill-ur-max 5s ease-in-out infinite, skill-ur-max-bg 5s ease-in-out infinite;
+    linear-gradient(
+      125deg,
+      rgba(120, 60, 255, 0.30),
+      rgba(40, 220, 190, 0.22),
+      rgba(255, 220, 70, 0.20),
+      rgba(255, 80, 150, 0.22),
+      rgba(60, 140, 255, 0.30)
+    );
+  background-size: 300% 300%;
+  box-shadow:
+    0 0 16px rgba(180, 120, 255, 0.62),
+    0 0 32px rgba(60, 210, 220, 0.42),
+    0 0 52px rgba(255, 220, 100, 0.28),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+  animation: platis-ur-max 5s ease-in-out infinite;
 }
 
-/* =========================================================
-   FOGO — MOVIMENTO REAL DE CALOR E BRASAS
-   ========================================================= */
+/* H4 mantém a identidade da afinidade no brilho externo */
+.skill-affinity-fogo.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(255, 75, 25, 0.65),
+    0 0 34px rgba(255, 125, 40, 0.42),
+    0 0 54px rgba(255, 210, 70, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
 
-@keyframes skill-fire {
+.skill-affinity-agua.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(40, 190, 255, 0.65),
+    0 0 34px rgba(70, 225, 255, 0.42),
+    0 0 54px rgba(120, 240, 255, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+.skill-affinity-luz.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(255, 220, 100, 0.65),
+    0 0 34px rgba(255, 235, 150, 0.42),
+    0 0 54px rgba(255, 250, 200, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+.skill-affinity-terra.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(185, 135, 65, 0.65),
+    0 0 34px rgba(210, 165, 85, 0.42),
+    0 0 54px rgba(235, 205, 130, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+.skill-affinity-trevas.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(125, 60, 210, 0.68),
+    0 0 34px rgba(175, 80, 255, 0.44),
+    0 0 54px rgba(220, 130, 255, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+.skill-affinity-vento.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(80, 205, 165, 0.65),
+    0 0 34px rgba(125, 235, 200, 0.42),
+    0 0 54px rgba(180, 255, 225, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+.skill-affinity-fisico.skill-level-4 {
+  box-shadow:
+    0 0 18px 
+
+  0 0 34px rgba(245, 245, 245, 0.38),
+  0 0 54px rgba(255, 255, 255, 0.22),
+  inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+.skill-affinity-magico.skill-level-4 {
+  box-shadow:
+    0 0 18px rgba(160, 75, 245, 0.68),
+    0 0 34px rgba(205, 105, 255, 0.44),
+    0 0 54px rgba(235, 170, 255, 0.25),
+    inset 0 0 22px rgba(255, 255, 255, 0.10);
+}
+
+@keyframes platis-h1 {
   0%, 100% {
-    transform: translateY(3%) scale(1);
-    opacity: 0.7;
-  }
-
-  25% {
-    transform: translateY(-2%) scale(1.03);
-    opacity: 0.85;
+    background-position: 0% 50%;
   }
 
   50% {
-    transform: translateY(-6%) scale(1.06);
-    opacity: 1;
-  }
-
-  75% {
-    transform: translateY(-3%) scale(1.02);
-    opacity: 0.8;
+    background-position: 100% 50%;
   }
 }
 
-@keyframes skill-embers {
-  0% {
-    background-position:
-      0 100%,
-      13px 100%;
-    transform: translateY(18%);
-    opacity: 0.25;
-  }
-
-  25% {
-    background-position:
-      7px 72%,
-      18px 68%;
-    transform: translateY(5%);
-    opacity: 0.65;
-  }
-
-  50% {
-    background-position:
-      -5px 45%,
-      10px 42%;
-    transform: translateY(-8%);
-    opacity: 1;
-  }
-
-  75% {
-    background-position:
-      9px 20%,
-      -4px 18%;
-    transform: translateY(-18%);
-    opacity: 0.7;
-  }
-
-  100% {
-    background-position:
-      0 -10%,
-      13px -8%;
-    transform: translateY(-30%);
-    opacity: 0;
-  }
-}
-
-/* =========================================================
-   MOVIMENTOS TEMÁTICOS DAS AFINIDADES
-   ========================================================= */
-
-/* ÁGUA — ondas, reflexos e deslocamento líquido */
-@keyframes skill-water {
+@keyframes platis-h2 {
   0%, 100% {
-    transform: translate3d(-4%, 2%, 0) scale(1);
-    opacity: 0.55;
+    background-position: 0% 35%;
   }
+
   50% {
-    transform: translate3d(5%, -3%, 0) scale(1.08);
-    opacity: 0.95;
+    background-position: 100% 65%;
   }
 }
 
-@keyframes skill-water-reflection {
-  0% {
-    transform: translateX(-35%) skewX(-12deg);
-    opacity: 0.1;
-  }
-  50% {
-    transform: translateX(20%) skewX(8deg);
-    opacity: 0.65;
-  }
-  100% {
-    transform: translateX(70%) skewX(-8deg);
-    opacity: 0.1;
-  }
-}
-
-/* LUZ — feixes atravessando o card */
-@keyframes skill-light {
-  0% {
-    transform: translateX(-60%) rotate(-12deg);
-    opacity: 0;
-  }
-  25% {
-    opacity: 0.65;
-  }
-  50% {
-    transform: translateX(15%) rotate(8deg);
-    opacity: 1;
-  }
-  75% {
-    opacity: 0.5;
-  }
-  100% {
-    transform: translateX(70%) rotate(-10deg);
-    opacity: 0;
-  }
-}
-
-@keyframes skill-light-cross {
+@keyframes platis-h3 {
   0%, 100% {
-    transform: rotate(-18deg) scaleX(0.7);
-    opacity: 0.2;
+    background-position: 0% 25%;
   }
+
   50% {
-    transform: rotate(18deg) scaleX(1.15);
-    opacity: 0.9;
+    background-position: 100% 75%;
   }
 }
 
-/* TERRA — pressão, minerais e pulsação pesada */
-@keyframes skill-earth {
+@keyframes platis-ur-max {
   0%, 100% {
-    background-position: 0 100%;
-    transform: translateY(1%);
+    background-position: 0% 50%;
+    transform: scale(1);
   }
+
   50% {
-    background-position: 18px 35%;
-    transform: translateY(-1%);
-  }
-}
-
-@keyframes skill-earth-pulse {
-  0%, 100% {
-    transform: scale(0.96);
-    opacity: 0.25;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 0.8;
-  }
-}
-
-/* TREVAS — regiões negras avançando e recuando */
-@keyframes skill-darkness {
-  0% {
-    transform: translate(-18%, 8%) scale(0.9);
-    opacity: 0.35;
-  }
-  35% {
-    transform: translate(5%, -4%) scale(1.08);
-    opacity: 0.85;
-  }
-  70% {
-    transform: translate(18%, 7%) scale(1.16);
-    opacity: 0.65;
-  }
-  100% {
-    transform: translate(-18%, 8%) scale(0.9);
-    opacity: 0.35;
-  }
-}
-
-@keyframes skill-dark-glow {
-  0%, 100% {
-    box-shadow: inset 0 0 8px rgba(100, 30, 150, 0.15);
-    opacity: 0.3;
-  }
-  50% {
-    box-shadow: inset 0 0 28px rgba(130, 45, 190, 0.5);
-    opacity: 0.9;
-  }
-}
-
-/* VENTO — correntes atravessando e partículas */
-@keyframes skill-wind {
-  0% {
-    transform: translateX(-55%) skewX(-12deg);
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.65;
-  }
-  60% {
-    transform: translateX(20%) skewX(8deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(75%) skewX(-6deg);
-    opacity: 0;
-  }
-}
-
-@keyframes skill-wind-particles {
-  0% {
-    background-position: -30px 80%;
-    transform: translateX(-12%);
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.8;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    background-position: 45px 15%;
-    transform: translateX(18%);
-    opacity: 0;
-  }
-}
-
-/* FÍSICO — impacto e cortes rápidos */
-@keyframes skill-impact {
-  0%, 100% {
-    transform: scale(0.94);
-    opacity: 0.2;
-  }
-  15% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-  25% {
-    transform: scale(0.98);
-    opacity: 0.55;
-  }
-  45% {
-    transform: scale(1.02);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(0.94);
-    opacity: 0.2;
-  }
-}
-
-@keyframes skill-slash {
-  0% {
-    transform: translate(-65%, 45%) rotate(-22deg);
-    opacity: 0;
-  }
-  18% {
-    opacity: 1;
-  }
-  45% {
-    transform: translate(5%, -5%) rotate(-22deg);
-    opacity: 0.9;
-  }
-  70% {
-    transform: translate(65%, -45%) rotate(-22deg);
-    opacity: 0;
-  }
-  100% {
-    transform: translate(65%, -45%) rotate(-22deg);
-    opacity: 0;
+    background-position: 100% 50%;
+    transform: scale(1.005);
   }
 }
