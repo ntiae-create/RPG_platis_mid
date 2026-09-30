@@ -28,7 +28,7 @@ export function CharacterCard({
   const nextBrasao = BRASAO_LEVELS[Math.min(8, brasao.level + 1)];
   const slots = skillSlots(character.brasaoXp);
   const xpNeed = character.level * 100;
-  const cardRarity = getCardRarity(character.level);
+  const cardRarity = getCardRarity(character.level, character.raceId, character.isMaster);
 
   // Retrato oficial da raça de acordo com o gênero escolhido.
   const racePortrait =
@@ -41,10 +41,29 @@ export function CharacterCard({
       className={cn(
         "aff-card aff-" + character.affinityId,
         "card-rarity-" + cardRarity.toLowerCase(),
+        "race-" + character.raceId,
+        character.isMaster ? "master-card" : "",
         "rounded-xl p-3 text-ink",
         compact ? "p-2" : "p-3",
       )}
     >
+      {character.isMaster && (cardRarity === "UR_MAX" || cardRarity === "LR" || cardRarity === "LR_EXTRA") && (
+        <div className="master-rarity-emblem" aria-label={cardRarity}>
+          ✦
+        </div>
+      )}
+      {character.raceId === "kitsune" && cardRarity === "LR_EXTRA" && (
+        <div className="kitsune-nine-tails" aria-hidden="true">
+          {Array.from({ length: 9 }).map((_, index) => (
+            <span key={index} />
+          ))}
+        </div>
+      )}
+      {character.raceId === "doppelganger" && cardRarity === "LR_EXTRA" && (
+        <div className="doppelganger-mirror" aria-hidden="true">
+          <span />
+        </div>
+      )}
       <div
         className={cn(
           "relative z-10 grid gap-3",
