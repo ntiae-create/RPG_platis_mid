@@ -890,22 +890,50 @@
 }
 
 /* Intensidade visual adicional */
-.skill-level-1 {
+.skill-affinity-card.skill-level-1 {
+  --skill-speed: 1.35;
+  --effect-opacity: 0.45;
   filter: none;
 }
 
-.skill-level-2 {
+.skill-affinity-card.skill-level-2 {
+  --skill-speed: 0.95;
+  --effect-opacity: 0.7;
   box-shadow:
-    0 0 10px rgba(255, 255, 255, 0.08),
-    0 0 18px rgba(120, 160, 220, 0.08);
+    0 0 12px rgba(255,255,255,0.10),
+    0 0 24px rgba(120,160,220,0.14);
 }
 
-.skill-level-3 {
+.skill-affinity-card.skill-level-3 {
+  --skill-speed: 0.65;
+  --effect-opacity: 1;
   box-shadow:
-    0 0 14px rgba(255, 255, 255, 0.12),
-    0 0 28px rgba(120, 160, 220, 0.14);
+    0 0 16px rgba(255,255,255,0.16),
+    0 0 34px rgba(120,160,220,0.22),
+    0 0 52px rgba(255,255,255,0.08);
 }
 
+.passive-affinity-card {
+  --skill-speed: 1.1;
+  --effect-opacity: 0.55;
+}
+
+.skill-affinity-card::before,
+.skill-affinity-card::after,
+.passive-affinity-card::before,
+.passive-affinity-card::after {
+  animation-duration: calc(1s * var(--skill-speed, 1));
+}
+
+.skill-affinity-card.skill-level-2::before,
+.skill-affinity-card.skill-level-2::after {
+  opacity: calc(var(--effect-opacity) * 0.9);
+}
+
+.skill-affinity-card.skill-level-3::before,
+.skill-affinity-card.skill-level-3::after {
+  opacity: var(--effect-opacity);
+}
 
 /* =========================================================
    GRADIENTE INTERNO — 8 AFINIDADES
@@ -1058,4 +1086,274 @@
     linear-gradient(125deg, rgba(120,60,255,0.32), rgba(40,220,190,0.25), rgba(255,220,70,0.23), rgba(255,80,150,0.25), rgba(60,140,255,0.32));
   background-size: auto, auto, 400% 400%;
   animation: skill-ur-max 5s ease-in-out infinite, skill-ur-max-bg 5s ease-in-out infinite;
+}
+
+/* =========================================================
+   FOGO — MOVIMENTO REAL DE CALOR E BRASAS
+   ========================================================= */
+
+@keyframes skill-fire {
+  0%, 100% {
+    transform: translateY(3%) scale(1);
+    opacity: 0.7;
+  }
+
+  25% {
+    transform: translateY(-2%) scale(1.03);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: translateY(-6%) scale(1.06);
+    opacity: 1;
+  }
+
+  75% {
+    transform: translateY(-3%) scale(1.02);
+    opacity: 0.8;
+  }
+}
+
+@keyframes skill-embers {
+  0% {
+    background-position:
+      0 100%,
+      13px 100%;
+    transform: translateY(18%);
+    opacity: 0.25;
+  }
+
+  25% {
+    background-position:
+      7px 72%,
+      18px 68%;
+    transform: translateY(5%);
+    opacity: 0.65;
+  }
+
+  50% {
+    background-position:
+      -5px 45%,
+      10px 42%;
+    transform: translateY(-8%);
+    opacity: 1;
+  }
+
+  75% {
+    background-position:
+      9px 20%,
+      -4px 18%;
+    transform: translateY(-18%);
+    opacity: 0.7;
+  }
+
+  100% {
+    background-position:
+      0 -10%,
+      13px -8%;
+    transform: translateY(-30%);
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   MOVIMENTOS TEMÁTICOS DAS AFINIDADES
+   ========================================================= */
+
+/* ÁGUA — ondas, reflexos e deslocamento líquido */
+@keyframes skill-water {
+  0%, 100% {
+    transform: translate3d(-4%, 2%, 0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(5%, -3%, 0) scale(1.08);
+    opacity: 0.95;
+  }
+}
+
+@keyframes skill-water-reflection {
+  0% {
+    transform: translateX(-35%) skewX(-12deg);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translateX(20%) skewX(8deg);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateX(70%) skewX(-8deg);
+    opacity: 0.1;
+  }
+}
+
+/* LUZ — feixes atravessando o card */
+@keyframes skill-light {
+  0% {
+    transform: translateX(-60%) rotate(-12deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateX(15%) rotate(8deg);
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(70%) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes skill-light-cross {
+  0%, 100% {
+    transform: rotate(-18deg) scaleX(0.7);
+    opacity: 0.2;
+  }
+  50% {
+    transform: rotate(18deg) scaleX(1.15);
+    opacity: 0.9;
+  }
+}
+
+/* TERRA — pressão, minerais e pulsação pesada */
+@keyframes skill-earth {
+  0%, 100% {
+    background-position: 0 100%;
+    transform: translateY(1%);
+  }
+  50% {
+    background-position: 18px 35%;
+    transform: translateY(-1%);
+  }
+}
+
+@keyframes skill-earth-pulse {
+  0%, 100% {
+    transform: scale(0.96);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.8;
+  }
+}
+
+/* TREVAS — regiões negras avançando e recuando */
+@keyframes skill-darkness {
+  0% {
+    transform: translate(-18%, 8%) scale(0.9);
+    opacity: 0.35;
+  }
+  35% {
+    transform: translate(5%, -4%) scale(1.08);
+    opacity: 0.85;
+  }
+  70% {
+    transform: translate(18%, 7%) scale(1.16);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(-18%, 8%) scale(0.9);
+    opacity: 0.35;
+  }
+}
+
+@keyframes skill-dark-glow {
+  0%, 100% {
+    box-shadow: inset 0 0 8px rgba(100, 30, 150, 0.15);
+    opacity: 0.3;
+  }
+  50% {
+    box-shadow: inset 0 0 28px rgba(130, 45, 190, 0.5);
+    opacity: 0.9;
+  }
+}
+
+/* VENTO — correntes atravessando e partículas */
+@keyframes skill-wind {
+  0% {
+    transform: translateX(-55%) skewX(-12deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.65;
+  }
+  60% {
+    transform: translateX(20%) skewX(8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(75%) skewX(-6deg);
+    opacity: 0;
+  }
+}
+
+@keyframes skill-wind-particles {
+  0% {
+    background-position: -30px 80%;
+    transform: translateX(-12%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    background-position: 45px 15%;
+    transform: translateX(18%);
+    opacity: 0;
+  }
+}
+
+/* FÍSICO — impacto e cortes rápidos */
+@keyframes skill-impact {
+  0%, 100% {
+    transform: scale(0.94);
+    opacity: 0.2;
+  }
+  15% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(0.98);
+    opacity: 0.55;
+  }
+  45% {
+    transform: scale(1.02);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.94);
+    opacity: 0.2;
+  }
+}
+
+@keyframes skill-slash {
+  0% {
+    transform: translate(-65%, 45%) rotate(-22deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(5%, -5%) rotate(-22deg);
+    opacity: 0.9;
+  }
+  70% {
+    transform: translate(65%, -45%) rotate(-22deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(65%, -45%) rotate(-22deg);
+    opacity: 0;
+  }
 }
