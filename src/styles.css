@@ -1643,3 +1643,10 @@
   display: block;
   width: 100%;
 }
+
+/* Kitsune — otimização mobile */
+@media (max-width: 768px) {
+  .kitsune-nine-tails {
+    display: none;
+  }
+}
