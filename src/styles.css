@@ -1589,3 +1589,16 @@
     transform: scale(1.005);
   }
 }
+
+
+/* TESTE DE PERFORMANCE — scroll do personagem */
+@media (max-width: 768px) {
+  .master-card.card-rarity-sr,
+  .master-card.card-rarity-ssr,
+  .master-card.card-rarity-ur,
+  .master-card.card-rarity-ur_max,
+  .master-card.card-rarity-lr,
+  .master-card.card-rarity-lr_extra {
+    animation: none !important;
+  }
+}
