@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AffinityIcon } from "./affinity-icon";
 import { StatBar } from "./stat-bar";
 import { AFFINITY_BY_ID } from "@/data/affinities";
@@ -20,6 +21,8 @@ export function CharacterCard({
   compact?: boolean;
   onImageClick?: () => void;
 }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
   const race = RACE_BY_ID[character.raceId];
   const cls = CLASS_BY_ID[character.classId];
   const aff = AFFINITY_BY_ID[character.affinityId];
@@ -39,6 +42,8 @@ export function CharacterCard({
   return (
     <article
       className={cn(
+        "character-card-shell",
+        isFlipped ? "character-card-show-back" : "character-card-show-front",
         "aff-card aff-" + character.affinityId,
         "card-rarity-" + cardRarity.toLowerCase(),
         "race-" + character.raceId,
@@ -47,6 +52,7 @@ export function CharacterCard({
         compact ? "p-2" : "p-3",
       )}
     >
+      <button type="button" onClick={() => setIsFlipped((value) => !value)} className="absolute top-2 right-2 z-30 rounded-full bg-bg/80 px-3 py-1.5 text-xs text-ink shadow-lg backdrop-blur-sm" aria-label={isFlipped ? "Voltar para frente" : "Virar card"}>{isFlipped ? "↩ Voltar" : "↻ Virar"}</button>
       {character.isMaster && (cardRarity === "UR_MAX" || cardRarity === "LR" || cardRarity === "LR_EXTRA") && (
         <div className="master-rarity-emblem" aria-label={cardRarity}>
           ✦
@@ -166,6 +172,48 @@ export function CharacterCard({
           <>
             <div className="space-y-1.5">
               <p className="text-[10px] tracking-wide text-muted uppercase">
+                Habilidades · {slots} slots
+              </p>
+
+              {character.skills.slice(0, slots).map((sk) => (
+                <div
+                  key={sk.id}
+                  className={cn("skill-affinity-card", "skill-affinity-" + sk.affinity, "skill-level-" + (sk.slot + 1), "flex items-center justify-between gap-2 rounded-md bg-bg/35 px-2 py-1.5")}
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm">
+                      {sk.name || "Slot vazio"}
+                    </div>
+
+                    <div className="truncate text-[11px] text-muted">
+                      {sk.type} · MP {sk.cost.mp} · EST {sk.cost.est}
+                    </div>
+                  </div>
+
+                  <StatusChip status={sk.status} />
+                </div>
+              ))}
+            </div>
+
+            
+            {isFlipped && (
+              <div className="character-card-back space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] tracking-wide text-muted uppercase">
+                    Detalhes do personagem
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsFlipped(false)}
+                    className="rounded-full bg-bg/80 px-3 py-1.5 text-xs text-ink shadow-lg"
+                  >
+                    ↩ Voltar
+                  </button>
+                </div>
+
+<div className="space-y-1.5">
+              <p className="text-[10px] tracking-wide text-muted uppercase">
                 Passivas
               </p>
 
@@ -207,32 +255,10 @@ export function CharacterCard({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <p className="text-[10px] tracking-wide text-muted uppercase">
-                Habilidades · {slots} slots
-              </p>
+                          </div>
+            )}
 
-              {character.skills.slice(0, slots).map((sk) => (
-                <div
-                  key={sk.id}
-                  className={cn("skill-affinity-card", "skill-affinity-" + sk.affinity, "skill-level-" + (sk.slot + 1), "flex items-center justify-between gap-2 rounded-md bg-bg/35 px-2 py-1.5")}
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm">
-                      {sk.name || "Slot vazio"}
-                    </div>
-
-                    <div className="truncate text-[11px] text-muted">
-                      {sk.type} · MP {sk.cost.mp} · EST {sk.cost.est}
-                    </div>
-                  </div>
-
-                  <StatusChip status={sk.status} />
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-md bg-bg/35 px-2 py-2">
+<div className="rounded-md bg-bg/35 px-2 py-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted">
                   Brasão {brasao.name}

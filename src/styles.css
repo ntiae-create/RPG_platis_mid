@@ -1602,3 +1602,44 @@
     animation: none !important;
   }
 }
+
+
+/* FLIP DO CARD DO PERSONAGEM */
+.character-card-flip {
+  perspective: 1200px;
+  width: 100%;
+}
+
+.character-card-flip > article {
+  transform-style: preserve-3d;
+  transition: transform 500ms ease;
+  backface-visibility: hidden;
+}
+
+.character-card-flip.is-flipped > article {
+  transform: rotateY(180deg);
+}
+
+/* CARD DO PERSONAGEM — FLIP */
+.character-card-shell {
+  width: 100%;
+}
+
+.character-card-show-front,
+.character-card-show-back {
+  width: 100%;
+}
+
+.character-card-back {
+  backface-visibility: hidden;
+}
+
+/* Quando o personagem está virado, esconde somente o conteúdo da frente */
+.character-card-show-back > .relative.z-10 > *:not(.character-card-back) {
+  display: none;
+}
+
+.character-card-show-back .character-card-back {
+  display: block;
+  width: 100%;
+}
