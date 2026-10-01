@@ -359,6 +359,10 @@ export function CreateForm({
                       "shadow-[0_0_0_2px_#d8d0c0]",
                     !can &&
                       "opacity-40",
+                    r.id === "kitsune" &&
+                      "race-selection-kitsune",
+                    r.id === "doppelganger" &&
+                      "race-selection-doppelganger",
                   )}
                 >
                   <img
