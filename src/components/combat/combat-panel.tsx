@@ -8,6 +8,7 @@ export function CombatPanel() {
   const combatActive = usePlatis((s) => s.combatActive);
   const startCombat = usePlatis((s) => s.startCombat);
   const endCombat = usePlatis((s) => s.endCombat);
+  const clearCombatLog = usePlatis((s) => s.clearCombatLog);
   const characters = usePlatis((s) => s.characters);
   const slots = usePlatis((s) => s.slots);
   const attackerId = usePlatis((s) => s.attackerId);
@@ -116,7 +117,7 @@ export function CombatPanel() {
         </div>
 
         <div className="panel max-h-72 overflow-auto p-4">
-          <h3 className="mb-2 font-display text-xl">Log</h3>
+          <div className="mb-2 flex items-center justify-between gap-2"><h3 className="font-display text-xl">Log</h3><Button size="sm" variant="outline" onClick={clearCombatLog} disabled={log.length === 0}>Limpar Log</Button></div>
           {log.length === 0 && <p className="text-sm text-muted">Aguardando rolagem.</p>}
           <ul className="space-y-2">
             {log.map((e) => (

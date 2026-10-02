@@ -203,6 +203,7 @@ type AppState = {
   startCombat: () => void;
   nextTurn: () => void;
   endCombat: () => void;
+  clearCombatLog: () => void;
   rollCombat: (kind: CombatKind, skillId?: string) => void;
   resolveCounter: (mode: "attack" | "defend") => void;
   rollLoose: (sides: number) => void;
@@ -788,7 +789,7 @@ export const usePlatis = create<AppState>()(
               return bStats.int - aStats.int;
             }
 
-            return a.localeCompare(b);
+            return finalStats(s.characters[b]).est - finalStats(s.characters[a]).est;
           });
 
         if (order.length === 0) return;
@@ -832,17 +833,9 @@ export const usePlatis = create<AppState>()(
           attackerId: nextId,
           defenderId: null,
           pendingCounter: null,
-          combatLog: [
-            {
-              id: uid("lg"),
-              at: Date.now(),
-              kind: "system" as const,
-              text: `Rodada ${wrapped ? s.combatRound + 1 : s.combatRound}: turno de ${s.characters[nextId].name}.`,
-            },
-            ...s.combatLog,
-          ].slice(0, 80),
         });
       },
+      clearCombatLog: () => set({ combatLog: [] }),
 
       endCombat: () => {
         const s = get();
@@ -855,15 +848,6 @@ export const usePlatis = create<AppState>()(
           attackerId: null,
           defenderId: null,
           pendingCounter: null,
-          combatLog: [
-            {
-              id: uid("lg"),
-              at: Date.now(),
-              kind: "system" as const,
-              text: "Combate encerrado.",
-            },
-            ...s.combatLog,
-          ].slice(0, 80),
         });
       },
 

@@ -15,6 +15,7 @@ import { WorldPanel } from "@/components/world/world-panel";
 import { usePlatis } from "@/lib/store";
 import type { Character } from "@/data/types";
 import { P2PRoom } from "@/lib/multiplayer";
+import type { SkillP2PMessage } from "@/lib/multiplayer/skill-events";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/mesa")({ component: MesaPage });
@@ -79,6 +80,31 @@ function Mesa() {
       },
       onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
       onMessage: (from, data, channel) => {
+          if (channel === "reliable" && typeof data === "object" && data !== null && "type" in data && (data.type === "skill-submitted" || data.type === "skill-decision")) {
+            const message = data as SkillP2PMessage;
+
+            if (message.type === "skill-submitted") {
+              const state = usePlatis.getState();
+              const character = state.characters[message.characterId];
+              if (character) {
+                state.patchCharacter(message.characterId, {
+                  skills: character.skills.map((skill) =>
+                    skill.id === message.skill.id ? message.skill : skill,
+                  ),
+                });
+              }
+            }
+
+            if (message.type === "skill-decision") {
+              usePlatis.getState().masterSkill(
+                message.characterId,
+                message.skillId,
+                message.action,
+                message.edit,
+              );
+            }
+          }
+
         console.log("[Mesa P2P] mensagem:", from, channel, data);
         if (
           channel === "state" &&
@@ -128,9 +154,50 @@ function Mesa() {
 
     return () => {
       room.close();
+
       p2pRef.current = null;
     };
   }, [selfId, ch?.name, role]);
+    useEffect(() => {
+      const handleSkillSubmitted = (event: Event) => {
+        const customEvent = event as CustomEvent<SkillP2PMessage>;
+        if (customEvent.detail.type !== "skill-submitted") return;
+        p2pRef.current?.broadcast(customEvent.detail);
+      };
+
+      window.addEventListener("platis-skill-submitted", handleSkillSubmitted);
+      return () => {
+        window.removeEventListener("platis-skill-submitted", handleSkillSubmitted);
+      };
+    }, []);
+    useEffect(() => {
+      if (role !== "mestre") return;
+
+      const handleSkillDecision = (event: Event) => {
+        const customEvent = event as CustomEvent<SkillP2PMessage>;
+        if (customEvent.detail.type !== "skill-decision") return;
+
+        const decision = customEvent.detail;
+        usePlatis.getState().masterSkill(
+          decision.characterId,
+          decision.skillId,
+          decision.action,
+          decision.edit,
+        );
+
+        const targetPeerId = Object.entries(remoteCharacters).find(([, character]) => character.id === decision.characterId)?.[0];
+        if (targetPeerId) {
+          p2pRef.current?.send(decision, targetPeerId);
+        }
+      };
+
+        window.addEventListener("platis-skill-decision", handleSkillDecision);
+        return () => {
+          window.removeEventListener("platis-skill-decision", handleSkillDecision);
+        };
+      }, [role, remoteCharacters]);
+
+
 
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
@@ -141,6 +208,7 @@ function Mesa() {
     p2pRef.current.broadcast({
       type: "character",
       character: ch,
+
     });
 
     for (const slotId of slots) {

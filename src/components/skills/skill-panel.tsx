@@ -39,24 +39,37 @@ export function SkillPanel() {
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
-          submit(slot, {
-            name: String(fd.get("name")),
-            description: String(fd.get("description")),
-            type: String(fd.get("type")) as SkillType,
-            affinity: String(fd.get("affinity") || "fisico") as SkillAffinity,
-            cost: {
-              hp: Number(fd.get("hp")) || 0,
-              mp: Number(fd.get("mp")) || 0,
-              est: Number(fd.get("est")) || 0,
-            },
-            target: String(fd.get("target")) as TargetMode,
-            areaCount: Number(fd.get("areaCount")) || 1,
-            areaSquares: Number(fd.get("areaSquares")) || 1,
-            direction: String(fd.get("direction")) as AreaDir,
-            range: Number(fd.get("range")) || 1,
-            duration: Number(fd.get("duration")) || 0,
-            cooldown: Number(fd.get("cooldown")) || 0,
-          });
+            const skillData = {
+              name: String(fd.get("name")),
+              description: String(fd.get("description")),
+              type: String(fd.get("type")) as SkillType,
+              affinity: String(fd.get("affinity") || "fisico") as SkillAffinity,
+              cost: {
+                hp: Number(fd.get("hp")) || 0,
+                mp: Number(fd.get("mp")) || 0,
+                est: Number(fd.get("est")) || 0,
+              },
+              target: String(fd.get("target")) as TargetMode,
+              areaCount: Number(fd.get("areaCount")) || 1,
+              areaSquares: Number(fd.get("areaSquares")) || 1,
+              direction: String(fd.get("direction")) as AreaDir,
+              range: Number(fd.get("range")) || 1,
+              duration: Number(fd.get("duration")) || 0,
+              cooldown: Number(fd.get("cooldown")) || 0,
+            };
+            submit(slot, skillData);
+            const submittedSkill = usePlatis.getState().characters[ch.id]?.skills[slot];
+            if (submittedSkill) {
+              window.dispatchEvent(
+                new CustomEvent("platis-skill-submitted", {
+                  detail: {
+                    type: "skill-submitted",
+                    characterId: ch.id,
+                    skill: submittedSkill,
+                  },
+                }),
+              );
+            }
         }}
       >
         <h2 className="font-display text-2xl">Criar habilidade</h2>
@@ -180,13 +193,13 @@ export function SkillPanel() {
                 </p>
                 <p className="text-xs text-muted">{sk.description}</p>
                 <div className="mt-2 flex gap-2">
-                  <Button size="sm" onClick={() => masterSkill(c.id, sk.id, "approve")}>
+                    <Button size="sm" onClick={() => window.dispatchEvent(new CustomEvent("platis-skill-decision", { detail: { type: "skill-decision", characterId: c.id, skillId: sk.id, action: "approve" } }))}>
                     Aprovar
                   </Button>
                   <Button
                     size="sm"
                     variant="danger"
-                    onClick={() => masterSkill(c.id, sk.id, "reject", { masterNote: "Recusada" })}
+                      onClick={() => window.dispatchEvent(new CustomEvent("platis-skill-decision", { detail: { type: "skill-decision", characterId: c.id, skillId: sk.id, action: "reject", edit: { masterNote: "Recusada" } } }))}
                   >
                     Recusar
                   </Button>
