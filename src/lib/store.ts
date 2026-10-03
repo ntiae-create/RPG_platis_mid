@@ -1119,13 +1119,13 @@ export const usePlatis = create<AppState>()(
           });
         }
 
-        const remainingPlayers = get().combatOrder.filter(
+        const remainingPlayers = get().combatParticipants.filter(
           (id) =>
             Boolean(get().characters[id]) &&
             get().characters[id].current.hp > 0,
         );
 
-        const remainingEnemies = get().combatOrder.filter(
+        const remainingEnemies = get().combatParticipants.filter(
           (id) =>
             Boolean(get().combatEnemies[id]) &&
             get().combatEnemies[id].current.hp > 0,
