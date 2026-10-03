@@ -32,6 +32,8 @@ const nextTurn = usePlatis((s) => s.nextTurn);
 
   const attacker = attackerId ? (characters[attackerId] ?? combatEnemies[attackerId] ?? null) : null;
   const defender = defenderId ? (characters[defenderId] ?? combatEnemies[defenderId] ?? null) : null;
+  const attackerEnemy = attackerId ? combatEnemies[attackerId] ?? null : null;
+  const defenderEnemy = defenderId ? combatEnemies[defenderId] ?? null : null;
   const roster: (Character | CombatEnemy)[] = [];
   for (const id of slots) {
     if (id && characters[id]) roster.push(characters[id]);
@@ -240,8 +242,31 @@ const nextTurn = usePlatis((s) => s.nextTurn);
       </div>
 
       <div className="space-y-3">
-        {attacker && <CharacterCard character={attacker} compact />}
-        {defender && <CharacterCard character={defender} compact />}
+        {attacker && !attackerEnemy && <CharacterCard character={attacker} compact />}
+        {attackerEnemy && (
+          <div className="panel p-4">
+            <p className="font-display text-xl">{attackerEnemy.name}</p>
+            <p className="text-xs text-muted">
+              {attackerEnemy.kind === "boss" ? "Boss" : "Monstro"} · Nv. {attackerEnemy.level}
+            </p>
+            <p className="mt-2 text-sm">HP: {attackerEnemy.current.hp} / {attackerEnemy.stats.hp}</p>
+            <p className="text-sm">MP: {attackerEnemy.current.mp} / {attackerEnemy.stats.mp}</p>
+            <p className="text-sm">EST: {attackerEnemy.current.est} / {attackerEnemy.stats.est}</p>
+          </div>
+        )}
+
+        {defender && !defenderEnemy && <CharacterCard character={defender} compact />}
+        {defenderEnemy && (
+          <div className="panel p-4">
+            <p className="font-display text-xl">{defenderEnemy.name}</p>
+            <p className="text-xs text-muted">
+              {defenderEnemy.kind === "boss" ? "Boss" : "Monstro"} · Nv. {defenderEnemy.level}
+            </p>
+            <p className="mt-2 text-sm">HP: {defenderEnemy.current.hp} / {defenderEnemy.stats.hp}</p>
+            <p className="text-sm">MP: {defenderEnemy.current.mp} / {defenderEnemy.stats.mp}</p>
+            <p className="text-sm">EST: {defenderEnemy.current.est} / {defenderEnemy.stats.est}</p>
+          </div>
+        )}
       </div>
     </div>
   );
