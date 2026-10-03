@@ -56,49 +56,41 @@ const nextTurn = usePlatis((s) => s.nextTurn);
         <DiceTray last={last} onRoll={rollLoose} />
 
         {combatActive && (
-          <div className="panel p-4">
-            <h2 className="font-display text-2xl">Arena de Combate · 30×30</h2>
-            <p className="mt-1 text-xs text-muted">
-              Posição de combate separada do mapa mundial.
-            </p>
+          <div className="panel p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="font-display text-lg">Arena · 30×30</h2>
+                <p className="text-[10px] text-muted">Área de combate separada do mapa mundial.</p>
+              </div>
+              <span className="text-[10px] text-muted">
+                {movingParticipantId ? "Movendo" : "Toque em um jogador/inimigo"}
+              </span>
+            </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex max-h-16 flex-wrap gap-1 overflow-hidden">
               {Object.entries(combatPositions).map(([id]) => {
-                const fighter =
-                  characters[id] ?? combatEnemies[id] ?? null;
-
+                const fighter = characters[id] ?? combatEnemies[id] ?? null;
                 if (!fighter) return null;
-
                 const selected = movingParticipantId === id;
 
                 return (
                   <Button
                     key={id}
                     variant={selected ? "secondary" : "ghost"}
-                    className="text-xs"
-                    onClick={() =>
-                      setMovingParticipantId(selected ? null : id)
-                    }
+                    className="h-7 px-2 text-[10px]"
+                    onClick={() => setMovingParticipantId(selected ? null : id)}
                   >
-                    {fighter.name}
+                    {combatEnemies[id] ? "E" : "P"} · {fighter.name}
                   </Button>
                 );
               })}
             </div>
 
-            <p className="mt-2 text-xs text-muted">
-              {movingParticipantId
-                ? "Toque em uma célula da arena para mover este participante."
-                : "Selecione um participante para movimentá-lo."}
-            </p>
-
-            <div className="mt-3 overflow-auto rounded-md border border-line">
+            <div className="mx-auto mt-2 w-full max-w-[420px] aspect-square overflow-hidden rounded-md border border-line">
               <div
-                className="relative"
+                className="relative h-full w-full"
                 style={{
-                  width: 600,
-                  height: 600,
-                  backgroundSize: "20px 20px",
+                  backgroundSize: "3.333333% 3.333333%",
                   backgroundImage:
                     "linear-gradient(to right, hsl(var(--line) / 0.35) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.35) 1px, transparent 1px)",
                 }}
@@ -106,16 +98,14 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                   if (!movingParticipantId) return;
 
                   const rect = event.currentTarget.getBoundingClientRect();
-                  const x = Math.floor((event.clientX - rect.left) / 20);
-                  const y = Math.floor((event.clientY - rect.top) / 20);
+                  const x = Math.floor(((event.clientX - rect.left) / rect.width) * 30);
+                  const y = Math.floor(((event.clientY - rect.top) / rect.height) * 30);
 
                   moveCombatParticipant(movingParticipantId, x, y);
                 }}
               >
                 {Object.entries(combatPositions).map(([id, position]) => {
-                  const fighter =
-                    characters[id] ?? combatEnemies[id] ?? null;
-
+                  const fighter = characters[id] ?? combatEnemies[id] ?? null;
                   if (!fighter) return null;
 
                   const isEnemy = Boolean(combatEnemies[id]);
@@ -123,23 +113,23 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                   return (
                     <div
                       key={id}
-                      className="absolute z-10 flex min-h-5 min-w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-line bg-panel px-1 text-[9px] font-bold whitespace-nowrap"
+                      className="absolute z-10 flex h-[5%] min-w-[5%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded border border-line bg-panel px-0.5 text-[7px] font-bold leading-none"
                       style={{
-                        left: position.x * 20,
-                        top: position.y * 20,
+                        left: `${((position.x + 0.5) / 30) * 100}%`,
+                        top: `${((position.y + 0.5) / 30) * 100}%`,
                       }}
                       title={fighter.name}
                     >
-                      {isEnemy ? "E" : "P"} · {fighter.name}
+                      {isEnemy ? "E" : "P"}
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            <div className="mt-2 flex gap-4 text-xs text-muted">
-              <span>● P = Player</span>
-              <span>● E = Inimigo</span>
+            <div className="mt-1 flex justify-center gap-3 text-[9px] text-muted">
+              <span>P = Player</span>
+              <span>E = Inimigo</span>
             </div>
           </div>
         )}
