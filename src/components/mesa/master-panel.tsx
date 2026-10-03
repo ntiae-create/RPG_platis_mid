@@ -15,11 +15,11 @@ import {
   Swords,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePlatis } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
-import type { Character } from "@/data/types";
+import type { Character, Skill } from "@/data/types";
 
 type MasterSection =
   | "eventos"
@@ -88,6 +88,14 @@ export function MasterPanel({
   const masterEvents = usePlatis((s) => s.masterEvents);
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
+  const combatEnemies = usePlatis((s) => s.combatEnemies);
+  const addCombatEnemy = usePlatis((s) => s.addCombatEnemy);
+  const removeCombatEnemy = usePlatis((s) => s.removeCombatEnemy);
+  const removeCombatEnemySkill = usePlatis((s) => s.removeCombatEnemySkill);
+const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
+  const startCombat = usePlatis((s) => s.startCombat);
+  const endCombat = usePlatis((s) => s.endCombat);
+  const combatActive = usePlatis((s) => s.combatActive);
   const masterId = usePlatis((s) => s.masterId);
   const grantXp = usePlatis((s) => s.grantXp);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
@@ -97,6 +105,47 @@ export function MasterPanel({
   const [xpAmount, setXpAmount] = useState(100);
   const [masterXpAmount, setMasterXpAmount] = useState(100);
   const [masterBrasaoAmount, setMasterBrasaoAmount] = useState(3000);
+  const [enemyHp, setEnemyHp] = useState(100);
+  const [enemyMp, setEnemyMp] = useState(100);
+  const [enemyEst, setEnemyEst] = useState(100);
+  const [enemyAtk, setEnemyAtk] = useState(10);
+  const [enemyAtkMgc, setEnemyAtkMgc] = useState(10);
+  const [enemyDef, setEnemyDef] = useState(10);
+  const [enemyRes, setEnemyRes] = useState(10);
+  const [enemyAgi, setEnemyAgi] = useState(10);
+  const [enemyInt, setEnemyInt] = useState(10);
+  const [enemySkillName, setEnemySkillName] = useState("");
+  const [enemySkillMp, setEnemySkillMp] = useState(0);
+  const [enemySkillEst, setEnemySkillEst] = useState(0);
+  const [enemySkillType, setEnemySkillType] = useState<Skill["type"]>("ataque");
+  const [enemySkillAffinity, setEnemySkillAffinity] = useState<Skill["affinity"]>("fisico");
+  const [enemySkillTarget, setEnemySkillTarget] = useState<Skill["target"]>("unico");
+  const [enemySkillRange, setEnemySkillRange] = useState(1);
+  const [enemySkillDuration, setEnemySkillDuration] = useState(0);
+  const [enemySkillCooldown, setEnemySkillCooldown] = useState(0);
+  const [enemySkillDescription, setEnemySkillDescription] = useState("");
+  const [editingEnemySkill, setEditingEnemySkill] = useState<string | null>(null);
+  const [editingEnemyId, setEditingEnemyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editingEnemyId || !editingEnemySkill) return;
+
+    const enemy = combatEnemies[editingEnemyId];
+    const skill = enemy?.skills.find((item) => item.id === editingEnemySkill);
+
+    if (!skill) return;
+
+    setEnemySkillName(skill.name);
+    setEnemySkillMp(skill.cost.mp);
+    setEnemySkillEst(skill.cost.est);
+    setEnemySkillType(skill.type);
+    setEnemySkillAffinity(skill.affinity);
+    setEnemySkillTarget(skill.target);
+    setEnemySkillRange(skill.range);
+    setEnemySkillDuration(skill.duration);
+    setEnemySkillCooldown(skill.cooldown);
+    setEnemySkillDescription(skill.description);
+  }, [editingEnemyId, editingEnemySkill, combatEnemies]);
 
   if (section === "jogadores") {
     return (
@@ -113,6 +162,353 @@ export function MasterPanel({
           remoteCharacters={remoteCharacters}
           onKickPeer={onKickPeer}
         />
+      </div>
+    );
+  }
+
+  if (section === "combate") {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSection(null)}>
+          ← Menu do Mestre
+        </Button>
+
+        <div>
+          <h2 className="font-display text-3xl">Combate</h2>
+          <p className="mt-1 text-sm text-muted">
+            Controle monstros, Bosses, turnos e confrontos da mesa.
+          </p>
+        </div>
+
+        <div className="panel space-y-4 p-4">
+          <h3 className="font-medium">Adicionar inimigo</h3>
+        <input
+          type="number"
+          min="0"
+          value={enemySkillCooldown}
+          onChange={(e) => setEnemySkillCooldown(Math.max(0, Number(e.target.value) || 0))}
+          placeholder="Cooldown em turnos (0 = sem cooldown)"
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+        <input
+          type="number"
+          min="0"
+          value={enemySkillDuration}
+          onChange={(e) => setEnemySkillDuration(Math.max(0, Number(e.target.value) || 0))}
+          placeholder="Duração em turnos (0 = instantânea)"
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+        <input
+          type="number"
+          min="1"
+          value={enemySkillRange}
+          onChange={(e) => setEnemySkillRange(Math.max(1, Number(e.target.value) || 1))}
+          placeholder="Alcance da habilidade"
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+        {editingEnemySkill && editingEnemyId && (
+          <Button
+            onClick={() => {
+              const enemy = combatEnemies[editingEnemyId];
+              const skill = enemy?.skills.find(
+                (item) => item.id === editingEnemySkill,
+              );
+
+              if (!skill) return;
+
+              updateCombatEnemySkill(editingEnemyId, editingEnemySkill, {
+                name: enemySkillName.trim(),
+                type: enemySkillType,
+                affinity: enemySkillAffinity,
+                description: enemySkillDescription.trim(),
+                cost: {
+                  ...skill.cost,
+                  mp: enemySkillMp,
+                  est: enemySkillEst,
+                },
+                target: enemySkillTarget,
+                range: enemySkillRange,
+                duration: enemySkillDuration,
+                cooldown: enemySkillCooldown,
+              });
+
+              setEditingEnemySkill(null);
+              setEditingEnemyId(null);
+            }}
+          >
+            Salvar habilidade
+          </Button>
+        )}
+
+        <select
+          value={enemySkillTarget}
+          onChange={(e) => setEnemySkillTarget(e.target.value as Skill["target"])}
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        >
+          <option value="unico">Alvo único</option>
+          <option value="area">Área</option>
+          <option value="aliado">Aliado</option>
+          <option value="grupo">Grupo</option>
+          <option value="self">Próprio</option>
+        </select>
+
+        <select
+          value={enemySkillAffinity}
+          onChange={(e) => setEnemySkillAffinity(e.target.value as Skill["affinity"])}
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        >
+          <option value="fisico">Físico</option>
+          <option value="magico">Mágico</option>
+          <option value="luz">Luz</option>
+          <option value="trevas">Trevas</option>
+          <option value="fogo">Fogo</option>
+          <option value="agua">Água</option>
+          <option value="vento">Vento</option>
+          <option value="terra">Terra</option>
+        </select>
+
+        <select
+          value={enemySkillType}
+          onChange={(e) => setEnemySkillType(e.target.value as Skill["type"])}
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        >
+          <option value="ataque">Ataque</option>
+          <option value="defesa">Defesa</option>
+          <option value="suporte">Suporte</option>
+          <option value="controle">Controle</option>
+        </select>
+
+        <textarea
+          value={enemySkillDescription}
+          onChange={(e) => setEnemySkillDescription(e.target.value)}
+          placeholder="Descrição/efeito da habilidade (opcional)"
+          rows={3}
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+        <input
+          id="master-enemy-skill-name"
+          value={enemySkillName}
+          onChange={(e) => setEnemySkillName(e.target.value)}
+          placeholder="Nome da habilidade (opcional)"
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+        <input
+          id="master-enemy-skill-est"
+          type="number"
+          min="0"
+          value={enemySkillEst}
+          onChange={(e) => setEnemySkillEst(Math.max(0, Number(e.target.value) || 0))}
+          placeholder="Custo de EST da habilidade"
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+        <input
+          id="master-enemy-skill-mp"
+          type="number"
+          min="0"
+          value={enemySkillMp}
+          onChange={(e) => setEnemySkillMp(Math.max(0, Number(e.target.value) || 0))}
+          placeholder="Custo de MP da habilidade"
+          className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+        />
+
+          <input
+            id="master-enemy-name"
+            placeholder="Nome do monstro ou Boss"
+            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              id="master-enemy-kind"
+              className="rounded-md border border-line bg-bg px-3 py-2 text-sm"
+            >
+              <option value="monster">Monstro</option>
+              <option value="boss">Boss</option>
+            </select>
+
+            <input
+              id="master-enemy-level"
+              type="number"
+              min="1"
+              defaultValue={1}
+              className="rounded-md border border-line bg-bg px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ["HP", enemyHp, setEnemyHp],
+              ["MP", enemyMp, setEnemyMp],
+              ["EST", enemyEst, setEnemyEst],
+              ["ATK", enemyAtk, setEnemyAtk],
+              ["ATK MGC", enemyAtkMgc, setEnemyAtkMgc],
+              ["DEF", enemyDef, setEnemyDef],
+              ["RES", enemyRes, setEnemyRes],
+              ["AGI", enemyAgi, setEnemyAgi],
+              ["INT", enemyInt, setEnemyInt],
+            ] as const).map(([label, value, setter]) => (
+              <label key={label} className="space-y-1">
+                <span className="text-xs font-medium text-muted">{label}</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={value}
+                  onChange={(e) => setter(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+                />
+              </label>
+            ))}
+          </div>
+
+          <Button
+            onClick={() => {
+              const nameInput = document.getElementById("master-enemy-name") as HTMLInputElement | null;
+              const kindInput = document.getElementById("master-enemy-kind") as HTMLSelectElement | null;
+              const levelInput = document.getElementById("master-enemy-level") as HTMLInputElement | null;
+
+              const name = nameInput?.value.trim();
+              const level = Math.max(1, Number(levelInput?.value) || 1);
+              const kind = kindInput?.value === "boss" ? "boss" : "monster";
+
+              if (!name) return;
+
+              addCombatEnemy({
+                name,
+                kind,
+                level,
+                stats: {
+                  hp: enemyHp,
+                  mp: enemyMp,
+                  est: enemyEst,
+                  san: enemyEst,
+                  atk: enemyAtk,
+                  atkMgc: enemyAtkMgc,
+                  def: enemyDef,
+                  res: enemyRes,
+                  agi: enemyAgi,
+                  int: enemyInt,
+                },
+                current: {
+                  hp: enemyHp,
+                  mp: enemyMp,
+                  est: enemyEst,
+                  san: enemyEst,
+                },
+                skills: enemySkillName.trim()
+              ? [{
+                  id: `enemy-skill-${Date.now()}`,
+                  slot: 0,
+                  name: enemySkillName.trim(),
+                  affinity: enemySkillAffinity,
+                  description: enemySkillDescription.trim(),
+                  type: enemySkillType,
+                  cost: { hp: 0, mp: enemySkillMp, est: enemySkillEst },
+                  target: enemySkillTarget,
+                  areaCount: 1,
+                  areaSquares: 1,
+                  direction: "cima",
+                  range: enemySkillRange,
+                  duration: enemySkillDuration,
+                  cooldown: enemySkillCooldown,
+                  status: "approved",
+                }]
+              : [],
+              });
+
+              if (nameInput) nameInput.value = "";
+            setEnemySkillName("");
+            setEnemySkillMp(0);
+            setEnemySkillEst(0);
+            setEnemySkillType("ataque");
+            setEnemySkillAffinity("fisico");
+            setEnemySkillTarget("unico");
+            setEnemySkillRange(1);
+            setEnemySkillDuration(0);
+            setEnemySkillCooldown(0);
+            setEnemySkillDescription("");
+            }}
+          >
+            Adicionar à batalha
+          </Button>
+        </div>
+
+        <div className="panel space-y-3 p-4">
+          <h3 className="font-medium">Inimigos na mesa</h3>
+
+          {Object.values(combatEnemies).length === 0 ? (
+            <p className="text-sm text-muted">Nenhum inimigo adicionado.</p>
+          ) : (
+            Object.values(combatEnemies).map((enemy) => (
+              <div
+                key={enemy.id}
+                className="flex items-center justify-between rounded-md border border-line p-3"
+              >
+                <div>
+                  <p className="font-medium">{enemy.name}</p>
+                  <p className="text-xs text-muted">
+                    {enemy.kind === "boss" ? "Boss" : "Monstro"} · Nv. {enemy.level} · HP {enemy.current.hp}/{enemy.stats.hp}
+                  </p>
+                  {enemy.skills.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs font-medium">Habilidades</p>
+                      {enemy.skills.map((skill) => (
+                        <div key={skill.id} className="flex items-center justify-between gap-2 rounded border border-line px-2 py-1">
+                          <p className="text-xs text-muted">
+                            {skill.name} · {skill.status}
+                          </p>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => { setEditingEnemyId(enemy.id); setEditingEnemySkill(skill.id); }}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => removeCombatEnemySkill(enemy.id, skill.id)}
+                            >
+                              Remover
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => removeCombatEnemy(enemy.id)}
+                >
+                  Remover
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="panel flex gap-2 p-4">
+          {combatActive ? (
+            <Button variant="ghost" onClick={endCombat}>
+              Encerrar combate
+            </Button>
+          ) : (
+            <Button
+              disabled={Object.keys(combatEnemies).length === 0}
+              onClick={startCombat}
+            >
+              Iniciar combate
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

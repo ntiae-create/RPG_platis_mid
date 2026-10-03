@@ -1,6 +1,6 @@
 import { CLASS_BY_ID } from "@/data/classes";
 import { RACE_BY_ID } from "@/data/races";
-import type { Character, CombatLogEntry, Skill, Stats } from "@/data/types";
+import type { Character, CombatEnemy, CombatLogEntry, Skill, Stats } from "@/data/types";
 import { rollDie, uid } from "./utils";
 import { finalStats } from "./stats";
 
@@ -49,6 +49,60 @@ function tieBreak(
   if (atk.int !== def.int) return atk.int > def.int ? "attacker" : "defender";
   if (atk.est !== def.est) return atk.est > def.est ? "attacker" : "defender";
   return "defender";
+}
+
+export function resolveEnemyAttack(opts: {
+  attacker: Character | CombatEnemy;
+  defender: Character | CombatEnemy;
+  kind: CombatKind;
+}): CombatResolution {
+  const attackerRoll = rollDie(20);
+  const defenderRoll = rollDie(20);
+  const aStats = "raceId" in opts.attacker ? finalStats(opts.attacker) : opts.attacker.stats;
+  const dStats = "raceId" in opts.defender ? finalStats(opts.defender) : opts.defender.stats;
+
+  let hit = attackerRoll > defenderRoll;
+  if (attackerRoll === defenderRoll) {
+    if (opts.kind === "magical" ? aStats.atkMgc !== dStats.res : aStats.atk !== dStats.def) {
+      hit = opts.kind === "magical" ? aStats.atkMgc > dStats.res : aStats.atk > dStats.def;
+    } else if (aStats.res !== dStats.res) {
+      hit = aStats.res > dStats.res;
+    } else if (aStats.int !== dStats.int) {
+      hit = aStats.int > dStats.int;
+    } else {
+      hit = aStats.est > dStats.est;
+    }
+  }
+
+  const critMult = hit ? (attackerRoll === 20 ? 3 : attackerRoll >= 15 ? 2 : 1) : 1;
+  const damageSides = Math.max(1, opts.kind === "magical" ? aStats.atkMgc : aStats.atk);
+  const damageDie = hit ? rollDie(damageSides) : 0;
+  const damage = hit ? damageDie * critMult : 0;
+  const counterAvailable = defenderRoll >= 17 && defenderRoll > attackerRoll;
+
+  const logs: CombatLogEntry[] = [
+    log("roll", `${opts.attacker.name} D20 = ${attackerRoll} · ${opts.defender.name} D20 = ${defenderRoll}`),
+  ];
+
+  if (hit) {
+    logs.push(log(critMult > 1 ? "crit" : "hit", `${opts.attacker.name} acerta ${opts.defender.name} por ${damage} de dano.`));
+  } else {
+    logs.push(log("miss", `${opts.attacker.name} erra o ataque contra ${opts.defender.name}.`));
+  }
+
+  return {
+    attackerRoll,
+    defenderRoll,
+    hit,
+    critMult,
+    damage,
+    damageDie,
+    damageSides,
+    counterAvailable,
+    stun: false,
+    notes: [],
+    log: logs,
+  };
 }
 
 export function resolveAttack(opts: {

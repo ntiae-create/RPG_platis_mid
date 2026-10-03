@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   Character,
+  CombatEnemy,
   InventoryItem,
   ChatMsg,
   CombatLogEntry,
@@ -13,7 +14,7 @@ import { CLASS_BY_ID } from "@/data/classes";
 import { RACE_BY_ID } from "@/data/races";
 import { BOSSES, GRID_H, GRID_W } from "@/data/world";
 import { createCharacter, finalStats, makeEmptySkills, skillSlots } from "./stats";
-import { applyDamage, resolveAttack, type CombatKind } from "./combat";
+import { applyDamage, resolveAttack, resolveEnemyAttack, type CombatKind } from "./combat";
 import { xpToNextLevel } from "@/data/progression";
 import { uid } from "./utils";
 
@@ -138,6 +139,7 @@ type AppState = {
   combatActive: boolean;
   attackerId: string | null;
   defenderId: string | null;
+  combatEnemies: Record<string, CombatEnemy>;
   combatOrder: string[];
   combatTurnIndex: number;
   combatRound: number;
@@ -203,6 +205,14 @@ type AppState = {
   startCombat: () => void;
   nextTurn: () => void;
   endCombat: () => void;
+  addCombatEnemy: (enemy: Omit<CombatEnemy, "id">) => void;
+  removeCombatEnemy: (id: string) => void;
+  removeCombatEnemySkill: (enemyId: string, skillId: string) => void;
+  updateCombatEnemySkill: (
+    enemyId: string,
+    skillId: string,
+    patch: Partial<Skill>,
+  ) => void;
   clearCombatLog: () => void;
   rollCombat: (kind: CombatKind, skillId?: string) => void;
   resolveCounter: (mode: "attack" | "defend") => void;
@@ -255,6 +265,7 @@ function empty(): Pick<
   | "combatTurnIndex"
   | "combatRound"
   | "attackerId"
+  | "combatEnemies"
   | "defenderId"
   | "combatLog"
   | "lastRoll"
@@ -285,6 +296,7 @@ function empty(): Pick<
     hiddenEntities: [],
     combatActive: false,
     attackerId: null,
+    combatEnemies: {},
     defenderId: null,
     combatOrder: [],
     combatTurnIndex: 0,
@@ -774,23 +786,23 @@ export const usePlatis = create<AppState>()(
       startCombat: () => {
         const s = get();
 
-        const order = s.slots
-          .filter((id): id is string => Boolean(id))
-          .filter((id) => Boolean(s.characters[id]))
-          .sort((a, b) => {
-            const aStats = finalStats(s.characters[a]);
-            const bStats = finalStats(s.characters[b]);
+        const order = [
+          ...s.slots.filter((id): id is string => Boolean(id)).filter((id) => Boolean(s.characters[id])),
+          ...Object.keys(s.combatEnemies),
+        ].sort((a, b) => {
+          const aStats = s.characters[a] ? finalStats(s.characters[a]) : s.combatEnemies[a].stats;
+          const bStats = s.characters[b] ? finalStats(s.characters[b]) : s.combatEnemies[b].stats;
 
-            if (bStats.agi !== aStats.agi) {
-              return bStats.agi - aStats.agi;
-            }
+          if (bStats.agi !== aStats.agi) {
+            return bStats.agi - aStats.agi;
+          }
 
-            if (bStats.int !== aStats.int) {
-              return bStats.int - aStats.int;
-            }
+          if (bStats.int !== aStats.int) {
+            return bStats.int - aStats.int;
+          }
 
-            return finalStats(s.characters[b]).est - finalStats(s.characters[a]).est;
-          });
+          return bStats.est - aStats.est;
+        });
 
         if (order.length === 0) return;
 
@@ -809,7 +821,7 @@ export const usePlatis = create<AppState>()(
               id: uid("lg"),
               at: Date.now(),
               kind: "system" as const,
-              text: `Combate iniciado. ${s.characters[firstId].name} começa pela iniciativa.`,
+              text: `Combate iniciado. ${(s.characters[firstId] ?? s.combatEnemies[firstId]).name} começa pela iniciativa.`,
             },
           ],
         });
@@ -846,8 +858,56 @@ export const usePlatis = create<AppState>()(
           combatTurnIndex: 0,
           combatRound: 0,
           attackerId: null,
+    combatEnemies: {},
           defenderId: null,
           pendingCounter: null,
+        });
+      },
+
+      addCombatEnemy: (enemy) => {
+        const id = uid("enemy");
+        set({
+          combatEnemies: {
+            ...get().combatEnemies,
+            [id]: { ...enemy, id },
+          },
+        });
+      },
+      removeCombatEnemy: (id) => {
+        const enemies = { ...get().combatEnemies };
+        delete enemies[id];
+        set({ combatEnemies: enemies });
+      },
+
+      updateCombatEnemySkill: (enemyId, skillId, patch) => {
+        const enemy = get().combatEnemies[enemyId];
+        if (!enemy) return;
+
+        set({
+          combatEnemies: {
+            ...get().combatEnemies,
+            [enemyId]: {
+              ...enemy,
+              skills: enemy.skills.map((skill) =>
+                skill.id === skillId ? { ...skill, ...patch } : skill,
+              ),
+            },
+          },
+        });
+      },
+
+      removeCombatEnemySkill: (enemyId, skillId) => {
+        const enemy = get().combatEnemies[enemyId];
+        if (!enemy) return;
+
+        set({
+          combatEnemies: {
+            ...get().combatEnemies,
+            [enemyId]: {
+              ...enemy,
+              skills: enemy.skills.filter((skill) => skill.id !== skillId),
+            },
+          },
         });
       },
 
@@ -858,8 +918,8 @@ export const usePlatis = create<AppState>()(
 
       rollCombat: (kind, skillId) => {
         const s = get();
-        const atk = s.attackerId ? s.characters[s.attackerId] : null;
-        const def = s.defenderId ? s.characters[s.defenderId] : null;
+        const atk = s.attackerId ? (s.characters[s.attackerId] ?? s.combatEnemies[s.attackerId] ?? null) : null;
+        const def = s.defenderId ? (s.characters[s.defenderId] ?? s.combatEnemies[s.defenderId] ?? null) : null;
         if (!atk || !def) return;
 
         if (
@@ -870,9 +930,9 @@ export const usePlatis = create<AppState>()(
           return;
         }
 
-        const skill = skillId ? atk.skills.find((k) => k.id === skillId) : undefined;
+        const skill = "raceId" in atk ? (skillId ? atk.skills.find((k) => k.id === skillId) : undefined) : undefined;
         if (skill && skill.status !== "approved") return;
-        if (skill) {
+        if (skill && "raceId" in atk) {
           const cur = { ...atk.current };
           cur.hp -= skill.cost.hp;
           cur.mp -= skill.cost.mp;
@@ -880,24 +940,45 @@ export const usePlatis = create<AppState>()(
           if (cur.hp < 0 || cur.mp < 0 || cur.est < 0) return;
           get().patchCharacter(atk.id, { current: cur });
         }
-        const res = resolveAttack({
-          attacker: get().characters[atk.id],
-          defender: def,
-          kind,
-          skill: skill && skill.status === "approved" ? skill : null,
-          allyNearby: s.slots.filter(Boolean).length > 1,
-        });
-        if (res.hit && res.damage > 0) {
-          const applied = applyDamage(def, res.damage);
-          if (applied.survivedAt1) {
-            res.log.push({
-              id: uid("lg"),
-              at: Date.now(),
-              kind: "passive",
-              text: `${def.name} permanece com 1 HP (Criação Indesejada).`,
+        const res = "raceId" in atk && "raceId" in def
+          ? resolveAttack({
+              attacker: atk,
+              defender: def,
+              kind,
+              skill: skill && skill.status === "approved" ? skill : null,
+              allyNearby: s.slots.filter(Boolean).length > 1,
+            })
+          : resolveEnemyAttack({
+              attacker: atk,
+              defender: def,
+              kind,
             });
+        if (res.hit && res.damage > 0) {
+          if ("raceId" in def) {
+            const applied = applyDamage(def, res.damage);
+            if (applied.survivedAt1) {
+              res.log.push({
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "passive",
+                text: `${def.name} permanece com 1 HP (Criação Indesejada).`,
+              });
+            }
+            get().patchCharacter(def.id, { current: applied.ch.current });
+          } else {
+            const enemy = get().combatEnemies[s.defenderId!];
+            if (enemy) {
+              set({
+                combatEnemies: {
+                  ...get().combatEnemies,
+                  [enemy.id]: {
+                    ...enemy,
+                    current: { ...enemy.current, hp: Math.max(0, enemy.current.hp - res.damage) },
+                  },
+                },
+              });
+            }
           }
-          get().patchCharacter(def.id, { current: applied.ch.current });
         }
         set({
           lastRoll: {

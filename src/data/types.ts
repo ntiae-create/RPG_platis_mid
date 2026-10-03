@@ -316,6 +316,23 @@ export type MapEntity = {
    LOG DE COMBATE
    ========================================================= */
 
+export type CombatEnemy = {
+  id: string;
+  name: string;
+  kind: "monster" | "boss";
+  level: number;
+  stats: Stats;
+  current: {
+    hp: number;
+    mp: number;
+    est: number;
+    san: number;
+  };
+  skills: Skill[];
+  image?: string;
+};
+
+
 export type CombatLogEntry = {
   id: string;
   at: number;

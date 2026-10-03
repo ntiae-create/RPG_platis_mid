@@ -2,7 +2,7 @@ import { DiceTray } from "./dice-tray";
 import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
 import { CharacterCard } from "@/components/character/character-card";
-import type { Character } from "@/data/types";
+import type { Character, CombatEnemy } from "@/data/types";
 
 export function CombatPanel() {
   const combatActive = usePlatis((s) => s.combatActive);
@@ -10,6 +10,7 @@ export function CombatPanel() {
   const endCombat = usePlatis((s) => s.endCombat);
   const clearCombatLog = usePlatis((s) => s.clearCombatLog);
   const characters = usePlatis((s) => s.characters);
+  const combatEnemies = usePlatis((s) => s.combatEnemies);
   const slots = usePlatis((s) => s.slots);
   const attackerId = usePlatis((s) => s.attackerId);
   const defenderId = usePlatis((s) => s.defenderId);
@@ -23,11 +24,12 @@ export function CombatPanel() {
   const trap = usePlatis((s) => s.trap);
   const disarm = usePlatis((s) => s.disarmTrap);
 
-  const attacker = attackerId ? characters[attackerId] : null;
-  const defender = defenderId ? characters[defenderId] : null;
-  const roster: Character[] = [];
+  const attacker = attackerId ? (characters[attackerId] ?? combatEnemies[attackerId] ?? null) : null;
+  const defender = defenderId ? (characters[defenderId] ?? combatEnemies[defenderId] ?? null) : null;
+  const roster: (Character | CombatEnemy)[] = [];
   for (const id of slots) {
     if (id && characters[id]) roster.push(characters[id]);
+  for (const enemy of Object.values(combatEnemies)) roster.push(enemy);
   }
 
   return (
@@ -146,7 +148,7 @@ function FighterPick({
 }: {
   label: string;
   current: string | null;
-  roster: Character[];
+  roster: (Character | CombatEnemy)[];
   onPick: (id: string) => void;
 }) {
   return (
