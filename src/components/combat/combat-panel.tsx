@@ -3,19 +3,25 @@ import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
 import { CharacterCard } from "@/components/character/character-card";
 import type { Character, CombatEnemy } from "@/data/types";
+import { useState } from "react";
 
 export function CombatPanel() {
+  const [movingParticipantId, setMovingParticipantId] = useState<string | null>(null);
   const combatActive = usePlatis((s) => s.combatActive);
   const startCombat = usePlatis((s) => s.startCombat);
   const endCombat = usePlatis((s) => s.endCombat);
+const nextTurn = usePlatis((s) => s.nextTurn);
   const clearCombatLog = usePlatis((s) => s.clearCombatLog);
   const characters = usePlatis((s) => s.characters);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
+  const combatPositions = usePlatis((s) => s.combatPositions);
+  const moveCombatParticipant = usePlatis((s) => s.moveCombatParticipant);
   const slots = usePlatis((s) => s.slots);
   const attackerId = usePlatis((s) => s.attackerId);
   const defenderId = usePlatis((s) => s.defenderId);
   const select = usePlatis((s) => s.selectFighter);
   const rollCombat = usePlatis((s) => s.rollCombat);
+  const attemptEscape = usePlatis((s) => s.attemptEscape);
   const rollLoose = usePlatis((s) => s.rollLoose);
   const last = usePlatis((s) => s.lastRoll);
   const log = usePlatis((s) => s.combatLog);
@@ -49,6 +55,95 @@ export function CombatPanel() {
 
         <DiceTray last={last} onRoll={rollLoose} />
 
+        {combatActive && (
+          <div className="panel p-4">
+            <h2 className="font-display text-2xl">Arena de Combate · 30×30</h2>
+            <p className="mt-1 text-xs text-muted">
+              Posição de combate separada do mapa mundial.
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(combatPositions).map(([id]) => {
+                const fighter =
+                  characters[id] ?? combatEnemies[id] ?? null;
+
+                if (!fighter) return null;
+
+                const selected = movingParticipantId === id;
+
+                return (
+                  <Button
+                    key={id}
+                    variant={selected ? "secondary" : "ghost"}
+                    className="text-xs"
+                    onClick={() =>
+                      setMovingParticipantId(selected ? null : id)
+                    }
+                  >
+                    {fighter.name}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <p className="mt-2 text-xs text-muted">
+              {movingParticipantId
+                ? "Toque em uma célula da arena para mover este participante."
+                : "Selecione um participante para movimentá-lo."}
+            </p>
+
+            <div className="mt-3 overflow-auto rounded-md border border-line">
+              <div
+                className="relative"
+                style={{
+                  width: 600,
+                  height: 600,
+                  backgroundSize: "20px 20px",
+                  backgroundImage:
+                    "linear-gradient(to right, hsl(var(--line) / 0.35) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.35) 1px, transparent 1px)",
+                }}
+                onClick={(event) => {
+                  if (!movingParticipantId) return;
+
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  const x = Math.floor((event.clientX - rect.left) / 20);
+                  const y = Math.floor((event.clientY - rect.top) / 20);
+
+                  moveCombatParticipant(movingParticipantId, x, y);
+                }}
+              >
+                {Object.entries(combatPositions).map(([id, position]) => {
+                  const fighter =
+                    characters[id] ?? combatEnemies[id] ?? null;
+
+                  if (!fighter) return null;
+
+                  const isEnemy = Boolean(combatEnemies[id]);
+
+                  return (
+                    <div
+                      key={id}
+                      className="absolute z-10 flex min-h-5 min-w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-line bg-panel px-1 text-[9px] font-bold whitespace-nowrap"
+                      style={{
+                        left: position.x * 20,
+                        top: position.y * 20,
+                      }}
+                      title={fighter.name}
+                    >
+                      {isEnemy ? "E" : "P"} · {fighter.name}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-2 flex gap-4 text-xs text-muted">
+              <span>● P = Player</span>
+              <span>● E = Inimigo</span>
+            </div>
+          </div>
+        )}
+
         <div className="panel p-4">
           <h2 className="font-display text-2xl">Resolução D20</h2>
           <p className="text-xs text-muted">
@@ -81,7 +176,29 @@ export function CombatPanel() {
               onPick={(id) => select("defender", id)}
             />
           </div>
+          {combatActive && attacker && "raceId" in attacker && (
+            <div className="mt-3 rounded-md border border-line p-3">
+              <p className="mb-2 text-sm font-medium">Ação de fuga</p>
+              <Button
+                variant="outline"
+                onClick={() => attemptEscape(attacker.id)}
+              >
+                Fugir · D100
+              </Button>
+              <p className="mt-2 text-xs text-muted">
+                Role 1d100. A fuga acontece se seu resultado for maior que o D100 do inimigo.
+              </p>
+            </div>
+          )}
+
           <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              disabled={!combatActive}
+              onClick={nextTurn}
+            >
+              Próximo Turno
+            </Button>
             <Button disabled={!attacker || !defender} onClick={() => rollCombat("physical")}>
               Ataque físico
             </Button>

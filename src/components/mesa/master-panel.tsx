@@ -89,6 +89,8 @@ export function MasterPanel({
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
+  const combatParticipants = usePlatis((s) => s.combatParticipants);
+  const toggleCombatParticipant = usePlatis((s) => s.toggleCombatParticipant);
   const addCombatEnemy = usePlatis((s) => s.addCombatEnemy);
   const removeCombatEnemy = usePlatis((s) => s.removeCombatEnemy);
   const removeCombatEnemySkill = usePlatis((s) => s.removeCombatEnemySkill);
@@ -96,6 +98,8 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const startCombat = usePlatis((s) => s.startCombat);
   const endCombat = usePlatis((s) => s.endCombat);
   const combatActive = usePlatis((s) => s.combatActive);
+  const allowBossEscape = usePlatis((s) => s.allowBossEscape);
+  const setAllowBossEscape = usePlatis((s) => s.setAllowBossEscape);
   const masterId = usePlatis((s) => s.masterId);
   const grantXp = usePlatis((s) => s.grantXp);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
@@ -439,6 +443,74 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
         </div>
 
         <div className="panel space-y-3 p-4">
+          <h3 className="font-medium">Participantes do combate</h3>
+          <p className="text-xs text-muted">
+            Selecione os Players, monstros e Bosses que participarão desta batalha.
+          </p>
+
+          <div className="space-y-2">
+            {slots.map((characterId, index) => {
+              if (!characterId) return null;
+
+              const character = characters[characterId];
+              if (!character) return null;
+
+              const selected = combatParticipants.includes(characterId);
+
+              return (
+                <label
+                  key={characterId}
+                  className="flex cursor-pointer items-center justify-between rounded-md border border-line p-3"
+                >
+                  <div>
+                    <p className="font-medium">
+                      Slot {index + 1} · {character.name}
+                    </p>
+                    <p className="text-xs text-muted">
+                      Nv. {character.level}
+                    </p>
+                  </div>
+
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleCombatParticipant(characterId)}
+                  />
+                </label>
+              );
+            })}
+
+            {Object.values(combatEnemies).map((enemy) => {
+              const selected = combatParticipants.includes(enemy.id);
+
+              return (
+                <label
+                  key={enemy.id}
+                  className="flex cursor-pointer items-center justify-between rounded-md border border-line p-3"
+                >
+                  <div>
+                    <p className="font-medium">{enemy.name}</p>
+                    <p className="text-xs text-muted">
+                      {enemy.kind === "boss" ? "Boss" : "Monstro"} · Nv. {enemy.level}
+                    </p>
+                  </div>
+
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleCombatParticipant(enemy.id)}
+                  />
+                </label>
+              );
+            })}
+          </div>
+
+          <p className="text-xs text-muted">
+            Selecionados: {combatParticipants.length}
+          </p>
+        </div>
+
+        <div className="panel space-y-3 p-4">
           <h3 className="font-medium">Inimigos na mesa</h3>
 
           {Object.values(combatEnemies).length === 0 ? (
@@ -493,6 +565,21 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               </div>
             ))
           )}
+        </div>
+
+        <div className="panel flex items-center justify-between gap-3 p-4">
+          <div>
+            <p className="font-medium">Fuga contra Boss</p>
+            <p className="text-xs text-muted">
+              Permite que jogadores tentem fugir de combates contra Bosses.
+            </p>
+          </div>
+
+          <input
+            type="checkbox"
+            checked={allowBossEscape}
+            onChange={(event) => setAllowBossEscape(event.target.checked)}
+          />
         </div>
 
         <div className="panel flex gap-2 p-4">

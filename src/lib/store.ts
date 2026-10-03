@@ -15,6 +15,7 @@ import { RACE_BY_ID } from "@/data/races";
 import { BOSSES, GRID_H, GRID_W } from "@/data/world";
 import { createCharacter, finalStats, makeEmptySkills, skillSlots } from "./stats";
 import { applyDamage, resolveAttack, resolveEnemyAttack, type CombatKind } from "./combat";
+import { rollDie } from "./utils";
 import { xpToNextLevel } from "@/data/progression";
 import { uid } from "./utils";
 
@@ -137,6 +138,10 @@ type AppState = {
   entities: MapEntity[];
   hiddenEntities: string[];
   combatActive: boolean;
+  combatParticipants: string[];
+  combatXpParticipants: string[];
+  combatPositions: Record<string, { x: number; y: number }>;
+  allowBossEscape: boolean;
   attackerId: string | null;
   defenderId: string | null;
   combatEnemies: Record<string, CombatEnemy>;
@@ -202,6 +207,9 @@ type AppState = {
   centerOn: (characterId: string) => void;
 
   selectFighter: (which: "attacker" | "defender", id: string | null) => void;
+  toggleCombatParticipant: (id: string) => void;
+  moveCombatParticipant: (id: string, x: number, y: number) => void;
+  setAllowBossEscape: (value: boolean) => void;
   startCombat: () => void;
   nextTurn: () => void;
   endCombat: () => void;
@@ -215,6 +223,7 @@ type AppState = {
   ) => void;
   clearCombatLog: () => void;
   rollCombat: (kind: CombatKind, skillId?: string) => void;
+  attemptEscape: (characterId: string) => void;
   resolveCounter: (mode: "attack" | "defend") => void;
   rollLoose: (sides: number) => void;
   setCombatXpAward: (n: number) => void;
@@ -261,6 +270,10 @@ function empty(): Pick<
   | "entities"
   | "hiddenEntities"
   | "combatActive"
+  | "combatParticipants"
+  | "combatXpParticipants"
+  | "combatPositions"
+  | "allowBossEscape"
   | "combatOrder"
   | "combatTurnIndex"
   | "combatRound"
@@ -295,6 +308,10 @@ function empty(): Pick<
     entities: [],
     hiddenEntities: [],
     combatActive: false,
+    combatParticipants: [],
+    combatXpParticipants: [],
+    combatPositions: {},
+    allowBossEscape: false,
     attackerId: null,
     combatEnemies: {},
     defenderId: null,
@@ -783,34 +800,94 @@ export const usePlatis = create<AppState>()(
         });
       },
 
+      toggleCombatParticipant: (id) => {
+        const participants = get().combatParticipants;
+        const exists = participants.includes(id);
+
+        set({
+          combatParticipants: exists
+            ? participants.filter((participantId) => participantId !== id)
+            : [...participants, id],
+        });
+      },
+
+      moveCombatParticipant: (id, x, y) => {
+        if (!get().combatParticipants.includes(id)) return;
+
+        const nextX = Math.max(0, Math.min(29, Math.round(x)));
+        const nextY = Math.max(0, Math.min(29, Math.round(y)));
+
+        set({
+          combatPositions: {
+            ...get().combatPositions,
+            [id]: {
+              x: nextX,
+              y: nextY,
+            },
+          },
+        });
+      },
+
+      setAllowBossEscape: (value) => {
+        set({ allowBossEscape: value });
+      },
+
       startCombat: () => {
         const s = get();
 
-        const order = [
-          ...s.slots.filter((id): id is string => Boolean(id)).filter((id) => Boolean(s.characters[id])),
-          ...Object.keys(s.combatEnemies),
-        ].sort((a, b) => {
-          const aStats = s.characters[a] ? finalStats(s.characters[a]) : s.combatEnemies[a].stats;
-          const bStats = s.characters[b] ? finalStats(s.characters[b]) : s.combatEnemies[b].stats;
+        const order = s.combatParticipants
+          .filter((id) => Boolean(s.characters[id] || s.combatEnemies[id]))
+          .sort((a, b) => {
+            const aStats = s.characters[a]
+              ? finalStats(s.characters[a])
+              : s.combatEnemies[a].stats;
 
-          if (bStats.agi !== aStats.agi) {
-            return bStats.agi - aStats.agi;
-          }
+            const bStats = s.characters[b]
+              ? finalStats(s.characters[b])
+              : s.combatEnemies[b].stats;
 
-          if (bStats.int !== aStats.int) {
-            return bStats.int - aStats.int;
-          }
+            if (bStats.agi !== aStats.agi) {
+              return bStats.agi - aStats.agi;
+            }
 
-          return bStats.est - aStats.est;
-        });
+            if (bStats.int !== aStats.int) {
+              return bStats.int - aStats.int;
+            }
 
-        if (order.length === 0) return;
+            return bStats.est - aStats.est;
+          });
+
+        if (order.length < 2) return;
 
         const firstId = order[0];
 
+        const combatPositions: Record<string, { x: number; y: number }> = {};
+
+        let playerIndex = 0;
+        let enemyIndex = 0;
+
+        for (const id of order) {
+          if (s.characters[id]) {
+            combatPositions[id] = {
+              x: 1,
+              y: 2 + playerIndex * 2,
+            };
+            playerIndex += 1;
+          } else if (s.combatEnemies[id]) {
+            combatPositions[id] = {
+              x: 28,
+              y: 2 + enemyIndex * 2,
+            };
+            enemyIndex += 1;
+          }
+        }
+
         set({
           combatActive: true,
+          combatParticipants: [...s.combatParticipants],
+          combatXpParticipants: [...s.combatParticipants],
           combatOrder: order,
+          combatPositions,
           combatTurnIndex: 0,
           combatRound: 1,
           attackerId: firstId,
@@ -832,20 +909,51 @@ export const usePlatis = create<AppState>()(
 
         if (!s.combatActive || s.combatOrder.length === 0) return;
 
-        const nextIndex = s.combatTurnIndex + 1;
-        const wrapped = nextIndex >= s.combatOrder.length;
-        const index = wrapped ? 0 : nextIndex;
-        const nextId = s.combatOrder[index];
+        let index = s.combatTurnIndex;
+        let wrapped = false;
+        let nextId: string | undefined;
 
-        if (!nextId || !s.characters[nextId]) return;
+        for (let step = 1; step <= s.combatOrder.length; step += 1) {
+          const candidateIndex = (s.combatTurnIndex + step) % s.combatOrder.length;
+          const candidateId = s.combatOrder[candidateIndex];
+
+          const character = s.characters[candidateId];
+          const enemy = s.combatEnemies[candidateId];
+
+          if (
+            (character && character.current.hp > 0) ||
+            (enemy && enemy.current.hp > 0)
+          ) {
+            index = candidateIndex;
+            wrapped = candidateIndex <= s.combatTurnIndex;
+            nextId = candidateId;
+            break;
+          }
+        }
+
+        if (!nextId) return;
+
+        const isEnemyTurn = Boolean(s.combatEnemies[nextId]);
+        const targetId = isEnemyTurn
+          ? s.combatOrder.find(
+              (id) =>
+                Boolean(s.characters[id]) &&
+                s.combatParticipants.includes(id) &&
+                s.characters[id].current.hp > 0,
+            ) ?? null
+          : null;
 
         set({
           combatTurnIndex: index,
           combatRound: wrapped ? s.combatRound + 1 : s.combatRound,
           attackerId: nextId,
-          defenderId: null,
+          defenderId: targetId,
           pendingCounter: null,
         });
+
+        if (isEnemyTurn && targetId) {
+          get().rollCombat("physical");
+        }
       },
       clearCombatLog: () => set({ combatLog: [] }),
 
@@ -854,6 +962,8 @@ export const usePlatis = create<AppState>()(
 
         set({
           combatActive: false,
+          combatParticipants: [],
+          combatXpParticipants: [],
           combatOrder: [],
           combatTurnIndex: 0,
           combatRound: 0,
@@ -980,6 +1090,76 @@ export const usePlatis = create<AppState>()(
             }
           }
         }
+
+        const defeatedCharacter = get().characters[def.id];
+        const defeatedEnemy = get().combatEnemies[def.id];
+
+        const defeatedId =
+          defeatedCharacter && defeatedCharacter.current.hp <= 0
+            ? def.id
+            : defeatedEnemy && defeatedEnemy.current.hp <= 0
+              ? def.id
+              : null;
+
+        if (defeatedId) {
+          const nextParticipants = get().combatParticipants.filter(
+            (id) => id !== defeatedId,
+          );
+          const nextOrder = get().combatOrder.filter(
+            (id) => id !== defeatedId,
+          );
+          const nextPositions = { ...get().combatPositions };
+          delete nextPositions[defeatedId];
+
+          set({
+            combatParticipants: nextParticipants,
+            combatOrder: nextOrder,
+            combatPositions: nextPositions,
+            defenderId: null,
+          });
+        }
+
+        const remainingPlayers = get().combatOrder.filter(
+          (id) =>
+            Boolean(get().characters[id]) &&
+            get().characters[id].current.hp > 0,
+        );
+
+        const remainingEnemies = get().combatOrder.filter(
+          (id) =>
+            Boolean(get().combatEnemies[id]) &&
+            get().combatEnemies[id].current.hp > 0,
+        );
+
+        const combatFinished =
+          remainingPlayers.length === 0 || remainingEnemies.length === 0;
+
+        if (combatFinished) {
+          set({
+            combatActive: false,
+            combatParticipants: [],
+            combatOrder: [],
+            combatPositions: {},
+            attackerId: null,
+            defenderId: null,
+            pendingCounter: null,
+            combatLog: [
+              {
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "system" as const,
+                text:
+                  remainingPlayers.length === 0
+                    ? "Combate encerrado: todos os jogadores foram derrotados."
+                    : "Combate encerrado: todos os inimigos foram derrotados.",
+              },
+              ...get().combatLog,
+            ].slice(0, 80),
+          });
+
+          return;
+        }
+
         set({
           lastRoll: {
             sides: 20,
@@ -989,22 +1169,117 @@ export const usePlatis = create<AppState>()(
             label: `${atk.name} vs ${def.name}`,
           },
           combatLog: [...res.log, ...s.combatLog].slice(0, 80),
-          pendingCounter: res.counterAvailable
-            ? { defenderId: def.id, attackerId: atk.id }
-            : null,
+          pendingCounter:
+            res.counterAvailable && !defeatedCharacter && !defeatedEnemy
+              ? { defenderId: def.id, attackerId: atk.id }
+              : null,
           tab: "combate",
+        });
+
+        if (s.combatEnemies[atk.id] && !res.counterAvailable) {
+          get().nextTurn();
+        }
+      },
+
+      attemptEscape: (characterId) => {
+        const s = get();
+
+        if (!s.combatActive) return;
+        if (!s.combatParticipants.includes(characterId)) return;
+        if (!s.characters[characterId]) return;
+
+        const enemyId =
+          s.defenderId && s.combatEnemies[s.defenderId]
+            ? s.defenderId
+            : s.combatParticipants.find((id) => Boolean(s.combatEnemies[id]));
+
+        if (!enemyId) return;
+
+        const enemy = s.combatEnemies[enemyId];
+
+        if (enemy.kind === "boss" && !s.allowBossEscape) {
+          set({
+            combatLog: [
+              ...s.combatLog,
+              {
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "system" as const,
+                text: "Fuga bloqueada: o Mestre não permite fuga contra Boss.",
+              },
+            ],
+          });
+          return;
+        }
+
+        const playerRoll = rollDie(100);
+        const enemyRoll = rollDie(100);
+        const success = playerRoll > enemyRoll;
+
+        const nextParticipants = success
+          ? s.combatParticipants.filter((id) => id !== characterId)
+          : s.combatParticipants;
+
+        const nextOrder = success
+          ? s.combatOrder.filter((id) => id !== characterId)
+          : s.combatOrder;
+
+        const nextPositions = { ...s.combatPositions };
+
+        if (success) {
+          delete nextPositions[characterId];
+        }
+
+        const nextTurnIndex = success
+          ? Math.min(s.combatTurnIndex, Math.max(0, nextOrder.length - 1))
+          : s.combatTurnIndex;
+
+        const nextAttackerId =
+          success && s.attackerId === characterId
+            ? (nextOrder[nextTurnIndex] ?? null)
+            : s.attackerId;
+
+        const nextDefenderId =
+          success && s.defenderId === characterId
+            ? (nextOrder.find((id) => id !== nextAttackerId) ?? null)
+            : s.defenderId;
+
+        set({
+          combatParticipants: nextParticipants,
+          combatOrder: nextOrder,
+          combatTurnIndex: nextTurnIndex,
+          combatPositions: nextPositions,
+          attackerId: nextAttackerId,
+          defenderId: nextDefenderId,
+          pendingCounter: null,
+          combatLog: [
+            ...s.combatLog,
+            {
+              id: uid("lg"),
+              at: Date.now(),
+              kind: success ? "system" as const : "miss" as const,
+              text: success
+                ? `${s.characters[characterId].name} tenta fugir: D100 = ${playerRoll} contra D100 = ${enemyRoll}. Fuga bem-sucedida.`
+                : `${s.characters[characterId].name} tenta fugir: D100 = ${playerRoll} contra D100 = ${enemyRoll}. Fuga falhou.`,
+            },
+          ],
         });
       },
 
       resolveCounter: (mode) => {
         const s = get();
         if (!s.pendingCounter) return;
+
         const def = s.characters[s.pendingCounter.defenderId];
-        const atk = s.characters[s.pendingCounter.attackerId];
+        const atk =
+          s.characters[s.pendingCounter.attackerId] ??
+          s.combatEnemies[s.pendingCounter.attackerId];
+
         if (!def || !atk) {
           set({ pendingCounter: null });
           return;
         }
+
         if (mode === "defend") {
           set({
             pendingCounter: null,
@@ -1020,19 +1295,49 @@ export const usePlatis = create<AppState>()(
           });
           return;
         }
+
         if (def.current.est < 3) return;
+
         get().patchCharacter(def.id, {
           current: { ...def.current, est: def.current.est - 3 },
         });
-        const res = resolveAttack({
-          attacker: get().characters[def.id],
-          defender: atk,
-          kind: "physical",
-        });
-        if (res.hit) {
-          const applied = applyDamage(atk, res.damage);
-          get().patchCharacter(atk.id, { current: applied.ch.current });
+
+        const res = "raceId" in atk
+          ? resolveAttack({
+              attacker: get().characters[def.id],
+              defender: atk,
+              kind: "physical",
+            })
+          : resolveEnemyAttack({
+              attacker: get().characters[def.id],
+              defender: atk,
+              kind: "physical",
+            });
+
+        if (res.hit && res.damage > 0) {
+          if ("raceId" in atk) {
+            const applied = applyDamage(atk, res.damage);
+            get().patchCharacter(atk.id, { current: applied.ch.current });
+          } else {
+            const enemy = get().combatEnemies[s.pendingCounter.attackerId];
+
+            if (enemy) {
+              set({
+                combatEnemies: {
+                  ...get().combatEnemies,
+                  [enemy.id]: {
+                    ...enemy,
+                    current: {
+                      ...enemy.current,
+                      hp: Math.max(0, enemy.current.hp - res.damage),
+                    },
+                  },
+                },
+              });
+            }
+          }
         }
+
         set({
           pendingCounter: null,
           combatLog: [
@@ -1076,15 +1381,14 @@ export const usePlatis = create<AppState>()(
       awardCombatXp: () => {
         const s = get();
 
-        s.slots.forEach((id) => {
-          if (id) s.grantXp(id, s.combatXpAward);
+        s.combatXpParticipants.forEach((id) => {
+          if (s.characters[id]) {
+            s.grantXp(id, s.combatXpAward);
+          }
         });
 
-        if (s.masterId) {
-          s.grantXp(s.masterId, s.combatXpAward);
-        }
-
         set({
+          combatXpParticipants: [],
           combatLog: [
             {
               id: uid("lg"),
