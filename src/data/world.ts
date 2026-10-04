@@ -592,6 +592,101 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
       },
     ],
   },
+
+  {
+    id: "skoll",
+    image: "/images/world-bosses/skoll.webp",
+    type: "World Boss",
+    creatureType: "Besta",
+    specialMechanic:
+      "Skoll e Hati são irmãos eternos e lutam em sincronia. Enquanto ambos estiverem vivos, permanecem vinculados. Se um for derrotado, o sobrevivente recebe os bônus de Irmãos Eternos correspondentes ao seu nível.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 210, est: 300, atk: 8, atkMgc: 12, def: 4, res: 46, agi: 16, int: 32, san: 1000 } },
+      { level: 100, stats: { hp: 510, mp: 1389, est: 1670, atk: 30, atkMgc: 45, def: 15, res: 173, agi: 60, int: 120, san: 1300 } },
+      { level: 200, stats: { hp: 1275, mp: 3158, est: 3725, atk: 52, atkMgc: 78, def: 26, res: 299, agi: 104, int: 208, san: 1600 } },
+      { level: 300, stats: { hp: 2550, mp: 6105, est: 7150, atk: 79, atkMgc: 118, def: 39, res: 452, agi: 157, int: 315, san: 1900 } },
+      { level: 400, stats: { hp: 5100, mp: 12000, est: 14000, atk: 135, atkMgc: 202, def: 67, res: 775, agi: 269, int: 539, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Irmãos Eternos",
+        description:
+          "Enquanto Skoll e Hati estiverem vivos, os dois lutam em sincronia. Se um for derrotado, o sobrevivente recebe permanentemente: Lv.12: +2 ATK, +2 ATK MGC e +2 AGI; Lv.100: +3 em cada atributo e resistência à duração de efeitos negativos; Lv.200: +4 em cada atributo e resistência maior a efeitos negativos; Lv.300: +6 em cada atributo e duração de efeitos negativos drasticamente reduzida; Lv.400: enquanto ambos estiverem vivos, possuem alta resistência a efeitos negativos e, se um morrer, o sobrevivente recebe +10 ATK, +10 ATK MGC e +10 AGI até o final do combate.",
+      },
+    ],
+    skills: [
+      {
+        name: "Feição Luminosa",
+        description:
+          "Custo: 30 MP / 25 EST. Dispara um poderoso raio de Luz, podendo atingir até 3 jogadores. Pode aplicar o efeito de aumento de sensibilidade previsto para a habilidade.",
+      },
+      {
+        name: "Uivo Sagrado",
+        description:
+          "Custo: 35 MP / 20 EST. Skoll fortalece Hati, concedendo a ele bônus em todos os atributos: Lv.12 +1; Lv.100 +2; Lv.200 +3; Lv.300 +5; Lv.400 +8.",
+      },
+      {
+        name: "Odor de Sangue",
+        description:
+          "Custo: 40 MP / 35 EST. Cria uma zona de 2 blocos. Inimigos dentro da área sofrem redução de ATK, ATK MGC e AGI: Lv.12 -1; Lv.100 -2; Lv.200 -3; Lv.300 -4; Lv.400 -4.",
+      },
+      {
+        name: "Eclipse Final",
+        description:
+          "Custo definido pela versão atual dos status. Skoll e Hati combinam Luz e Trevas, criando um Eclipse que representa o ápice do poder dos dois irmãos.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
+  {
+    id: "hati",
+    image: "/images/world-bosses/hati.webp",
+    type: "World Boss",
+    creatureType: "Besta",
+    specialMechanic:
+      "Hati e Skoll são irmãos eternos e lutam em sincronia. Enquanto ambos estiverem vivos, permanecem vinculados. Se um for derrotado, o sobrevivente recebe os bônus de Irmãos Eternos correspondentes ao seu nível.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 160, est: 300, atk: 12, atkMgc: 8, def: 9, res: 30, agi: 14, int: 21, san: 1000 } },
+      { level: 100, stats: { hp: 490, mp: 1244, est: 1770, atk: 45, atkMgc: 30, def: 34, res: 113, agi: 53, int: 79, san: 1300 } },
+      { level: 200, stats: { hp: 1225, mp: 2870, est: 3975, atk: 78, atkMgc: 52, def: 59, res: 195, agi: 91, int: 137, san: 1600 } },
+      { level: 300, stats: { hp: 2450, mp: 5580, est: 7650, atk: 118, atkMgc: 79, def: 89, res: 295, agi: 138, int: 207, san: 1900 } },
+      { level: 400, stats: { hp: 4900, mp: 11000, est: 15000, atk: 202, atkMgc: 135, def: 152, res: 505, agi: 235, int: 354, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Irmãos Eternos",
+        description:
+          "Enquanto Hati e Skoll estiverem vivos, os dois lutam em sincronia. Se um for derrotado, o sobrevivente recebe: Lv.12 +2 ATK, +2 ATK MGC e +2 AGI; Lv.100 +3 em cada atributo; Lv.200 +4 em cada atributo; Lv.300 +6 em cada atributo; Lv.400 +10 em cada atributo. A resistência a efeitos negativos também aumenta conforme o nível.",
+      },
+    ],
+    skills: [
+      {
+        name: "Hate Cure",
+        description:
+          "Custo: 30 MP / 25 EST. Ataque de Trevas que aplica Infecção, restringindo a recuperação de HP/vida do alvo. Também pode aplicar Sangramento, causando dano a cada rodada.",
+      },
+      {
+        name: "Sombra Odiosa",
+        description:
+          "Custo: 25 MP / 30 EST. Ataque de Trevas contra um único alvo. Não possui efeitos secundários adicionais; seu foco é causar alto dano direto.",
+      },
+ {
+        name: "Uivo Grotesco",
+        description:
+          "Custo: 40 MP / 35 EST. Uivo de Trevas em uma área de até 2 blocos. Aplica Stun e o alvo afetado perde sua próxima ação.",
+      },
+      {
+        name: "Eclipse Final",
+        description:
+          "Custo definido pela versão atual dos status. Skoll e Hati combinam Luz e Trevas, criando um Eclipse que representa o ápice do poder dos dois irmãos.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
 ];
 
 export type Dungeon = {
