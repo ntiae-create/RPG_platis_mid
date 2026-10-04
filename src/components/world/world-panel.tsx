@@ -12,6 +12,7 @@ function worldBossDetail(id: string) {
 }
 
 export function WorldPanel() {
+  console.log("WORLD PANEL RENDERIZOU");
   const open = usePlatis((s) => s.openContinent);
   const addEntity = usePlatis((s) => s.addEntity);
   const continentId = usePlatis((s) => s.continentId);
