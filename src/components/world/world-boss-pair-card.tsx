@@ -148,7 +148,6 @@ export function WorldBossPairCard({
                 type="button"
                 onClick={() => {
                   setSelectedBoss("skoll");
-                  setSelectedLevel(skoll.levelStart);
                 }}
                 className={cn(
                   "rounded-lg border px-3 py-2 text-sm",
@@ -164,7 +163,6 @@ export function WorldBossPairCard({
                 type="button"
                 onClick={() => {
                   setSelectedBoss("hati");
-                  setSelectedLevel(hati.levelStart);
                 }}
                 className={cn(
                   "rounded-lg border px-3 py-2 text-sm",
