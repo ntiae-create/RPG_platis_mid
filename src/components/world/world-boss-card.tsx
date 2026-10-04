@@ -27,7 +27,7 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
     >
       <div
         className={[
-          "world-boss-card relative min-h-[320px] w-full overflow-hidden rounded-xl transition-transform duration-700 [transform-style:preserve-3d]",
+          "world-boss-card relative aspect-[2/3] w-full overflow-hidden rounded-xl transition-transform duration-700 [transform-style:preserve-3d]",
           flipped ? "[transform:rotateY(180deg)]" : "",
         ].join(" ")}
       >

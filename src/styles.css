@@ -1647,3 +1647,14 @@
     display: none;
   }
 }
+
+@keyframes worldBossWind {
+  0% { transform: translateX(-12%) skewX(-12deg); opacity: 0.15; }
+  50% { transform: translateX(12%) skewX(12deg); opacity: 0.45; }
+  100% { transform: translateX(-12%) skewX(-12deg); opacity: 0.15; }
+}
+
+@keyframes worldBossCrest {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
