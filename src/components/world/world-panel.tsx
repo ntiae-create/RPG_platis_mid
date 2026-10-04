@@ -1,10 +1,15 @@
-import { BOSSES, CONTINENTS, TOTAL_DUNGEON_COUNT, dungeonsFor } from "@/data/world";
+import { BOSSES, WORLD_BOSS_DETAILS, CONTINENTS, TOTAL_DUNGEON_COUNT, dungeonsFor } from "@/data/world";
 import { BRASAO_LEVELS } from "@/data/progression";
 import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
 import { useMemo, useState } from "react";
 import { AffinityIcon } from "@/components/character/affinity-icon";
 import type { AffinityId } from "@/data/types";
+import { WorldBossCard } from "@/components/world/world-boss-card";
+
+function worldBossDetail(id: string) {
+  return WORLD_BOSS_DETAILS.find((boss) => boss.id === id);
+}
 
 export function WorldPanel() {
   const open = usePlatis((s) => s.openContinent);
@@ -13,6 +18,7 @@ export function WorldPanel() {
   const role = usePlatis((s) => s.role);
   const [cid, setCid] = useState(continentId ?? "platis");
   const list = useMemo(() => dungeonsFor(cid).slice(0, 40), [cid]);
+  const hraesvelgr = worldBossDetail("hraesvelgr");
 
   return (
     <div className="space-y-4">
@@ -24,18 +30,12 @@ export function WorldPanel() {
         </p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {BOSSES.map((b) => (
-            <li key={b.id} className="rounded-md bg-raised p-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{b.name}</span>
-                {typeof b.affinity === "string" && <AffinityIcon id={b.affinity as AffinityId} className="size-4" />}
-              </div>
-              <p className="text-[11px] text-muted">
-                Brasão {b.brasao} · bônus {b.bonusPct}% · {CONTINENTS.find((c) => c.id === b.continentId)?.name}
-              </p>
-              <Button size="sm" variant="outline" className="mt-2" onClick={() => open(b.continentId)}>
+            <div key={b.id} className="space-y-2">
+              <WorldBossCard boss={b} detail={worldBossDetail(b.id)} />
+              <Button size="sm" variant="outline" className="w-full" onClick={() => open(b.continentId)}>
                 Ir ao continente
               </Button>
-            </li>
+            </div>
           ))}
         </ul>
       </div>

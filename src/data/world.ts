@@ -457,6 +457,7 @@ export type WorldBossDetail = {
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
     id: "hraesvelgr",
+    image: "/images/world-bosses/hraesvelgr.webp",
     type: "World Boss",
     creatureType: "Besta",
     specialMechanic:

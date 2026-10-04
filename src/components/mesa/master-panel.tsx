@@ -185,8 +185,34 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
         </div>
 
         <div className="panel space-y-4 p-4">
-          <h3 className="font-medium">Adicionar inimigo</h3>
-        <input
+          <div>
+  <h3 className="font-medium">👹 Criar inimigo</h3>
+  <p className="mt-1 text-xs text-muted">Defina primeiro a identidade e os atributos do Monstro ou Boss.</p>
+</div>
+<input
+            id="master-enemy-name"
+            placeholder="Nome do monstro ou Boss"
+            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+          />
+
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              id="master-enemy-kind"
+              className="rounded-md border border-line bg-bg px-3 py-2 text-sm"
+            >
+              <option value="monster">Monstro</option>
+              <option value="boss">Boss</option>
+            </select>
+
+            <input
+              id="master-enemy-level"
+              type="number"
+              min="1"
+              defaultValue={1}
+              className="rounded-md border border-line bg-bg px-3 py-2 text-sm"
+            />
+          </div>
+        <div className="pt-2">\n  <h4 className="font-medium">⚔️ Habilidade</h4>\n  <p className="mt-1 text-xs text-muted">Opcional. Configure uma habilidade especial para este inimigo.</p>\n</div>\n<input
           type="number"
           min="0"
           value={enemySkillCooldown}
@@ -321,31 +347,9 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
           className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
         />
 
-          <input
-            id="master-enemy-name"
-            placeholder="Nome do monstro ou Boss"
-            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
-          />
+          
 
-          <div className="grid grid-cols-2 gap-2">
-            <select
-              id="master-enemy-kind"
-              className="rounded-md border border-line bg-bg px-3 py-2 text-sm"
-            >
-              <option value="monster">Monstro</option>
-              <option value="boss">Boss</option>
-            </select>
-
-            <input
-              id="master-enemy-level"
-              type="number"
-              min="1"
-              defaultValue={1}
-              className="rounded-md border border-line bg-bg px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
+          <div>\n  <h4 className="font-medium">📊 Status de combate</h4>\n  <p className="mt-1 text-xs text-muted">Atributos iniciais do Monstro ou Boss.</p>\n</div>\n<div className="grid grid-cols-2 gap-2">
             {([
               ["HP", enemyHp, setEnemyHp],
               ["MP", enemyMp, setEnemyMp],
