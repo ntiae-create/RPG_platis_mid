@@ -76,20 +76,40 @@ export function WorldBossPairCard({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg bg-raised/70 p-2 text-center">
-              <div className="mb-1 flex items-center justify-center gap-1">
-                <AffinityIcon id="luz" />
-                <span className="text-xs font-semibold">Skoll</span>
+            <div className="overflow-hidden rounded-lg bg-raised/70 text-center">
+              <div className="relative aspect-[2/3] w-full">
+                <img
+                  src="/images/world-bosses/skoll.webp"
+                  alt="Skoll"
+                  className="size-full object-contain"
+                />
+                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-bg/70 px-2 py-1 text-[11px] backdrop-blur-sm">
+                  <AffinityIcon id="luz" className="size-3.5" />
+                  Luz
+                </span>
               </div>
-              <span className="text-[10px] text-muted">Luz · +100%</span>
+              <div className="p-2">
+                <p className="text-sm font-semibold">Skoll</p>
+                <p className="text-[10px] text-muted">Brasão da Luz · +100%</p>
+              </div>
             </div>
 
-            <div className="rounded-lg bg-raised/70 p-2 text-center">
-              <div className="mb-1 flex items-center justify-center gap-1">
-                <AffinityIcon id="trevas" />
-                <span className="text-xs font-semibold">Hati</span>
+            <div className="overflow-hidden rounded-lg bg-raised/70 text-center">
+              <div className="relative aspect-[2/3] w-full">
+                <img
+                  src="/images/world-bosses/hati.webp"
+                  alt="Hati"
+                  className="size-full object-contain"
+                />
+                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-bg/70 px-2 py-1 text-[11px] backdrop-blur-sm">
+                  <AffinityIcon id="trevas" className="size-3.5" />
+                  Trevas
+                </span>
               </div>
-              <span className="text-[10px] text-muted">Trevas · +100%</span>
+              <div className="p-2">
+                <p className="text-sm font-semibold">Hati</p>
+                <p className="text-[10px] text-muted">Brasão das Trevas · +100%</p>
+              </div>
             </div>
           </div>
 
