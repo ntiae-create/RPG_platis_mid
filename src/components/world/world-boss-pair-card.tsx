@@ -175,6 +175,18 @@ export function WorldBossPairCard({
               </button>
             </div>
 
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg bg-raised/60 p-3">
+                <span className="block text-[10px] uppercase tracking-wider text-muted">Brasão</span>
+                <strong className="mt-1 block">{boss.brasao}</strong>
+                <span className="text-[11px] text-muted">Bônus: +{boss.bonusPct}% em todos os atributos</span>
+              </div>
+              <div className="rounded-lg bg-raised/60 p-3">
+                <span className="block text-[10px] uppercase tracking-wider text-muted">Progressão</span>
+                <strong className="mt-1 block">{boss.progression.length} estágios</strong>
+                <span className="text-[11px] text-muted">Lv.{boss.progression[0]} → Lv.{boss.progression[boss.progression.length - 1]}</span>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {boss.progression.map((level) => (
                 <button
