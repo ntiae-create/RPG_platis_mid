@@ -593,6 +593,36 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
     ],
   },
 
+
+  {
+    id: "eikthyrnir",
+    type: "World Boss",
+    creatureType: "Besta",
+    specialMechanic: "Eikthyrnir acumula Efeitos de Natureza. Durante cada rodada, o mesmo atributo de dano não pode ser repetido contra ele. Ao entrar na fase de Imortal Terrestre, começa com 10 Efeitos de Natureza; enquanto eles existirem, permanece imortal.",
+    levels: [
+      { level: 12, stats: { hp: 120, mp: 110, est: 180, atk: 16, atkMgc: 6, def: 20, res: 15, agi: 13, int: 12, san: 1000 } },
+      { level: 100, stats: { hp: 1200, mp: 1100, est: 1800, atk: 60, atkMgc: 23, def: 75, res: 56, agi: 49, int: 45, san: 1300 } },
+      { level: 200, stats: { hp: 3000, mp: 2750, est: 4500, atk: 104, atkMgc: 39, def: 130, res: 98, agi: 85, int: 78, san: 1600 } },
+      { level: 300, stats: { hp: 6000, mp: 5500, est: 9000, atk: 157, atkMgc: 59, def: 197, res: 148, agi: 128, int: 118, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11000, est: 18000, atk: 269, atkMgc: 101, def: 337, res: 253, agi: 219, int: 202, san: 2200 } },
+    ],
+    passives: [
+      { name: "Temor Terrestre", description: "A 20% de HP ou menos, entra em Postura. Enquanto estiver nessa postura, ataques mágicos que o atingirem têm o dano refletido ao atacante." },
+      { name: "Raízes Ancestrais", description: "DEF aumenta conforme o HP diminui: acima de 75% = 0%; até 75% = +10%; até 50% = +20%; até 25% = +30%." },
+      { name: "Fúria da Natureza", description: "ATK aumenta conforme o HP diminui: acima de 75% = 0%; até 75% = +10%; até 50% = +20%; até 25% = +30%." },
+      { name: "Efeito de Natureza", description: "Sempre que um ataque atinge Eikthyrnir, remove 1 Efeito de Natureza e registra o atributo usado pelo atacante. Se o mesmo atacante usar novamente o mesmo atributo dentro da janela do nível, Eikthyrnir ganha +1 Efeito de Natureza. Janela: 2 ataques no Lv.12, 3 no Lv.100, 4 no Lv.200, 5 no Lv.300 e 6 no Lv.400. Cada efeito concede +10% ATK e +10% ATK MGC. Durante cada rodada, o mesmo atributo de dano não pode ser repetido contra Eikthyrnir." },
+      { name: "Temor da Terra — Imortal Terrestre", description: "Ao entrar nessa fase, começa com 10 Efeitos de Natureza. Enquanto existirem, sua imortalidade permanece ativa. Os inimigos precisam reduzir os 10 efeitos a zero para quebrar a imortalidade e poder derrotá-lo. A regra de não repetir o mesmo atributo durante a rodada continua ativa." },
+    ],
+    skills: [
+      { name: "Chifrada Terrestre", description: "Ataque físico de alvo único com os chifres. Dano: 4 + D[ATK]. Sem efeito adicional." },
+      { name: "Investida dos Chifres", description: "Avança em linha, atingindo múltiplos inimigos. Dano: 3 + D[ATK]. Sem efeito adicional." },
+      { name: "Ruptura Terrestre", description: "Golpeia o solo, causando dano físico a todos os inimigos. Dano: 4 + D[ATK]. Sem efeito adicional." },
+      { name: "Ira da Terra", description: "Ataque mágico de Terra contra todos os inimigos. Dano: 5 + D[ATK MGC]. Também concede +1 Efeito de Natureza." },
+      { name: "Colisão da Natureza", description: "Protege os Efeitos de Natureza existentes. Durante a próxima rodada, Efeitos de Natureza não podem ser removidos." },
+      { name: "Penitência da Natureza", description: "Ultimate Lv.400. Cria o Domínio da Natureza. Se possuir 10 Efeitos de Natureza ao usar a Ultimate, entra em Natureza Primordial. Durante essa rodada, os efeitos não podem ser reduzidos e recebe +100% ATK e +100% ATK MGC. Na rodada seguinte, nenhum atributo de dano pode ser repetido contra Eikthyrnir. Se um inimigo violar a regra, sofre Stun por 1 turno.", unlockLevel: 400, ultimate: true },
+    ],
+  },
+
   {
     id: "skoll",
     image: "/images/world-bosses/skoll.webp",
