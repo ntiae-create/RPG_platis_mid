@@ -598,6 +598,7 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
     id: "eikthyrnir",
     type: "World Boss",
     creatureType: "Besta",
+    image: "/images/world-bosses/eikthyrnir.webp",
     specialMechanic: "Eikthyrnir acumula Efeitos de Natureza. Durante cada rodada, o mesmo atributo de dano não pode ser repetido contra ele. Ao entrar na fase de Imortal Terrestre, começa com 10 Efeitos de Natureza; enquanto eles existirem, permanece imortal.",
     levels: [
       { level: 12, stats: { hp: 120, mp: 110, est: 180, atk: 16, atkMgc: 6, def: 20, res: 15, agi: 13, int: 12, san: 1000 } },
