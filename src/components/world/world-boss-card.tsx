@@ -145,7 +145,8 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
           )}
         </div>
 
-        <div className="character-card-back space-y-4">
+        {isFlipped && (
+          <div className="character-card-back space-y-4">
           <div className="pr-16">
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
               World Boss
@@ -208,7 +209,8 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
             ))}
           </section>
         </div>
-      </div>
-    </article>
+        )}
+        </div>
+      </article>
   );
 }
