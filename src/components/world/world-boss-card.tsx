@@ -18,11 +18,14 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
   const [selectedLevel, setSelectedLevel] = useState(boss.levelStart);
 
   const levelData = detail?.levels.find((level) => level.level === selectedLevel);
-  const unlockedSkills = detail?.skills.filter(
-    (skill) => skill.unlockLevel === undefined || selectedLevel >= skill.unlockLevel,
-  ) ?? [];
+  const unlockedSkills =
+    detail?.skills.filter(
+      (skill) =>
+        skill.unlockLevel === undefined || selectedLevel >= skill.unlockLevel,
+    ) ?? [];
 
-  const affinity = typeof boss.affinity === "string" ? boss.affinity : boss.affinity?.[0];
+  const affinity =
+    typeof boss.affinity === "string" ? boss.affinity : boss.affinity?.[0];
 
   return (
     <article
@@ -40,8 +43,8 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
         {isFlipped ? "↩ Voltar" : "↻ Virar"}
       </button>
 
-      {!isFlipped ? (
-        <div className="relative z-10 space-y-3">
+      <div className="relative z-10 grid grid-cols-1 gap-3">
+        <div>
           <div className="flex items-center justify-between gap-2 pr-20">
             <div>
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
@@ -55,7 +58,7 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
             {affinity && <AffinityIcon id={affinity} className="size-6" />}
           </div>
 
-          <div className="flex items-center justify-between gap-2">
+          <div className="mt-3 flex items-center justify-between gap-2">
             <span className="text-xs text-muted">
               Brasão {boss.brasao}
             </span>
@@ -80,8 +83,7 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
               </label>
             )}
           </div>
-
-          <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-background/40">
+<div className="mt-3 relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-background/40">
             {detail?.image ? (
               <img
                 src={detail.image}
@@ -97,7 +99,7 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
 
           {levelData && (
             <>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <StatBar
                   label="HP"
                   value={levelData.stats.hp}
@@ -124,7 +126,7 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="mt-3 grid grid-cols-3 gap-1.5">
                 {ATTRS.map((key) => (
                   <div
                     key={key}
@@ -142,8 +144,8 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
             </>
           )}
         </div>
-      ) : (
-        <div className="character-card-back relative z-10 space-y-4 pr-1">
+
+        <div className="character-card-back space-y-4">
           <div className="pr-16">
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
               World Boss
@@ -152,81 +154,61 @@ export function WorldBossCard({ boss, detail }: WorldBossCardProps) {
               {boss.name}
             </h2>
             <p className="mt-1 text-xs text-muted">
-              Nível {selectedLevel} • {detail?.creatureType ?? "Besta"}
+              Nível {selectedLevel} · {detail?.creatureType ?? "Besta"}
             </p>
           </div>
 
           {detail?.specialMechanic && (
             <section className="rounded-lg bg-bg/35 p-3">
-              <h3 className="mb-1 text-sm font-bold">
-                Mecânica Especial
-              </h3>
+              <h3 className="mb-1 text-sm font-bold">Mecânica Especial</h3>
               <p className="text-xs leading-relaxed text-muted">
                 {detail.specialMechanic}
               </p>
             </section>
           )}
 
-          <section>
-            <h3 className="mb-2 text-sm font-bold">
-              Passivas
-            </h3>
+          <section className="space-y-2">
+            <h3 className="text-sm font-bold">Passivas</h3>
 
-            <div className="space-y-2">
-              {(detail?.passives ?? []).map((passive) => (
-                <div
-                  key={passive.name}
-                  className="rounded-lg bg-bg/35 p-3"
-                >
-                  <div className="text-sm font-semibold">
-                    {passive.name}
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted">
-{passive.description}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {(detail?.passives ?? []).map((passive) => (
+              <div key={passive.name} className="rounded-lg bg-bg/35 p-3">
+                <div className="text-sm font-semibold">{passive.name}</div>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  {passive.description}
+                </p>
+              </div>
+            ))}
           </section>
 
-          <section>
-            <h3 className="mb-2 text-sm font-bold">
-              Habilidades
-            </h3>
+          <section className="space-y-2">
+            <h3 className="text-sm font-bold">Habilidades</h3>
 
-            <div className="space-y-2">
-              {unlockedSkills.map((skill) => (
-                <div
-                  key={skill.name}
-                  className="rounded-lg bg-bg/35 p-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-semibold">
-                      {skill.name}
+            {unlockedSkills.map((skill) => (
+              <div key={skill.name} className="rounded-lg bg-bg/35 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-sm font-semibold">{skill.name}</span>
+
+                  {skill.ultimate && (
+                    <span className="rounded-full bg-bg px-2 py-0.5 text-[10px] font-bold uppercase">
+                      Ultimate
                     </span>
-
-                    {skill.ultimate && (
-                      <span className="rounded-full bg-bg px-2 py-0.5 text-[10px] font-bold uppercase">
-                        Ultimate
-                      </span>
-                    )}
-                  </div>
-
-                  {skill.unlockLevel !== undefined && (
-                    <p className="mt-1 text-[10px] uppercase tracking-wide text-muted">
-                      Desbloqueia no nível {skill.unlockLevel}
-                    </p>
                   )}
-
-                  <p className="mt-1 text-xs leading-relaxed text-muted">
-                    {skill.description}
-                  </p>
                 </div>
-              ))}
-            </div>
+
+                {skill.unlockLevel !== undefined && (
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-muted">
+                    Desbloqueia no nível {skill.unlockLevel}
+                  </p>
+                )}
+
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  {skill.description}
+                </p>
+              </div>
+            ))}
           </section>
         </div>
-      )}
+      </div>
     </article>
   );
 }
