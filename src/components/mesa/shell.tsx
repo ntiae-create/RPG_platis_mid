@@ -48,7 +48,7 @@ export function MesaShell({
             <button
               key={t.id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => { console.log("TAB:", t.id); setTab(t.id); }}
               className={cn(
                 "flex h-11 items-center gap-2 rounded-md px-3 text-sm",
                 tab === t.id ? "bg-raised" : "text-muted hover:text-ink",
@@ -71,7 +71,7 @@ export function MesaShell({
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => { console.log("TAB:", t.id); setTab(t.id); }}
             className={cn(
               "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-md text-[10px]",
               tab === t.id ? "bg-raised text-ink" : "text-muted",
