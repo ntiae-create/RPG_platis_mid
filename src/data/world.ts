@@ -413,6 +413,186 @@ export const BOSSES: WorldBoss[] = [
   },
 ];
 
+export type WorldBossStats = {
+  hp: number;
+  mp: number;
+  est: number;
+  atk: number;
+  atkMgc: number;
+  def: number;
+  res: number;
+  agi: number;
+  int: number;
+  san: number;
+};
+
+export type WorldBossLevel = {
+  level: number;
+  stats: WorldBossStats;
+};
+
+export type WorldBossPassive = {
+  name: string;
+  description: string;
+};
+
+export type WorldBossSkill = {
+  name: string;
+  description: string;
+  unlockLevel?: number;
+  ultimate?: boolean;
+};
+
+export type WorldBossDetail = {
+  id: string;
+  image?: string;
+  type: "World Boss";
+  creatureType: string;
+  specialMechanic: string;
+  levels: WorldBossLevel[];
+  passives: WorldBossPassive[];
+  skills: WorldBossSkill[];
+};
+
+export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
+  {
+    id: "hraesvelgr",
+    type: "World Boss",
+    creatureType: "Besta",
+    specialMechanic:
+      "Ao entrar na batalha, faz uma onda de choque mandando os inimigos para locais aleatórios, espalhando eles.",
+    levels: [
+      {
+        level: 12,
+        stats: {
+          hp: 100,
+          mp: 180,
+          est: 350,
+          atk: 14,
+          atkMgc: 18,
+          def: 8,
+          res: 35,
+          agi: 18,
+          int: 28,
+          san: 1000,
+        },
+      },
+      {
+        level: 100,
+        stats: {
+          hp: 1000,
+          mp: 1362,
+          est: 1815,
+          atk: 53,
+          atkMgc: 68,
+          def: 30,
+          res: 131,
+          agi: 68,
+          int: 105,
+          san: 1300,
+        },
+      },
+      {
+        level: 200,
+        stats: {
+          hp: 2500,
+          mp: 3135,
+          est: 4012,
+          atk: 91,
+          atkMgc: 117,
+          def: 52,
+          res: 228,
+          agi: 117,
+          int: 182,
+          san: 1600,
+        },
+      },
+      {
+        level: 300,
+        stats: {
+          hp: 5000,
+          mp: 6090,
+          est: 7675,
+          atk: 138,
+          atkMgc: 177,
+          def: 79,
+          res: 344,
+          agi: 177,
+          int: 275,
+          san: 1900,
+        },
+      },
+      {
+        level: 400,
+        stats: {
+          hp: 10000,
+          mp: 12000,
+          est: 15000,
+          atk: 236,
+          atkMgc: 303,
+          def: 135,
+          res: 589,
+          agi: 303,
+          int: 471,
+          san: 2200,
+        },
+      },
+    ],
+    passives: [
+      {
+        name: "Senhor dos Céus",
+        description:
+          "Enquanto estiver no ar, Hræsvelgr fica imune a ataques corpo a corpo.",
+      },
+      {
+        name: "Rei da Tempestade",
+        description:
+          "Hræsvelgr domina o campo através de zonas de Vento e correntes de ar, utilizando o ambiente para controlar o posicionamento dos inimigos.",
+      },
+    ],
+    skills: [
+      {
+        name: "Tempestade do Devorador",
+        description:
+          "Ataque de Vento frontal que causa dano e empurra o alvo.",
+      },
+      {
+        name: "Asas do Fim",
+        description:
+          "Libera uma explosão de Vento ao redor de si, atingindo a área próxima e causando deslocamento aleatório nos alvos atingidos.",
+      },
+      {
+        name: "Queda do Céu",
+        description:
+          "Hræsvelgr desaparece do campo e retorna no turno seguinte, realizando um ataque de área de Vento com grande impacto e empurrando os inimigos.",
+      },
+      {
+        name: "O Uivo dos Céus",
+        description:
+          "Um poderoso uivo de Vento que afeta o campo de batalha e reforça o domínio aéreo de Hræsvelgr.",
+      },
+      {
+        name: "Sopro do Abismo",
+        description: "Ataque de Vento de longo alcance.",
+        unlockLevel: 200,
+      },
+      {
+        name: "Penas do Armagedon",
+        description:
+          "Hræsvelgr lança uma chuva de penas cortantes sobre o campo. Os projéteis podem ser repelidos durante 2 turnos.",
+        unlockLevel: 400,
+      },
+      {
+        name: "Fúria do Devorador dos Céus",
+        description:
+          "A manifestação máxima do poder de Hræsvelgr, liberando sua força de Vento sobre o campo de batalha.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+];
+
 export type Dungeon = {
   id: string;
   name: string;
