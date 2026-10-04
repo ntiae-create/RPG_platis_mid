@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { AffinityIcon } from "@/components/character/affinity-icon";
 import type { AffinityId } from "@/data/types";
 import { WorldBossCard } from "@/components/world/world-boss-card";
+import { WorldBossPairCard } from "@/components/world/world-boss-pair-card";
 
 function worldBossDetail(id: string) {
   return WORLD_BOSS_DETAILS.find((boss) => boss.id === id);
@@ -30,14 +31,45 @@ export function WorldPanel() {
           individualmente.
         </p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-          {BOSSES.map((b) => (
-            <div key={b.id} className="space-y-2">
-              <WorldBossCard boss={b} detail={worldBossDetail(b.id)} />
-              <Button size="sm" variant="outline" className="w-full" onClick={() => open(b.continentId)}>
-                Ir ao continente
-              </Button>
-            </div>
-          ))}
+          {BOSSES.filter((b) => b.id !== "hati").map((b) => {
+            if (b.id === "skoll") {
+              const hati = BOSSES.find((item) => item.id === "hati");
+              if (!hati) return null;
+
+              return (
+                <div key="skoll-hati" className="space-y-2">
+                  <WorldBossPairCard
+                    skoll={b}
+                    hati={hati}
+                    skollDetail={worldBossDetail("skoll")}
+                    hatiDetail={worldBossDetail("hati")}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => open(b.continentId)}
+                  >
+                    Ir ao continente
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
+              <div key={b.id} className="space-y-2">
+                <WorldBossCard boss={b} detail={worldBossDetail(b.id)} />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => open(b.continentId)}
+                >
+                  Ir ao continente
+                </Button>
+              </div>
+            );
+          })}
         </ul>
       </div>
 
