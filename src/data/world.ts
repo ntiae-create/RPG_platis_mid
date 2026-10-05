@@ -456,6 +456,36 @@ export type WorldBossDetail = {
 
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
+    id: "wendigo",
+    image: "/images/world-bosses/wendigo.webp",
+    type: "World Boss",
+    creatureType: "Espírito Corrompido — Predador Abissal",
+    specialMechanic: "A Transformação: a cada 3 turnos a fome aumenta e Wendigo recebe 1 ação extra no turno seguinte. Quando alguém cai, Wendigo se fortalece com a vítima. Quanto mais consome, mais difícil a batalha se torna.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 165, est: 335, atk: 16, atkMgc: 13, agi: 15, def: 8, res: 36, int: 17, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1265, est: 1875, atk: 60, atkMgc: 49, agi: 56, def: 30, res: 134, int: 64, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 2940, est: 4115, atk: 102, atkMgc: 83, agi: 95, def: 51, res: 230, int: 109, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 5730, est: 7790, atk: 155, atkMgc: 126, agi: 145, def: 78, res: 350, int: 166, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11200, est: 14900, atk: 265, atkMgc: 215, agi: 247, def: 133, res: 595, int: 283, san: 2200 } },
+    ],
+    passives: [
+      { name: "Fome Incessante", description: "Cada vez que um inimigo sofre dano, Wendigo recebe +4% ATK e +2% AGI, acumulando até +40% ATK e +20% AGI. Se alguém cair, Wendigo recebe o dobro do acúmulo." },
+      { name: "Gélido Abraço", description: "Os ataques de Wendigo aplicam Congelamento: -1 AGI por 2 turnos, acumulável até 3 vezes. Com 3 acúmulos, o alvo fica imobilizado por 1 turno." },
+      { name: "Carne que Rouba", description: "20% do dano causado é convertido em cura. O excesso acima do HP máximo vira Carne Extra, um escudo que absorve dano." },
+      { name: "Presença da Neve Eterna", description: "O campo inteiro congela. Todos os personagens gastam +25% EST em ações. Enquanto um inimigo estiver Congelado, sua recuperação de vida é reduzida pela metade." },
+      { name: "O Vazio Interior — Suprema", description: "Inimigos abaixo de 50% HP recebem +30% de dano de todas as fontes de Wendigo. Abaixo de 25% HP não podem se curar. Cada inimigo derrotado concede +10% em todos os atributos permanentemente." },
+    ],
+    skills: [
+      { name: "Garras de Gelo", description: "Corpo a corpo. 20 MP · 18 EST. Dano de Gelo + Trevas e aplica 1 pilha de Congelamento.", unlockLevel: 12 },
+      { name: "Uivo da Solidão", description: "Área. 28 MP · 22 EST. Todos os alvos sofrem dano leve, -1 AGI por 2 turnos e -20% de cura recebida.", unlockLevel: 12 },
+      { name: "Passo do Esquecimento", description: "Investida. 25 MP · 28 EST. Wendigo desaparece e reaparece atrás do alvo, causando dano surpresa, ignorando 15% DEF e aplicando Congelamento garantido pelas costas.", unlockLevel: 12 },
+      { name: "Fome que Avança", description: "Golpe duplo. 35 MP · 35 EST. Dois ataques consecutivos; o segundo acerta mesmo se o primeiro for esquivado. Se o alvo estiver Congelado, causa +30% de dano.", unlockLevel: 200 },
+      { name: "Névoa da Morte", description: "Zona. 45 MP · 40 EST. Cria uma área de neblina gélida que causa dano contínuo e acumula Congelamento. Ao sair, o efeito diminui.", unlockLevel: 300 },
+      { name: "Devoração Absoluta", description: "Ultimate. 10% do MP máximo · 12% do EST máximo. Causa dano massivo a todos os inimigos. Alvos abaixo de 30% HP sofrem dano instantâneo proporcional à vida perdida. Se alguém cair através do golpe, Wendigo recupera 50% do HP máximo.", unlockLevel: 400, ultimate: true },
+    ],
+  },
+
+  {
     id: "tsuchigumo",
     image: "/images/world-bosses/tsuchigumo.webp",
     type: "World Boss",
