@@ -626,6 +626,35 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
 
 
   {
+    id: "jormungandr",
+    image: "/images/world-bosses/jormungandr.webp",
+    type: "World Boss",
+    creatureType: "Serpente Marinha / Boss Colossal",
+    specialMechanic: "Jörmungandr ocupa dois pontos no campo: Cabeça e Cauda. Ataques em área atingem ambas se cobrirem o espaço entre elas. Efeitos de atordoamento e imobilidade afetam todo o corpo. Se separada por obstáculo, perde os bônus de suas passivas até se reconectar.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 170, est: 320, atk: 15, atkMgc: 17, def: 7, res: 38, agi: 13, int: 25, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1285, est: 1790, atk: 56, atkMgc: 64, def: 26, res: 142, agi: 48, int: 94, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 2990, est: 3920, atk: 95, atkMgc: 108, def: 45, res: 244, agi: 82, int: 162, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 5835, est: 7380, atk: 144, atkMgc: 164, def: 68, res: 371, agi: 125, int: 246, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11500, est: 14500, atk: 245, atkMgc: 280, def: 116, res: 630, agi: 213, int: 418, san: 2200 } },
+    ],
+    passives: [
+      { name: "Corpo Ininterrupto", description: "A serpente ocupa 2 blocos no campo. Ataques direcionados a uma parte têm 50% de chance de errar e acertar a outra parte." },
+      { name: "Escamas Abissais", description: "A resistência a dano físico aumenta conforme o HP diminui: com HP ≤75%, +10%; ≤50%, +20%; ≤25%, +30%." },
+      { name: "Fluxo Contínuo", description: "A cada turno, recupera 5% de MP e 3% de EST. Seus recursos não podem ser drenados." },
+      { name: "Mar que Tudo Engole", description: "Inimigos que permanecem 2 turnos consecutivos adjacentes a Jörmungandr sofrem Arrastão: deslocamento forçado em direção a ela e dano leve de Água." },
+      { name: "Círculo do Mundo — Suprema", description: "Seus dois extremos se tocam, formando uma zona interna no centro do campo. Inimigos dentro dela recebem -2 AGI e têm o custo de EST aumentado em 50%. Abaixo de 25% de HP, entra em Ragnarök: perde resistências, mas recebe +30% ATK e +30% ATK MGC." },
+    ],
+    skills: [
+      { name: "Golpe de Cauda", description: "Área traseira. Custo: 20 MP e 15 EST. A cauda chicoteia violentamente, atingindo 3 blocos atrás, causando dano de Água e empurrando os alvos em 2 blocos.", unlockLevel: 12 },
+      { name: "Jato de Profundidade", description: "Linha à frente. Custo: 25 MP e 20 EST. A cabeça dispara um jato de água comprimida que atravessa toda a linha, causando dano e aplicando Molhado (-1 AGI por 2 turnos).", unlockLevel: 12 },
+      { name: "Inundação", description: "Área ampla. Custo: 35 MP e 25 EST. O nível da água sobe, causando dano de Água e aplicando Molhado a todos. O terreno pode ser coberto.", unlockLevel: 12 },
+      { name: "Redemoinho Eterno", description: "Zona circular. Custo: 45 MP e 35 EST. Cria um vórtice de 3×3 blocos que puxa inimigos ao centro e causa dano repetido por 2 turnos, dificultando a saída da área.", unlockLevel: 200 },
+      { name: "Respiração do Abismo", description: "Linha massiva. Custo: 55 MP e 45 EST. Um jato pressurizado atravessa todo o campo, causando dano massivo e lançando os alvos 3 blocos para trás.", unlockLevel: 300 },
+      { name: "Fim das Águas — Ragnarök", description: "Ultimate Lv.400. Custo: 10% do MP máximo e 10% do EST máximo. Causa dano massivo a todos e reconfigura o campo. Molhado permanece até o fim. Se ativada abaixo de 25% de HP, causa Renascimento: recupera 15% de HP e dobra a recuperação de MP e EST.", unlockLevel: 400, ultimate: true },
+    ],
+  },
+  {
     id: "ratatoskr",
     image: "/images/world-bosses/ratatoskr.webp",
     type: "World Boss",
