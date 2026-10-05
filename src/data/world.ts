@@ -456,6 +456,77 @@ export type WorldBossDetail = {
 
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
+    id: "fenrir",
+    image: "/images/world-bosses/fenrir.webp",
+    type: "World Boss",
+    creatureType: "Besta Divina / Predador Supremo",
+    specialMechanic:
+      "Formas: Lv.12 Lobo Selvagem; Lv.100 Fera da Fúria Crescente; Lv.200 O Pressagiado do Ragnarök; Lv.300 A Mandíbula do Destino; Lv.400 Ragnarök — O Fim dos Deuses. A Corrente Gleipnir: Fenrir começa limitado pela corrente, sofrendo -12% ATK e alcance de movimento reduzido. Cada golpe físico bem-sucedido ou dano recebido enfraquece a corrente. Ao atingir 4 enfraquecimentos, Gleipnir se rompe, remove a penalidade inicial, concede +15% ATK permanente e permite empurrar inimigos em acertos críticos.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 140, est: 340, atk: 17, atkMgc: 8, def: 7, res: 28, agi: 16, int: 14, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1186, est: 1855, atk: 64, atkMgc: 30, def: 26, res: 104, agi: 60, int: 52, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 2735, est: 4075, atk: 108, atkMgc: 51, def: 45, res: 180, agi: 102, int: 90, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 5345, est: 7700, atk: 165, atkMgc: 78, def: 68, res: 275, agi: 156, int: 137, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 10500, est: 15000, atk: 280, atkMgc: 132, def: 116, res: 470, agi: 265, int: 235, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Força Bruta",
+        description: "Quanto mais próximo do alvo, maior o dano. Ataques contra alvos adjacentes recebem +15% de dano físico. Ataques corpo a corpo possuem 10% de chance de quebrar guarda; quebrar guarda anula os bônus de DEF do alvo durante o turno.",
+      },
+      {
+        name: "Fúria do Corpo",
+        description: "A cada golpe recebido ou desferido, Fenrir recebe +4% ATK, acumulável até +30%. O bônus não diminui com o tempo e só começa a diminuir se Fenrir ficar 2 turnos consecutivos afastado de todos os inimigos.",
+      },
+      {
+        name: "Corpo Indomável",
+        description: "Fenrir é imune a Atordoamento e Empurrão. Efeitos que reduzem DEF ou ATK têm sua duração cortada pela metade. Com ≤50% HP recebe +15% DEF; com ≤25% HP recebe +30% DEF.",
+      },
+      {
+        name: "Presença Esmagadora",
+        description: "Inimigos adjacentes a Fenrir recebem -2 AGI e gastam +20% de EST ao realizar ações físicas. Ninguém consegue passar por Fenrir sem sofrer dano de passagem.",
+      },
+      {
+        name: "O Peso do Mundo — Suprema",
+        description: "Todos os ataques de Fenrir ignoram 25% da DEF do alvo. Quando Fenrir estiver abaixo de 25% HP, ativa Força Absoluta: ignora 50% da DEF do alvo e cada golpe bem-sucedido recupera 5% do HP de Fenrir.",
+      },
+    ],
+    skills: [
+      {
+        name: "Mordida da Fera",
+        description: "Lv.12 — Corpo a Corpo — 15 MP · 22 EST. Fenrir realiza uma investida violenta contra o alvo e causa dano físico elevado. Se o alvo estiver com menos de 50% HP, o acerto é garantido e o dano recebe +20%.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Garras Rachadoras",
+        description: "Lv.12 — Corpo a Corpo Duplo — 18 MP · 25 EST. Fenrir desfere dois golpes consecutivos. Se o primeiro golpe acertar, o segundo ignora 20% da DEF do alvo.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Corrida do Predador",
+        description: "Lv.12 — Investida em Linha — 20 MP · 30 EST. Fenrir avança em linha reta por até 4 blocos. Todos os inimigos no caminho são atingidos, sofrem dano físico, são derrubados e perdem sua ação no próximo turno.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Pisada Colossal",
+        description: "Lv.200 — Área ao Redor — 28 MP · 38 EST. Fenrir salta e causa enorme impacto contra o solo. Atinge todos os inimigos em até 2 blocos, causando dano físico e empurrando-os 2 blocos. Se o alvo colidir com um obstáculo, sofre dano adicional.",
+        unlockLevel: 200,
+      },
+      {
+        name: "Chibatada de Cauda",
+        description: "Lv.300 — Área Traseira/Lateral — 32 MP · 42 EST. Fenrir realiza uma poderosa varredura com a cauda em alcance de 3 blocos. Causa dano físico, quebra a postura e remove os bônus defensivos dos alvos por 1 turno.",
+        unlockLevel: 300,
+      },
+      {
+        name: "MANDÍBULA DO RAGNARÖK",
+        description: "Lv.400 — Ultimate — Alvo + Área — 8% do MP máximo · 12% do EST máximo. Fenrir agarra e esmaga o alvo principal, causando dano físico massivo. Uma onda de choque atinge todos os inimigos adjacentes. Se Gleipnir estiver rompida,  dobra a penetração de DEF e Fenrir recupera 10% do HP.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
+  {
     id: "raiju",
     image: "/images/world-bosses/raiju.webp",
     type: "World Boss",
