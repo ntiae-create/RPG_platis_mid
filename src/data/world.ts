@@ -456,6 +456,77 @@ export type WorldBossDetail = {
 
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
+    id: "ammit",
+    image: "/images/world-bosses/ammit.webp",
+    type: "World Boss",
+    creatureType: "Juízo Eterno — Monstro do Submundo",
+    specialMechanic:
+      "Formas: Lv.12 Guardiã do Limite; Lv.100 A Balança Pesada; Lv.200 Dentes do Julgamento; Lv.300 A Que Não Perdoa; Lv.400 Devoração Final — O Fim do Peso. A Balança: cada jogador possui Peso de 0 a 10. Ao causar dano recebe +1 Peso; ao receber dano recebe +2 Peso. Quanto maior o Peso, mais vulnerável o alvo se torna e mais dano recebe de Ammit. Ammit prioriza quem possui mais Peso. O Peso só diminui através de ações de proteção ou suporte.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 160, est: 340, atk: 16, atkMgc: 12, def: 9, res: 34, agi: 13, int: 16, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1225, est: 1905, atk: 60, atkMgc: 45, def: 34, res: 127, agi: 49, int: 60, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 2840, est: 4165, atk: 102, atkMgc: 76, def: 59, res: 218, agi: 84, int: 103, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 5530, est: 7880, atk: 155, atkMgc: 116, def: 89, res: 332, agi: 128, int: 157, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11100, est: 14950, atk: 265, atkMgc: 198, def: 152, res: 565, agi: 220, int: 268, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Pesagem do Coração",
+        description: "Cada jogador acumula Peso. Ao causar dano recebe +1 Peso; ao receber dano recebe +2 Peso. Quanto maior o Peso acumulado, mais dano o alvo recebe de Ammit.",
+      },
+      {
+        name: "Corpo de Rocha",
+        description: "Ammit reduz todo dano recebido em 12%. Se for atacada no mesmo turno por mais de 2 alvos, sua resistência dobra temporariamente.",
+      },
+      {
+        name: "Gula Sem Fim",
+        description: "25% do dano causado é convertido em cura para Ammit. Se alguém cair, Ammit devora sua essência e recebe +20% do HP máximo e +10% ATK permanente.",
+      },
+      {
+        name: "Imobilidade da Sentença",
+        description: "Quem estiver com Peso máximo recebe -3 AGI e não pode desviar de ataques. Ammit ignora 20% da DEF de quem carrega Peso.",
+      },
+      {
+        name: "Nada Resta — Suprema",
+        description: "O Peso passa a acumular mais rapidamente. Quem cair abaixo de 30% HP ganha Peso Dobrado. Se Ammit derrotar alguém, o alvo não pode ser revivido por 3 turnos.",
+      },
+    ],
+    skills: [
+      {
+        name: "Mordida Julgadora",
+        description: "Lv.12 — Alvo Único — 22 MP · 18 EST. Causa dano físico e aplica +2 Peso. Se o alvo possuir 5 ou mais Peso, causa +20% de dano.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Golpe de Cauda",
+        description: "Lv.12 — Área Lateral — 25 MP · 22 EST. Atinge até 3 blocos, causa dano, empurra os alvos em 2 blocos e aplica +1 Peso a todos os atingidos.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Abalo do Juízo",
+        description: "Lv.12 — Área Global — 30 MP · 28 EST. Ammit faz o Peso colidir contra o solo, causando dano leve em todos e aplicando +1 Peso para cada jogador.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Mandíbula da Verdade",
+        description: "Lv.200 — Agarramento — 38 MP · 35 EST. Ammit avança e agarra o alvo. O alvo principal sofre dano massivo, fica Imobilizado por 1 turno e recebe +3 Peso. Se Ammit soltar o alvo antes, ele sofre dano extra.",
+        unlockLevel: 200,
+      },
+      {
+        name: "Sombra do Abismo",
+        description: "Lv.300 — Área Persistente — 45 MP · 40 EST. Cria uma zona de escuridão. Quem permanecer dentro recebe +2 Peso por turno e recupera 50% menos vida. Ammit pode se mover livremente pela área.",
+        unlockLevel: 300,
+      },
+      {
+        name: "Devoração da Alma",
+        description: "Lv.400 — Ultimate — 10% do MP máximo · 12% do EST máximo. Ammit abre sua boca sobre todos os inimigos, causando dano massivo. Inimigos abaixo de 50% HP recebem Peso máximo. Se alguém cair através desse golpe, não pode ser revivido e Ammit ganha bônus total.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
+  {
     id: "fenrir",
     image: "/images/world-bosses/fenrir.webp",
     type: "World Boss",
