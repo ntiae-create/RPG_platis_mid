@@ -624,6 +624,76 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
     ],
   },
 
+
+  {
+    id: "ratatoskr",
+    type: "World Boss",
+    creatureType: "Guardião da Árvore-Mundo",
+    specialMechanic: "Antes do combate real, os jogadores precisam derrubar 12 Árvores Ancestrais. Enquanto houver árvores, Ratatoskr envia Ecos e Projeções e recupera 5% de MP por árvore intacta a cada turno. Cada árvore derrubada reduz permanentemente sua RES mágica em 10%. Quando a 12ª cai, as Projeções desaparecem, Ratatoskr desce da Grande Árvore e inicia o combate real com Energia Arcana máxima.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 200, est: 290, atk: 9, atkMgc: 18, def: 5, res: 42, agi: 15, int: 30, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1490, est: 1655, atk: 34, atkMgc: 68, def: 19, res: 157, agi: 56, int: 112, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 3450, est: 3635, atk: 58, atkMgc: 116, def: 32, res: 270, agi: 95, int: 192, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 6725, est: 6900, atk: 88, atkMgc: 177, def: 49, res: 412, agi: 145, int: 293, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 12500, est: 14300, atk: 150, atkMgc: 300, def: 84, res: 705, agi: 247, int: 500, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Canal da Árvore",
+        description: "A cada turno, acumula 1 Energia Arcana, até 5 pilhas. Cada pilha concede +8% Poder Mágico. Habilidades podem gastar as pilhas para serem amplificadas.",
+      },
+      {
+        name: "Conhecimento em Crescimento",
+        description: "A cada 3 turnos, recebe +10% ATK MGC e +5% INT. O bônus não possui limite e não diminui.",
+      },
+      {
+        name: "Mensagem entre Planos",
+        description: "Possui 20% de chance de duplicar um efeito, podendo resultar em alvo extra ou duração +1. Efeitos de Silêncio e Supressão têm sua duração reduzida pela metade.",
+      },
+      {
+        name: "Fonte Inesgotável",
+        description: "Recupera 8% de MP por turno. Quando o MP estiver cheio, gera um escudo mágico. Recursos mágicos não podem ser drenados nem bloqueados.",
+      },
+      {
+        name: "A Árvore é Toda Parte — Suprema",
+        description: "No Lv.400, sua magia possui alcance global. Cada habilidade utilizada concede +1 pilha de graça. As pilhas concedem +15% Poder Mágico por pilha e sua magia não pode ser anulada.",
+      },
+    ],
+    skills: [
+      {
+        name: "Sussurro da Folhagem",
+        description: "Alvo único. Custo: 18 MP e 12 EST. Dispara uma rajada de energia brilhante, causando dano mágico e concedendo +1 pilha de Energia Arcana.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Caminho dos Ramos",
+        description: "Área. Custo: 25 MP e 18 EST. Ramos de luz surgem no campo, causando dano em área e reduzindo a RES mágica em 10% por 2 turnos.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Eco da Árvore",
+        description: "Suporte. Custo: 20 MP e 15 EST. Libera a energia acumulada e gasta as pilhas de Energia Arcana para escolher entre restaurar MP da equipe ou amplificar o próximo ataque.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Cascata de Luz",
+        description: "Linha. Custo: 38 MP e 28 EST. Libera um poderoso fluxo de energia entre céu e terra, causando dano mágico massivo em linha e concedendo +2 pilhas de Energia Arcana.",
+        unlockLevel: 200,
+      },
+      {
+        name: "O Vento das Eras",
+        description: "Global. Custo: 45 MP e 35 EST. Utiliza magia ancestral para causar dano contra todos os inimigos, atrasando os inimigos e acelerando os aliados.",
+        unlockLevel: 300,
+      },
+      {
+        name: "YGGDRASIL — RAIZ E CÉU",
+        description: "Ultimate Lv.400. Custo: 12% do MP máximo e 8% do EST máximo. Manifesta a própria Árvore-Mundo, causando dano colossal, levando a Energia Arcana ao máximo e restaurando recursos. Enquanto a manifestação durar, a magia de Ratatoskr cresce continuamente a cada instante.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
   {
     id: "skoll",
     image: "/images/world-bosses/skoll.webp",
