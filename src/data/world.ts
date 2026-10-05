@@ -627,6 +627,7 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
 
   {
     id: "ratatoskr",
+    image: "/images/world-bosses/ratatoskr.webp",
     type: "World Boss",
     creatureType: "Guardião da Árvore-Mundo",
     specialMechanic: "Antes do combate real, os jogadores precisam derrubar 12 Árvores Ancestrais. Enquanto houver árvores, Ratatoskr envia Ecos e Projeções e recupera 5% de MP por árvore intacta a cada turno. Cada árvore derrubada reduz permanentemente sua RES mágica em 10%. Quando a 12ª cai, as Projeções desaparecem, Ratatoskr desce da Grande Árvore e inicia o combate real com Energia Arcana máxima.",
