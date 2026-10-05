@@ -456,6 +456,77 @@ export type WorldBossDetail = {
 
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
+    id: "camazotz",
+    image: "/images/world-bosses/camazotz.webp",
+    type: "World Boss",
+    creatureType: "Deus Ancestral — Predador Noturno",
+    specialMechanic:
+      "Formas: Lv.12 Morcego da Caverna; Lv.100 Voz da Noite; Lv.200 Dentes da Lua; Lv.300 Deus da Escuridão; Lv.400 Eclipse Total — Camazotz Supremo. A Noite que Cai: Turno 1 começa com o campo claro. No turno 3 ocorre a Noite Parcial e Camazotz recebe +15% ATK. No turno 5 ocorre a Noite Total e a Passiva Suprema é ativada. Se alguém tentar iluminar o campo, Camazotz pode apagar a luz novamente.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 158, est: 342, atk: 15, atkMgc: 14, def: 8, res: 35, agi: 16, int: 18, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1205, est: 1895, atk: 58, atkMgc: 54, def: 31, res: 130, agi: 62, int: 67, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 2795, est: 4195, atk: 98, atkMgc: 91, def: 53, res: 224, agi: 105, int: 114, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 5465, est: 7940, atk: 150, atkMgc: 139, def: 81, res: 342, agi: 160, int: 175, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11050, est: 14970, atk: 255, atkMgc: 237, def: 138, res: 582, agi: 272, int: 298, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Visão Noturna",
+        description: "Camazotz não pode ser Cegado e não erra ataques contra alvos com menos de 50% HP. Inimigos com pouca vida deixam um rastro de sangue visível apenas para Camazotz.",
+      },
+      {
+        name: "Sopro da Lua",
+        description: "A cada ataque bem-sucedido, Camazotz recebe +8% ATK por 2 turnos, acumulável até +40% ATK. Se atacar durante a noite, o bônus dobra.",
+      },
+      {
+        name: "Drenagem Sombria",
+        description: "22% do dano causado é convertido em cura para Camazotz. Se o alvo estiver Sangrando, 35% do dano causado é convertido em cura.",
+      },
+      {
+        name: "Ecos da Caverna",
+        description: "Sempre que Camazotz utiliza uma habilidade, todos os inimigos sofrem -1 AGI no próximo turno. Se estiverem em uma área escura, também sofrem -10% RES.",
+      },
+      {
+        name: "Noite Eterna — Suprema",
+        description: "O campo se torna permanentemente escuro. Enquanto Noite Eterna estiver ativa, inimigos não podem receber bônus provenientes de Luz, recuperam apenas 50% da vida e Camazotz recebe +25% de dano contra todos.",
+      },
+    ],
+    skills: [
+      {
+        name: "Mordida Sombria",
+        description: "Lv.12 — Alvo Único — 20 MP · 17 EST. Causa dano de Trevas, aplica Sangramento por 2 turnos e recupera 10% do HP de Camazotz.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Voo do Corvo",
+        description: "Lv.12 — Investida — 24 MP · 21 EST. Camazotz atravessa o alvo em alta velocidade, causando dano, ignorando 18% da DEF e deixando um rastro de sombra no chão.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Chamado dos Morcegos",
+        description: "Lv.12 — Área — 30 MP · 26 EST. Invoca um enxame de morcegos que causa dano leve em todos os inimigos, aplica Sangramento por 1 turno e move Camazotz para trás após o ataque.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Lua de Sangue",
+        description: "Lv.200 — Zona — 38 MP · 34 EST. Cria uma área de luz vermelha. Quem permanecer dentro recebe +20% de dano e sofre Sangramento a cada turno. Enquanto estiver dentro da área, Camazotz se cura.",
+        unlockLevel: 200,
+      },
+      {
+        name: "Asas do Eclipse",
+        description: "Lv.300 — Defesa + Ataque — 42 MP · 38 EST. Primeiro bloqueia o próximo ataque em área. Depois libera uma onda de Trevas que atinge todos os inimigos.",
+        unlockLevel: 300,
+      },
+      {
+        name: "Devorador da Escuridão",
+        description: "Lv.400 — Ultimate — 10% do MP máximo · 12% do EST máximo. Camazotz se torna a própria noite, causando dano massivo a todos os inimigos e aplicando Sangramento máximo por 3 turnos. Se alguém cair através desse golpe, Camazotz recebe +15% ATK permanentemente.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
+  {
     id: "ammit",
     image: "/images/world-bosses/ammit.webp",
     type: "World Boss",
