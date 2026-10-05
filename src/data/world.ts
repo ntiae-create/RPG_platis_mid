@@ -456,6 +456,77 @@ export type WorldBossDetail = {
 
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
+    id: "raiju",
+    image: "/images/world-bosses/raiju.webp",
+    type: "World Boss",
+    creatureType: "Besta Celeste / Fúria Incandescente",
+    specialMechanic:
+      "Formas: Lv.12 Fera da Centelha; Lv.100 Lobo da Chama Viva; Lv.200 Corpo em Combustão; Lv.300 A Chama que Não Apaga; Lv.400 Sol em Forma de Fera — Fogo Eterno. O Campo em Chamas: Raiju deixa rastros de Fogo ao se mover. Quem pisa neles sofre dano leve e pode receber Combustão. Áreas em chamas se espalham lentamente a cada turno. Áreas alagadas ou resfriadas fazem o fogo recuar. Quando Raiju reacende o fogo, recupera força.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 185, est: 315, atk: 15, atkMgc: 16, def: 6, res: 34, agi: 17, int: 22, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1390, est: 1800, atk: 56, atkMgc: 60, def: 22, res: 127, agi: 64, int: 83, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 3230, est: 3960, atk: 95, atkMgc: 102, def: 38, res: 218, agi: 110, int: 142, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 6300, est: 7475, atk: 144, atkMgc: 155, def: 58, res: 332, agi: 167, int: 216, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11900, est: 14600, atk: 245, atkMgc: 265, def: 99, res: 565, agi: 285, int: 368, san: 2200 } },
+    ],
+    passives: [
+      {
+        name: "Chama Inicial",
+        description: "Cada ataque bem-sucedido aplica Combustão. Combustão causa dano contínuo de Fogo por 2 turnos e pode acumular até 3.",
+      },
+      {
+        name: "Fogo Crescente",
+        description: "Para cada alvo em Combustão: +8% ATK e +5% AGI, até o máximo de +24% ATK e +15% AGI.",
+      },
+      {
+        name: "Corpo em Chama",
+        description: "Quem atacar Raiju corpo a corpo recebe dano leve de Fogo de retorno. Se Raiju estiver abaixo de 50% HP, o retorno é dobrado.",
+      },
+      {
+        name: "Chama que Se Alimenta",
+        description: "Inimigos que sofrerem dano de Fogo não podem recuperar vida durante 1 turno. Se um inimigo cair enquanto estiver em Combustão, Raiju recupera 10% HP.",
+      },
+      {
+        name: "Fogo Eterno — Suprema",
+        description: "Combustão deixa de possuir duração e permanece até ser extinguida por água ou resfriamento. Se todos os inimigos estiverem queimando: +30% dano de Fogo e ataques ignoram 25% RES.",
+      },
+    ],
+    skills: [
+      {
+        name: "Uivo da Centelha",
+        description: "Lv.12 — Área — 22 MP · 18 EST. Atinge todos os inimigos, causando dano leve de Fogo e 1 Combustão.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Garras Incandescentes",
+        description: "Lv.12 — Alvo único — 25 MP · 20 EST. Causa dano de Fogo + Combustão. Se já estiver queimando: +20% de dano.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Corrida Flamejante",
+        description: "Lv.12 — Investida em linha — 30 MP · 25 EST. Causa dano de Fogo e deixa um rastro de fogo.",
+        unlockLevel: 12,
+      },
+      {
+        name: "Explosão de Cinzas",
+        description: "Lv.200 — Área ao redor — 40 MP · 32 EST. Atinge inimigos em até 2 blocos, causa dano de Fogo e aplica Combustão extra. Se já estiver queimando, espalha fogo para inimigos adjacentes.",
+        unlockLevel: 200,
+      },
+      {
+        name: "Relâmpago em Chama",
+        description: "Lv.300 — Alvo + área — 48 MP · 38 EST. Causa dano massivo de Fogo no alvo principal e ondas de choque flamejantes nos inimigos ao redor.",
+        unlockLevel: 300,
+      },
+      {
+        name: "O SOL DESPERTO",
+        description: "Lv.400 — Ultimate Global — 10% MP máximo · 10% EST máximo. Causa dano massivo de Fogo a todos os inimigos e aplica Combustão máxima, com 3 acúmulos. Se Fogo Eterno estiver ativo, renova e fortalece as chamas existentes.",
+        unlockLevel: 400,
+        ultimate: true,
+      },
+    ],
+  },
+
+  {
     id: "hraesvelgr",
     image: "/images/world-bosses/hraesvelgr.webp",
     type: "World Boss",
