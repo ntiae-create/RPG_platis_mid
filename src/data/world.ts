@@ -456,6 +456,36 @@ export type WorldBossDetail = {
 
 export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
   {
+    id: "tsuchigumo",
+    image: "/images/world-bosses/tsuchigumo.webp",
+    type: "World Boss",
+    creatureType: "Monstro Ancestral — Predador Subterrâneo",
+    specialMechanic: "O Campo de Teias: Tsuchigumo transforma gradualmente o campo em seu território. As teias permitem movimento instantâneo para Tsuchigumo, dificultam os inimigos e podem ser destruídas por fogo ou destruição direta, mas são rapidamente reconstruídas. Quanto maior o domínio de teias, mais habilidades são desbloqueadas.",
+    levels: [
+      { level: 12, stats: { hp: 100, mp: 155, est: 345, atk: 15, atkMgc: 11, agi: 14, def: 9, res: 33, int: 15, san: 1000 } },
+      { level: 100, stats: { hp: 1000, mp: 1190, est: 1925, atk: 56, atkMgc: 41, agi: 52, def: 34, res: 123, int: 56, san: 1300 } },
+      { level: 200, stats: { hp: 2500, mp: 2770, est: 4235, atk: 95, atkMgc: 70, agi: 88, def: 58, res: 212, int: 96, san: 1600 } },
+      { level: 300, stats: { hp: 5000, mp: 5400, est: 8000, atk: 144, atkMgc: 106, agi: 134, def: 88, res: 322, int: 146, san: 1900 } },
+      { level: 400, stats: { hp: 10000, mp: 11000, est: 15000, atk: 245, atkMgc: 180, agi: 230, def: 150, res: 548, int: 248, san: 2200 } },
+    ],
+    passives: [
+      { name: "Sensibilidade à Terra", description: "Tsuchigumo conhece a posição de todos no campo e não pode ser surpreendida. Inimigos que mudaram de posição durante o turno recebem +5% ATK de Tsuchigumo contra eles." },
+      { name: "Fios que Prendem", description: "Cada ataque bem-sucedido aplica 1 Fio de Seda. Com 3 Fios de Seda, o alvo fica imobilizado por 1 turno. Os fios desaparecem gradualmente se o alvo permanecer parado." },
+      { name: "Dupla Ameaça", description: "Ataques corpo a corpo podem atingir 2 alvos adjacentes quando próximos. Ataques à distância com teia podem se espalhar para mais 1 alvo próximo do alvo principal." },
+      { name: "Solo Aliado", description: "Inimigos sobre teias ou terreno modificado sofrem -2 AGI e +20% de dano recebido. Enquanto Tsuchigumo estiver em sua própria teia, recebe +15% DEF e recupera 5% EST por turno." },
+      { name: "Dominância Subterrânea — Suprema", description: "Tsuchigumo pode desaparecer no solo e reaparecer em qualquer teia existente. Sobre suas áreas, os custos de movimento dos inimigos dobram. Fios de Seda passam a causar dano contínuo enquanto permanecerem ativos." },
+    ],
+    skills: [
+      { name: "Fio Lançado", description: "Alvo único. 18 MP · 15 EST. Dano leve, aplica 1 Fio de Seda e reduz o movimento do alvo em 1 bloco.", unlockLevel: 12 },
+      { name: "Mordida Venenosa", description: "Corpo a corpo. 22 MP · 20 EST. Dano e Venenoso por 2 turnos. Se o alvo possuir Fios de Seda, o Veneno dura +1 turno.", unlockLevel: 12 },
+      { name: "Terremoto de Patas", description: "Área ao redor. 28 MP · 25 EST. Dano físico em todos os alvos adjacentes, derruba, remove uma ação parcial e cria uma área de teia ao redor de Tsuchigumo.", unlockLevel: 12 },
+      { name: "Rede de Prisão", description: "Zona 3×3. 38 MP · 32 EST. Todos dentro recebem 2 Fios de Seda e não podem sair no próximo turno.", unlockLevel: 200 },
+      { name: "Túnel das Sombras", description: "Teleporte + ataque. 45 MP · 38 EST. Tsuchigumo emerge sob o alvo, causando dano massivo, derrubando-o e criando uma teia. Se houver uma teia conectada, pode ser utilizado novamente no mesmo turno.", unlockLevel: 300 },
+      { name: "Império de Fios", description: "Ultimate global. 10% do MP máximo · 12% do EST máximo. Cobre o campo inteiro com teias, aplica 2 Fios de Seda a todos os inimigos, causa dano de Terra + Sombras, impede que os fios acumulados desapareçam sozinhos por 3 turnos e recupera 10% do HP por teia ativa.", unlockLevel: 400, ultimate: true },
+    ],
+  },
+
+  {
     id: "camazotz",
     image: "/images/world-bosses/camazotz.webp",
     type: "World Boss",
