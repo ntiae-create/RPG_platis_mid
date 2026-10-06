@@ -2,12 +2,16 @@ import { DiceTray } from "./dice-tray";
 import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
 import { CharacterCard } from "@/components/character/character-card";
+import { WorldBossCard } from "./world-boss-card";
+import { WorldBossCombatPanel } from "./world-boss-combat-panel";
 import type { Character, CombatEnemy } from "@/data/types";
 import { useState } from "react";
 
 export function CombatPanel() {
   const [movingParticipantId, setMovingParticipantId] = useState<string | null>(null);
   const combatActive = usePlatis((s) => s.combatActive);
+  const combatMode = usePlatis((s) => s.combatMode);
+  const worldBossId = usePlatis((s) => s.worldBossId);
   const startCombat = usePlatis((s) => s.startCombat);
   const endCombat = usePlatis((s) => s.endCombat);
 const nextTurn = usePlatis((s) => s.nextTurn);
@@ -38,6 +42,10 @@ const nextTurn = usePlatis((s) => s.nextTurn);
   for (const id of slots) {
     if (id && characters[id]) roster.push(characters[id]);
   for (const enemy of Object.values(combatEnemies)) roster.push(enemy);
+  }
+
+  if (combatMode === "world-boss") {
+    return <WorldBossCombatPanel />;
   }
 
   return (
@@ -242,6 +250,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
       </div>
 
       <div className="space-y-3">
+        {worldBossId && <WorldBossCard bossId={worldBossId} level={12} compact={false} />}
         {attacker && !attackerEnemy && <CharacterCard character={attacker} compact />}
         {attackerEnemy && (
           <div className="panel p-4">

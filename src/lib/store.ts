@@ -12,7 +12,7 @@ import type {
 } from "@/data/types";
 import { CLASS_BY_ID } from "@/data/classes";
 import { RACE_BY_ID } from "@/data/races";
-import { BOSSES, GRID_H, GRID_W } from "@/data/world";
+import { BOSSES, GRID_H, GRID_W, WORLD_BOSS_DETAILS } from "@/data/world";
 import { createCharacter, finalStats, makeEmptySkills, skillSlots } from "./stats";
 import { applyDamage, resolveAttack, resolveEnemyAttack, type CombatKind } from "./combat";
 import { rollDie } from "./utils";
@@ -20,6 +20,17 @@ import { xpToNextLevel } from "@/data/progression";
 import { uid } from "./utils";
 
 export type Role = "jogador" | "mestre";
+
+export type WorldBossCombatState = {
+  bossId: string;
+  level: number;
+  current: {
+    hp: number;
+    mp: number;
+    est: number;
+    san: number;
+  };
+};
 export type MesaTab =
   | "personagem"
   | "mapa"
@@ -138,6 +149,7 @@ type AppState = {
   entities: MapEntity[];
   hiddenEntities: string[];
   combatActive: boolean;
+  combatMode: "normal" | "world-boss";
   combatParticipants: string[];
   combatXpParticipants: string[];
   combatPositions: Record<string, { x: number; y: number }>;
@@ -145,6 +157,8 @@ type AppState = {
   attackerId: string | null;
   defenderId: string | null;
   combatEnemies: Record<string, CombatEnemy>;
+  worldBossCombat: WorldBossCombatState | null;
+  worldBossId: string | null;
   combatOrder: string[];
   combatTurnIndex: number;
   combatRound: number;
@@ -211,9 +225,11 @@ type AppState = {
   moveCombatParticipant: (id: string, x: number, y: number) => void;
   setAllowBossEscape: (value: boolean) => void;
   startCombat: () => void;
+  startWorldBossCombat: (bossId: string, level: number) => void;
   nextTurn: () => void;
   endCombat: () => void;
   addCombatEnemy: (enemy: Omit<CombatEnemy, "id">) => void;
+  setWorldBoss: (id: string | null) => void;
   removeCombatEnemy: (id: string) => void;
   removeCombatEnemySkill: (enemyId: string, skillId: string) => void;
   updateCombatEnemySkill: (
@@ -270,6 +286,7 @@ function empty(): Pick<
   | "entities"
   | "hiddenEntities"
   | "combatActive"
+  | "combatMode"
   | "combatParticipants"
   | "combatXpParticipants"
   | "combatPositions"
@@ -279,6 +296,8 @@ function empty(): Pick<
   | "combatRound"
   | "attackerId"
   | "combatEnemies"
+  | "worldBossId"
+  | "worldBossCombat"
   | "defenderId"
   | "combatLog"
   | "lastRoll"
@@ -308,12 +327,15 @@ function empty(): Pick<
     entities: [],
     hiddenEntities: [],
     combatActive: false,
+    combatMode: "normal",
     combatParticipants: [],
     combatXpParticipants: [],
     combatPositions: {},
     allowBossEscape: false,
     attackerId: null,
     combatEnemies: {},
+    worldBossId: null,
+    worldBossCombat: null,
     defenderId: null,
     combatOrder: [],
     combatTurnIndex: 0,
@@ -755,6 +777,16 @@ export const usePlatis = create<AppState>()(
         const key = exploreKey(s.continentId, s.layer);
         const setExplored = new Set(s.explored[key] ?? []);
         setExplored.add(`${x},${y}`);
+
+        const reachedBoss = s.entities.find(
+          (entity) =>
+            entity.kind === "boss" &&
+            entity.continentId === s.continentId &&
+            entity.layer === s.layer &&
+            entity.x === x &&
+            entity.y === y
+        );
+
         const trapRoll = Math.random();
         let trap = s.trap;
         if (trapRoll < 0.04 && !trap) {
@@ -763,9 +795,20 @@ export const usePlatis = create<AppState>()(
         get().patchCharacter(id, {
           position: { ...ch.position, continentId: s.continentId, layer: s.layer, x, y },
         });
+
+        if (reachedBoss) {
+          get().startWorldBossCombat(
+            reachedBoss.id.replace(/^boss-/, ""),
+            12,
+          );
+        }
+
         set({
           explored: { ...s.explored, [key]: [...setExplored] },
           trap,
+          worldBossId: reachedBoss
+            ? reachedBoss.id.replace(/^boss-/, "")
+            : s.worldBossId,
         });
       },
 
@@ -830,6 +873,33 @@ export const usePlatis = create<AppState>()(
 
       setAllowBossEscape: (value) => {
         set({ allowBossEscape: value });
+      },
+
+      startWorldBossCombat: (bossId, level) => {
+        const boss = WORLD_BOSS_DETAILS.find((item) => item.id === bossId);
+        if (!boss) return;
+
+        const bossLevel =
+          boss.levels.find((entry) => entry.level === level) ??
+          boss.levels[boss.levels.length - 1];
+
+        if (!bossLevel) return;
+
+        set({
+          combatMode: "world-boss",
+          combatActive: true,
+          worldBossId: bossId,
+          worldBossCombat: {
+            bossId,
+            level: bossLevel.level,
+            current: {
+              hp: bossLevel.stats.hp,
+              mp: bossLevel.stats.mp,
+              est: bossLevel.stats.est,
+              san: bossLevel.stats.san,
+            },
+          },
+        });
       },
 
       startCombat: () => {
@@ -973,6 +1043,8 @@ export const usePlatis = create<AppState>()(
           pendingCounter: null,
         });
       },
+
+      setWorldBoss: (id) => set({ worldBossId: id }),
 
       addCombatEnemy: (enemy) => {
         const id = uid("enemy");
