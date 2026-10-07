@@ -441,6 +441,8 @@ export type WorldBossSkill = {
   description: string;
   unlockLevel?: number;
   ultimate?: boolean;
+  cooldown?: number;
+  affinityId?: "fogo" | "agua" | "terra" | "vento" | "luz" | "trevas" | "fisico" | "magico";
 };
 
 export type WorldBossDetail = {
@@ -470,17 +472,17 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
     ],
     passives: [
       { name: "Fome Incessante", description: "Cada vez que um inimigo sofre dano, Wendigo recebe +4% ATK e +2% AGI, acumulando até +40% ATK e +20% AGI. Se alguém cair, Wendigo recebe o dobro do acúmulo." },
-      { name: "Gélido Abraço", description: "Os ataques de Wendigo aplicam Congelamento: -1 AGI por 2 turnos, acumulável até 3 vezes. Com 3 acúmulos, o alvo fica imobilizado por 1 turno." },
+      { name: "Gélido Abraço", description: "Os ataques de Wendigo aplicam Frio: -1 AGI por 2 turnos, acumulável até 3 vezes. Com 3 acúmulos de Frio, o alvo sofre Congelamento e fica incapacitado por 1 turno." },
       { name: "Carne que Rouba", description: "20% do dano causado é convertido em cura. O excesso acima do HP máximo vira Carne Extra, um escudo que absorve dano." },
       { name: "Presença da Neve Eterna", description: "O campo inteiro congela. Todos os personagens gastam +25% EST em ações. Enquanto um inimigo estiver Congelado, sua recuperação de vida é reduzida pela metade." },
       { name: "O Vazio Interior — Suprema", description: "Inimigos abaixo de 50% HP recebem +30% de dano de todas as fontes de Wendigo. Abaixo de 25% HP não podem se curar. Cada inimigo derrotado concede +10% em todos os atributos permanentemente." },
     ],
     skills: [
-      { name: "Garras de Gelo", description: "Corpo a corpo. 20 MP · 18 EST. Dano de Gelo + Trevas e aplica 1 pilha de Congelamento.", unlockLevel: 12 },
+      { name: "Garras de Gelo", description: "Corpo a corpo. 20 MP · 18 EST. Dano de Gelo + Trevas e aplica 1 pilha de Frio.", unlockLevel: 12 },
       { name: "Uivo da Solidão", description: "Área. 28 MP · 22 EST. Todos os alvos sofrem dano leve, -1 AGI por 2 turnos e -20% de cura recebida.", unlockLevel: 12 },
-      { name: "Passo do Esquecimento", description: "Investida. 25 MP · 28 EST. Wendigo desaparece e reaparece atrás do alvo, causando dano surpresa, ignorando 15% DEF e aplicando Congelamento garantido pelas costas.", unlockLevel: 12 },
+      { name: "Passo do Esquecimento", description: "Investida. 25 MP · 28 EST. Wendigo desaparece e reaparece atrás do alvo, causando dano surpresa, ignorando 15% DEF e aplicando Frio garantido pelas costas.", unlockLevel: 12 },
       { name: "Fome que Avança", description: "Golpe duplo. 35 MP · 35 EST. Dois ataques consecutivos; o segundo acerta mesmo se o primeiro for esquivado. Se o alvo estiver Congelado, causa +30% de dano.", unlockLevel: 200 },
-      { name: "Névoa da Morte", description: "Zona. 45 MP · 40 EST. Cria uma área de neblina gélida que causa dano contínuo e acumula Congelamento. Ao sair, o efeito diminui.", unlockLevel: 300 },
+      { name: "Névoa da Morte", description: "Zona. 45 MP · 40 EST. Cria uma área de neblina gélida que causa dano contínuo e acumula Frio. Ao sair, o efeito diminui.", unlockLevel: 300 },
       { name: "Devoração Absoluta", description: "Ultimate. 10% do MP máximo · 12% do EST máximo. Causa dano massivo a todos os inimigos. Alvos abaixo de 30% HP sofrem dano instantâneo proporcional à vida perdida. Se alguém cair através do golpe, Wendigo recupera 50% do HP máximo.", unlockLevel: 400, ultimate: true },
     ],
   },
@@ -507,7 +509,7 @@ export const WORLD_BOSS_DETAILS: WorldBossDetail[] = [
     ],
     skills: [
       { name: "Fio Lançado", description: "Alvo único. 18 MP · 15 EST. Dano leve, aplica 1 Fio de Seda e reduz o movimento do alvo em 1 bloco.", unlockLevel: 12 },
-      { name: "Mordida Venenosa", description: "Corpo a corpo. 22 MP · 20 EST. Dano e Venenoso por 2 turnos. Se o alvo possuir Fios de Seda, o Veneno dura +1 turno.", unlockLevel: 12 },
+      { name: "Mordida Venenosa", description: "Corpo a corpo. 22 MP · 20 EST. Dano e Veneno por 2 turnos. Se o alvo possuir Fios de Seda, o Veneno dura +1 turno.", unlockLevel: 12 },
       { name: "Terremoto de Patas", description: "Área ao redor. 28 MP · 25 EST. Dano físico em todos os alvos adjacentes, derruba, remove uma ação parcial e cria uma área de teia ao redor de Tsuchigumo.", unlockLevel: 12 },
       { name: "Rede de Prisão", description: "Zona 3×3. 38 MP · 32 EST. Todos dentro recebem 2 Fios de Seda e não podem sair no próximo turno.", unlockLevel: 200 },
       { name: "Túnel das Sombras", description: "Teleporte + ataque. 45 MP · 38 EST. Tsuchigumo emerge sob o alvo, causando dano massivo, derrubando-o e criando uma teia. Se houver uma teia conectada, pode ser utilizado novamente no mesmo turno.", unlockLevel: 300 },

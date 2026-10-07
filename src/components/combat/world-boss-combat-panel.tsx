@@ -1,4 +1,5 @@
 import { CharacterCard } from "@/components/character/character-card";
+import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
 import { WorldBossCard } from "./world-boss-card";
 
@@ -6,6 +7,7 @@ export function WorldBossCombatPanel() {
   const worldBossCombat = usePlatis((s) => s.worldBossCombat);
   const characters = usePlatis((s) => s.characters);
   const slots = usePlatis((s) => s.slots);
+  const worldBossAttack = usePlatis((s) => s.worldBossAttack);
 
   if (!worldBossCombat) return null;
 
@@ -28,13 +30,32 @@ export function WorldBossCombatPanel() {
             <h3 className="font-display text-lg">Jogadores</h3>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              {players.map((player) => (
-                <CharacterCard
-                  key={player!.id}
-                  character={player!}
-                  compact
-                />
-              ))}
+              {players.map((player) => {
+                if (!player) return null;
+
+                const isCurrentTurn =
+                  worldBossCombat.turnOrder[worldBossCombat.turnIndex] ===
+                  player.id;
+
+                return (
+                  <div key={player.id} className="space-y-2">
+                    <CharacterCard
+                      character={player}
+                      compact
+                    />
+
+                    {isCurrentTurn && (
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => worldBossAttack(player.id)}
+                      >
+                        ⚔ Atacar
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
