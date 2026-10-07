@@ -1,5 +1,13 @@
+import {
+  blockAffinityReaction,
+  isAffinityReactionBlocked,
+  resolveAffinityReaction,
+  tickAffinityReactionBlocks,
+  type AffinityReactionBlock,
+} from "./status-effects";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { STATUS_EFFECTS } from "@/data/types";
 import type {
   Character,
   CombatEnemy,
@@ -12,7 +20,13 @@ import type {
 } from "@/data/types";
 import { CLASS_BY_ID } from "@/data/classes";
 import { RACE_BY_ID } from "@/data/races";
-import { BOSSES, GRID_H, GRID_W, WORLD_BOSS_DETAILS } from "@/data/world";
+import {
+  BOSSES,
+  GRID_H,
+  GRID_W,
+  WORLD_BOSS_DETAILS,
+  type WorldBossSkill,
+} from "@/data/world";
 import { createCharacter, finalStats, makeEmptySkills, skillSlots } from "./stats";
 import { applyDamage, resolveAttack, resolveEnemyAttack, type CombatKind } from "./combat";
 import { rollDie } from "./utils";
@@ -20,6 +34,21 @@ import { xpToNextLevel } from "@/data/progression";
 import { uid } from "./utils";
 
 export type Role = "jogador" | "mestre";
+
+export type WorldBossCooldown = {
+  skillName: string;
+  remaining: number;
+};
+
+export type WorldBossEffect = {
+  id: string;
+  name: string;
+  stacks: number;
+  duration: number | null;
+  source: "boss" | "player" | "system";
+  targetId: string;
+  damageValues?: number[];
+};
 
 export type WorldBossCombatState = {
   bossId: string;
@@ -30,6 +59,13 @@ export type WorldBossCombatState = {
     est: number;
     san: number;
   };
+  turnOrder: string[];
+  turnIndex: number;
+  round: number;
+  targetId: string | null;
+  effects: WorldBossEffect[];
+  cooldowns: WorldBossCooldown[];
+  affinityReactionBlocks: AffinityReactionBlock[];
 };
 export type MesaTab =
   | "personagem"
@@ -226,6 +262,8 @@ type AppState = {
   setAllowBossEscape: (value: boolean) => void;
   startCombat: () => void;
   startWorldBossCombat: (bossId: string, level: number) => void;
+  worldBossAttack: (characterId: string) => void;
+  nextWorldBossTurn: () => void;
   nextTurn: () => void;
   endCombat: () => void;
   addCombatEnemy: (enemy: Omit<CombatEnemy, "id">) => void;
@@ -429,6 +467,242 @@ function hash(s: string) {
 
 function exploreKey(continentId: string, layer: number) {
   return `${continentId}:${layer}`;
+}
+
+function addWorldBossEffect(
+  effects: WorldBossEffect[],
+  effect: Omit<WorldBossEffect, "stacks"> & { stacks?: number },
+): WorldBossEffect[] {
+  const existing = effects.find(
+    (item) =>
+      item.id === effect.id &&
+      item.targetId === effect.targetId,
+  );
+
+  const maxStacks = STATUS_EFFECTS[effect.id]?.maxStacks;
+
+  if (existing) {
+    const nextStacks = existing.stacks + (effect.stacks ?? 1);
+
+    return effects.map((item) =>
+      item === existing
+        ? {
+            ...item,
+            stacks:
+              maxStacks !== undefined
+                ? Math.min(maxStacks, nextStacks)
+                : nextStacks,
+            duration: effect.duration,
+          }
+        : item,
+    );
+  }
+
+  const initialStacks = effect.stacks ?? 1;
+
+  return [
+    ...effects,
+    {
+      ...effect,
+      stacks:
+        maxStacks !== undefined
+          ? Math.min(maxStacks, initialStacks)
+          : initialStacks,
+    },
+  ];
+}
+
+function tickWorldBossEffects(
+  effects: WorldBossEffect[],
+): WorldBossEffect[] {
+  return effects
+    .map((effect) =>
+      effect.duration === null
+        ? effect
+        : {
+            ...effect,
+            duration: Math.max(0, effect.duration - 1),
+          },
+    )
+    .filter(
+      (effect) =>
+        effect.duration === null || effect.duration > 0,
+    );
+}
+
+function removeWorldBossEffect(
+  effects: WorldBossEffect[],
+  effectId: string,
+  targetId: string,
+  stacks = 1,
+): WorldBossEffect[] {
+  return effects
+    .map((effect) => {
+      if (effect.id !== effectId || effect.targetId !== targetId) {
+        return effect;
+      }
+
+      return {
+        ...effect,
+        stacks: Math.max(0, effect.stacks - stacks),
+      };
+    })
+    .filter(
+      (effect) =>
+        effect.stacks > 0 ||
+        effect.id !== effectId ||
+        effect.targetId !== targetId,
+    );
+}
+
+function hasWorldBossEffect(
+  effects: WorldBossEffect[],
+  effectId: string,
+  targetId: string,
+): boolean {
+  return effects.some(
+    (effect) =>
+      effect.id === effectId &&
+      effect.targetId === targetId &&
+      effect.stacks > 0,
+  );
+}
+
+function initializeWorldBossEffects(
+  bossId: string,
+): WorldBossEffect[] {
+  const effects: WorldBossEffect[] = [];
+
+  switch (bossId) {
+    default:
+      return effects;
+  }
+}
+
+function getWorldBossAvailableSkills(
+  bossId: string,
+  level: number,
+) {
+  const boss = WORLD_BOSS_DETAILS.find(
+    (entry) => entry.id === bossId,
+  );
+
+  if (!boss) return [];
+
+  return boss.skills.filter(
+    (skill) =>
+      !skill.ultimate &&
+      (!skill.unlockLevel || level >= skill.unlockLevel),
+  );
+}
+
+function getWorldBossCooldown(
+  cooldowns: WorldBossCooldown[],
+  skillName: string,
+): number {
+  return (
+    cooldowns.find((cooldown) => cooldown.skillName === skillName)
+      ?.remaining ?? 0
+  );
+}
+
+function setWorldBossCooldown(
+  cooldowns: WorldBossCooldown[],
+  skillName: string,
+  turns = 1,
+): WorldBossCooldown[] {
+  const existing = cooldowns.some(
+    (cooldown) => cooldown.skillName === skillName,
+  );
+
+  if (existing) {
+    return cooldowns.map((cooldown) =>
+      cooldown.skillName === skillName
+        ? { ...cooldown, remaining: turns }
+        : cooldown,
+    );
+  }
+
+  return [
+    ...cooldowns,
+    {
+      skillName,
+      remaining: turns,
+    },
+  ];
+}
+
+function tickWorldBossCooldowns(
+  cooldowns: WorldBossCooldown[],
+): WorldBossCooldown[] {
+  return cooldowns
+    .map((cooldown) => ({
+      ...cooldown,
+      remaining: Math.max(0, cooldown.remaining - 1),
+    }))
+    .filter((cooldown) => cooldown.remaining > 0);
+}
+
+function chooseWorldBossSkill(
+  bossId: string,
+  level: number,
+  cooldowns: WorldBossCooldown[],
+): WorldBossSkill | null {
+  const available = getWorldBossAvailableSkills(bossId, level).filter(
+    (skill) => getWorldBossCooldown(cooldowns, skill.name) === 0,
+  );
+
+  if (available.length === 0) return null;
+
+  return available[Math.floor(Math.random() * available.length)] ?? null;
+}
+
+function canUseWorldBossSkill(
+  skill: WorldBossSkill,
+  cooldowns: WorldBossCooldown[],
+): boolean {
+  return getWorldBossCooldown(cooldowns, skill.name) === 0;
+}
+
+function getWorldBossSkillCooldown(
+  level: number,
+  skill: WorldBossSkill,
+): number {
+  if (skill.ultimate) return 0;
+
+  if (level >= 400) return 6;
+  if (level >= 300) return 5;
+  if (level >= 200) return 4;
+  if (level >= 100) return 3;
+  return 2;
+}
+
+function executeWorldBossSkill(
+  combat: WorldBossCombatState,
+): {
+  skill: WorldBossSkill;
+  cooldowns: WorldBossCooldown[];
+} | null {
+  const skill = chooseWorldBossSkill(
+    combat.bossId,
+    combat.level,
+    combat.cooldowns,
+  );
+
+  if (!skill || !canUseWorldBossSkill(skill, combat.cooldowns)) {
+    return null;
+  }
+
+  const cooldowns = setWorldBossCooldown(
+    combat.cooldowns,
+    skill.name,
+    getWorldBossSkillCooldown(combat.level, skill),
+  );
+
+  return {
+    skill,
+    cooldowns,
+  };
 }
 
 export const usePlatis = create<AppState>()(
@@ -885,6 +1159,29 @@ export const usePlatis = create<AppState>()(
 
         if (!bossLevel) return;
 
+        const s = get();
+
+        const playerIds = s.slots.filter(
+          (id): id is string =>
+            Boolean(id && s.characters[id] && s.characters[id].current.hp > 0),
+        );
+
+        const bossTurnId = "world-boss";
+
+        const order = [...playerIds, bossTurnId].sort((a, b) => {
+          const aStats =
+            a === bossTurnId ? bossLevel.stats : finalStats(s.characters[a]);
+          const bStats =
+            b === bossTurnId ? bossLevel.stats : finalStats(s.characters[b]);
+
+          if (bStats.agi !== aStats.agi) return bStats.agi - aStats.agi;
+          if (bStats.int !== aStats.int) return bStats.int - aStats.int;
+          return bStats.est - aStats.est;
+        });
+
+        const turnIndex = 0;
+        const firstId = order[turnIndex] ?? null;
+
         set({
           combatMode: "world-boss",
           combatActive: true,
@@ -898,8 +1195,586 @@ export const usePlatis = create<AppState>()(
               est: bossLevel.stats.est,
               san: bossLevel.stats.san,
             },
+            turnOrder: order,
+            turnIndex,
+            round: 1,
+            targetId:
+              firstId === bossTurnId
+                ? playerIds[0] ?? null
+                : bossTurnId,
+            effects: initializeWorldBossEffects(bossId),
+            cooldowns: [],
+      affinityReactionBlocks: [],
           },
         });
+      },
+
+      nextWorldBossTurn: () => {
+        const s = get();
+        const combat = s.worldBossCombat;
+        const affinityReactionBlocks = combat
+          ? tickAffinityReactionBlocks(combat.affinityReactionBlocks)
+          : [];
+        const worldBossEffects = combat
+          ? tickWorldBossEffects(combat.effects)
+          : [];
+
+        if (!combat || !s.combatActive || s.combatMode !== "world-boss") return;
+        if (combat.turnOrder.length === 0) return;
+
+        let nextIndex = combat.turnIndex;
+        let nextId: string | null = null;
+        let wrapped = false;
+
+        for (let step = 1; step <= combat.turnOrder.length; step += 1) {
+          const candidateIndex =
+            (combat.turnIndex + step) % combat.turnOrder.length;
+          const candidateId = combat.turnOrder[candidateIndex];
+
+          if (candidateId === "world-boss") {
+            if (combat.current.hp > 0) {
+              nextIndex = candidateIndex;
+              nextId = candidateId;
+              wrapped = candidateIndex <= combat.turnIndex;
+              break;
+            }
+            continue;
+          }
+
+          const character = s.characters[candidateId];
+
+          if (character && character.current.hp > 0) {
+            nextIndex = candidateIndex;
+            nextId = candidateId;
+            wrapped = candidateIndex <= combat.turnIndex;
+            break;
+          }
+        }
+
+        if (!nextId) return;
+
+        const targetId =
+          nextId === "world-boss"
+            ? combat.turnOrder.find(
+                (id) =>
+                  id !== "world-boss" &&
+                  Boolean(s.characters[id]) &&
+                  s.characters[id].current.hp > 0,
+              ) ?? null
+            : "world-boss";
+
+        let poisonCharacters = s.characters;
+
+        for (const effect of combat.effects) {
+          if (
+            effect.id !== "poison" ||
+            !effect.targetId ||
+            effect.duration === null ||
+            effect.duration <= 0
+          ) {
+            continue;
+          }
+
+          const poisonedCharacter = poisonCharacters[effect.targetId];
+
+          if (!poisonedCharacter || poisonedCharacter.current.hp <= 0) {
+            continue;
+          }
+
+          poisonCharacters = {
+            ...poisonCharacters,
+            [effect.targetId]: {
+              ...poisonedCharacter,
+              current: {
+                ...poisonedCharacter.current,
+                hp: Math.max(
+                  0,
+                  poisonedCharacter.current.hp - 2,
+                ),
+              },
+            },
+          };
+        }
+
+        set({
+          characters: poisonCharacters,
+          worldBossCombat: {
+            ...combat,
+            turnIndex: nextIndex,
+            round: wrapped ? combat.round + 1 : combat.round,
+            targetId,
+            cooldowns: combat.cooldowns,
+            effects: worldBossEffects,
+            affinityReactionBlocks,
+          },
+        });
+
+        if (
+          nextId === "world-boss" &&
+          combat.bossId === "ratatoskr"
+        ) {
+          const effects = addWorldBossEffect(combat.effects, {
+            id: "ratatoskr-arcane-energy",
+            name: "Energia Arcana",
+            duration: null,
+            source: "boss",
+            targetId: "world-boss",
+            stacks: 1,
+          }).map((effect) =>
+            effect.id === "ratatoskr-arcane-energy"
+              ? { ...effect, stacks: Math.min(5, effect.stacks) }
+              : effect,
+          );
+
+          set({
+            worldBossCombat: {
+              ...get().worldBossCombat!,
+              effects,
+            },
+          });
+        }
+
+        if (nextId === "world-boss" && targetId) {
+          const boss = WORLD_BOSS_DETAILS.find(
+            (entry) => entry.id === combat.bossId,
+          );
+          const bossLevel = boss?.levels.find(
+            (entry) => entry.level === combat.level,
+          );
+          const target = s.characters[targetId];
+
+          if (bossLevel && target) {
+            const skillExecution = executeWorldBossSkill({
+              ...combat,
+              cooldowns: get().worldBossCombat?.cooldowns ?? [],
+            });
+
+            if (skillExecution) {
+              let reactionBlocks =
+                get().worldBossCombat?.affinityReactionBlocks ?? [];
+
+              const skillAffinity = skillExecution.skill.affinityId;
+              const targetAffinity = target.affinityId;
+
+              if (skillAffinity && targetAffinity) {
+                const reaction = resolveAffinityReaction(
+                  skillAffinity,
+                  targetAffinity,
+                );
+
+                if (
+                  reaction &&
+                  !isAffinityReactionBlocked(
+                    reactionBlocks,
+                    reaction.reactionId,
+                  )
+                ) {
+                  if (!reaction.activated) {
+                    reactionBlocks = blockAffinityReaction(
+                      reactionBlocks,
+                      reaction.reactionId,
+                      reaction.blockTurns,
+                    );
+                  } else {
+                    const reactionEffect = STATUS_EFFECTS[reaction.effectId];
+
+                    if (reactionEffect) {
+                      const reactionDurations: Record<string, number | null> = {
+                        bleeding: 2,
+                        stun: 1,
+                        freeze: 1,
+                        cold: 2,
+                        slow: 2,
+                        infect: 1,
+                        burn: 3,
+                        blind: 1,
+                        weakness: 2,
+                        poison:
+                          reaction.effectId === "poison" &&
+                          get().worldBossCombat?.effects.some(
+                            (effect) =>
+                              effect.id === "silk_thread" &&
+                              effect.targetId === targetId,
+                          )
+                            ? 3
+                            : 2,
+                        cancel: 1,
+                        wet: null,
+                        silk_thread: null,
+                        explosion: null,
+                      };
+
+                      let reactionWorldBossEffects = addWorldBossEffect(
+                        get().worldBossCombat?.effects ?? [],
+                        {
+                          id: reaction.effectId,
+                          name: reactionEffect.name,
+                          duration:
+                            reactionDurations[reaction.effectId] ?? null,
+                          source: "system",
+                          targetId,
+                          stacks: 1,
+                        },
+                      );
+
+                      if (
+                        reaction.effectId === "cold" &&
+                        reactionWorldBossEffects.find(
+                          (effect) =>
+                            effect.id === "cold" &&
+                            effect.targetId === targetId,
+                        )?.stacks === 3
+                      ) {
+                        reactionWorldBossEffects = removeWorldBossEffect(
+                          reactionWorldBossEffects,
+                          "cold",
+                          targetId,
+                        );
+
+                        reactionWorldBossEffects = addWorldBossEffect(
+                          reactionWorldBossEffects,
+                          {
+                            id: "freeze",
+                            name: STATUS_EFFECTS.freeze.name,
+                            duration: 1,
+                            source: "system",
+                            targetId,
+                            stacks: 1,
+                          },
+                        );
+                      }
+
+                      if (
+                        reaction.effectId === "silk_thread" &&
+                        reactionWorldBossEffects.find(
+                          (effect) =>
+                            effect.id === "silk_thread" &&
+                            effect.targetId === targetId,
+                        )?.stacks === 3
+                      ) {
+                        reactionWorldBossEffects = removeWorldBossEffect(
+                          reactionWorldBossEffects,
+                          "silk_thread",
+                          targetId,
+                        );
+
+                        reactionWorldBossEffects = addWorldBossEffect(
+                          reactionWorldBossEffects,
+                          {
+                            id: "immobilize",
+                            name: STATUS_EFFECTS.immobilize.name,
+                            duration: 1,
+                            source: "system",
+                            targetId,
+                            stacks: 1,
+                          },
+                        );
+                      }
+
+                      set({
+                        worldBossCombat: {
+                          ...get().worldBossCombat!,
+                          effects: reactionWorldBossEffects,
+                        },
+                      });
+                    }
+                  }
+                }
+              }
+
+              const skillLog = {
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "system" as const,
+                text: `O World Boss usa ${skillExecution.skill.name}.`,
+              };
+
+              set({
+                worldBossCombat: {
+                  ...get().worldBossCombat!,
+                  cooldowns: skillExecution.cooldowns,
+                  affinityReactionBlocks: reactionBlocks,
+                },
+                combatLog: [skillLog, ...get().combatLog].slice(0, 80),
+                tab: "combate",
+              });
+            }
+
+            const triggeredExplosion =
+              skillExecution &&
+              get().worldBossCombat?.effects.some(
+                (effect) =>
+                  effect.id === "explosion" &&
+                  effect.targetId === targetId,
+              );
+
+            const targetStats = finalStats(target);
+            const targetColdStacks =
+              combat.effects.find(
+                (effect) =>
+                  effect.id === "cold" &&
+                  effect.targetId === targetId,
+              )?.stacks ?? 0;
+
+            targetStats.agi = Math.max(
+              0,
+              targetStats.agi - targetColdStacks,
+            );
+
+            const arcaneEnergy =
+              combat.bossId === "ratatoskr"
+                ? get().worldBossCombat?.effects.find(
+                    (effect) =>
+                      effect.id === "ratatoskr-arcane-energy" &&
+                      effect.targetId === "world-boss",
+                  )?.stacks ?? 0
+                : 0;
+
+            const bossMagicMultiplier =
+              1 + arcaneEnergy * 0.08;
+
+            const effectiveMagicAttack = Math.floor(
+              bossLevel.stats.atkMgc * bossMagicMultiplier,
+            );
+
+            const attackerRoll = rollDie(20);
+            const defenderRoll = rollDie(20);
+
+            let hit = attackerRoll > defenderRoll;
+
+            if (attackerRoll === defenderRoll) {
+              hit =
+                bossLevel.stats.agi > targetStats.agi ||
+                (bossLevel.stats.agi === targetStats.agi &&
+                  bossLevel.stats.int > targetStats.int);
+            }
+
+            const critical =
+              attackerRoll === 20 ? 3 : attackerRoll >= 15 ? 2 : 1;
+
+            const usesMagicSkill =
+              skillExecution?.skill.name === "Sombra Odiosa";
+
+            const attackPower = usesMagicSkill
+              ? effectiveMagicAttack
+              : bossLevel.stats.atk;
+
+            const defensePower = usesMagicSkill
+              ? targetStats.res
+              : targetStats.def;
+
+            const damage = hit
+              ? Math.max(
+                  1,
+                  rollDie(Math.max(1, attackPower)) -
+                    Math.floor(defensePower / 2),
+                ) * critical
+              : 0;
+
+            if (triggeredExplosion) {
+              const currentEffects =
+                get().worldBossCombat?.effects ?? [];
+              const explosionEffect = currentEffects.find(
+                (effect) =>
+                  effect.id === "explosion" &&
+                  effect.targetId === targetId,
+              );
+
+              if (explosionEffect) {
+                const damageValues = [
+                  ...(explosionEffect.damageValues ?? []),
+                  damage,
+                ];
+
+                if (damageValues.length >= 2) {
+                  const explosionDamage = Math.floor(
+                    (damageValues[0] + damageValues[1]) * 0.2,
+                  );
+
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      effects: removeWorldBossEffect(
+                        currentEffects,
+                        "explosion",
+                        targetId,
+                      ),
+                    },
+                  });
+
+                  set({
+                    characters: {
+                      ...get().characters,
+                      [targetId]: {
+                        ...target,
+                        current: {
+                          ...target.current,
+                          hp: Math.max(
+                            0,
+                            target.current.hp - explosionDamage,
+                          ),
+                        },
+                      },
+                    },
+                    combatLog: [
+                      {
+                        id: uid("lg"),
+                        at: Date.now(),
+                        kind: "system" as const,
+                        text: `Explosão causa ${explosionDamage} de dano em ${target.name}.`,
+                      },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                } else {
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      effects: currentEffects.map((effect) =>
+                        effect.id === "explosion" &&
+                        effect.targetId === targetId
+                          ? { ...effect, damageValues }
+                          : effect,
+                      ),
+                    },
+                  });
+                }
+              }
+            }
+
+            const nextPlayerHp = Math.max(
+              0,
+              target.current.hp - damage,
+            );
+
+            const logEntry = {
+              id: uid("lg"),
+              at: Date.now(),
+              kind: hit ? ("hit" as const) : ("miss" as const),
+              text: skillExecution
+                ? hit
+                  ? `O World Boss usa ${skillExecution.skill.name} em ${target.name} e causa ${damage} de dano.`
+                  : `O World Boss usa ${skillExecution.skill.name}, mas erra ${target.name}.`
+                : hit
+                  ? `O World Boss ataca ${target.name} e causa ${damage} de dano.`
+                  : `O World Boss erra o ataque contra ${target.name}.`,
+            };
+
+            set({
+              characters: {
+                ...s.characters,
+                [targetId]: {
+                  ...target,
+                  current: {
+                    ...target.current,
+                    hp: nextPlayerHp,
+                  },
+                },
+              },
+              combatLog: [logEntry, ...s.combatLog].slice(0, 80),
+              tab: "combate",
+            });
+
+            const updatedCooldowns = tickWorldBossCooldowns(
+              get().worldBossCombat?.cooldowns ?? [],
+            );
+
+            set({
+              worldBossCombat: {
+                ...get().worldBossCombat!,
+                cooldowns: updatedCooldowns,
+              },
+            });
+
+            if (nextPlayerHp > 0) {
+              get().nextWorldBossTurn();
+            }
+          }
+        }
+      },
+
+      worldBossAttack: (characterId) => {
+        const s = get();
+        const combat = s.worldBossCombat;
+
+        if (!combat || !s.combatActive || s.combatMode !== "world-boss") return;
+        if (!s.characters[characterId]) return;
+
+        const currentActor = combat.turnOrder[combat.turnIndex];
+        if (currentActor !== characterId) return;
+        if (combat.targetId !== "world-boss") return;
+
+        const character = s.characters[characterId];
+        if (character.current.hp <= 0) return;
+
+        if (
+          combat.effects.some(
+            (effect) =>
+              (effect.id === "freeze" ||
+                effect.id === "immobilize") &&
+              effect.targetId === characterId,
+          )
+        ) {
+          get().nextWorldBossTurn();
+          return;
+        }
+
+        const boss = WORLD_BOSS_DETAILS.find(
+          (entry) => entry.id === combat.bossId,
+        );
+        const bossLevel = boss?.levels.find(
+          (entry) => entry.level === combat.level,
+        );
+
+        if (!boss || !bossLevel) return;
+
+        const stats = finalStats(character);
+        const attackerRoll = rollDie(20);
+        const defenderRoll = rollDie(20);
+
+        let hit = attackerRoll > defenderRoll;
+
+        if (attackerRoll === defenderRoll) {
+          if (stats.agi !== bossLevel.stats.agi) {
+            hit = stats.agi > bossLevel.stats.agi;
+          } else {
+            hit = stats.int > bossLevel.stats.int;
+          }
+        }
+
+        const critical =
+          attackerRoll === 20 ? 3 : attackerRoll >= 15 ? 2 : 1;
+
+        const damage = hit
+          ? rollDie(Math.max(1, stats.atk)) * critical
+          : 0;
+
+        const nextHp = Math.max(0, combat.current.hp - damage);
+
+        const logEntry = {
+          id: uid("lg"),
+          at: Date.now(),
+          kind: hit ? ("hit" as const) : ("miss" as const),
+          text: hit
+            ? `${character.name} acerta o World Boss por ${damage} de dano.`
+            : `${character.name} erra o ataque contra o World Boss.`,
+        };
+
+        set({
+          worldBossCombat: {
+            ...combat,
+            current: {
+              ...combat.current,
+              hp: nextHp,
+            },
+          },
+          combatLog: [logEntry, ...s.combatLog].slice(0, 80),
+          tab: "combate",
+        });
+
+        if (nextHp > 0) {
+          get().nextWorldBossTurn();
+        }
       },
 
       startCombat: () => {
