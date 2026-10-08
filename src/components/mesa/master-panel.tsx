@@ -81,6 +81,7 @@ export function MasterPanel({
   onPatchRemoteCharacter: (characterId: string, patch: Partial<Character>) => void;
 }) {
   const [section, setSection] = useState<MasterSection | null>(null);
+  const nav = useNavigate();
   const [eventType, setEventType] = useState<string | null>(null);
   const [cteTimerMs, setCteTimerMs] = useState(3000);
   const [cteTarget, setCteTarget] = useState<"todos" | "especificos">("todos");
@@ -844,6 +845,9 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
         <div>
           <h2 className="font-display text-3xl">Personagens do Mestre</h2>
           <p className="mt-1 text-sm text-muted">Gerencie os personagens do Mestre e escolha qual está ativo.</p>
+          <Button onClick={() => nav({ to: "/criar" })}>
+            Criar novo personagem
+          </Button>
         </div>
         {masterCharacter && (
           <div className="panel space-y-4 p-4">
