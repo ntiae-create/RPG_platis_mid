@@ -2,11 +2,23 @@ import { CONTINENTS } from "@/data/world";
 import { BOSSES } from "@/data/world";
 import { usePlatis } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { WorldGlobe } from "@/components/map/world-globe";
+import { useState } from "react";
 
 export function WorldMap() {
   const openContinent = usePlatis((s) => s.openContinent);
+  const [view, setView] = useState<"map" | "globe">("map");
   return (
-    <div className="panel overflow-hidden">
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setView("map")} aria-pressed={view === "map"} className={cn("rounded-lg border px-4 py-2 text-sm", view === "map" ? "border-accent bg-accent/15 text-accent" : "border-line text-muted")}>
+          Mapa 2D
+        </button>
+        <button type="button" onClick={() => setView("globe")} aria-pressed={view === "globe"} className={cn("rounded-lg border px-4 py-2 text-sm", view === "globe" ? "border-accent bg-accent/15 text-accent" : "border-line text-muted")}>
+          Globo 3D
+        </button>
+      </div>
+      {view === "globe" ? <WorldGlobe /> : <div className="panel overflow-hidden">
       <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-raised">
         <img
           src="/world/map.jpg"
@@ -40,6 +52,7 @@ export function WorldMap() {
       <p className="px-4 py-3 text-xs text-muted">
         22 continentes · 2390 dungeons · 11 bosses mundiais. Toque um marco para abrir a grade 2000×3000.
       </p>
+      </div>}
     </div>
   );
 }

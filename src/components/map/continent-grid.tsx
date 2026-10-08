@@ -140,6 +140,13 @@ function getTerrainPalette(biome: string, affinity?: string) {
 
 export function ContinentGrid() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mapDragRef = useRef<{
+    pointerId: number;
+    lastX: number;
+    lastY: number;
+    moved: boolean;
+  } | null>(null);
+  const didDragRef = useRef(false);
   const [tick, setTick] = useState(0);
   const [selectedCell, setSelectedCell] = useState<{
     x: number;
@@ -772,9 +779,67 @@ export function ContinentGrid() {
    * Não depende mais de Shift.
    */
 
+  const onCanvasPointerDown = (
+    ev: React.PointerEvent<HTMLCanvasElement>,
+  ) => {
+    if (role !== "mestre" || ev.button !== 0) return;
+
+    mapDragRef.current = {
+      pointerId: ev.pointerId,
+      lastX: ev.clientX,
+      lastY: ev.clientY,
+      moved: false,
+    };
+
+    ev.currentTarget.setPointerCapture(ev.pointerId);
+  };
+
+  const onCanvasPointerMove = (
+    ev: React.PointerEvent<HTMLCanvasElement>,
+  ) => {
+    const drag = mapDragRef.current;
+    if (!drag || drag.pointerId !== ev.pointerId) return;
+
+    const dx = ev.clientX - drag.lastX;
+    const dy = ev.clientY - drag.lastY;
+
+    if (Math.abs(ev.clientX - (drag.lastX)) > 3 ||
+        Math.abs(ev.clientY - (drag.lastY)) > 3) {
+      drag.moved = true;
+    }
+
+    if (drag.moved) {
+      didDragRef.current = true;
+      const rect = ev.currentTarget.getBoundingClientRect();
+
+      panTo(
+        viewX - (dx * COLS) / rect.width,
+        viewY - (dy * ROWS) / rect.height,
+      );
+    }
+
+    drag.lastX = ev.clientX;
+    drag.lastY = ev.clientY;
+  };
+
+  const onCanvasPointerUp = (
+    ev: React.PointerEvent<HTMLCanvasElement>,
+  ) => {
+    const drag = mapDragRef.current;
+    if (drag && drag.pointerId === ev.pointerId) {
+      if (drag.moved) didDragRef.current = true;
+      mapDragRef.current = null;
+    }
+  };
+
   const onCanvasClick = (
     ev: React.MouseEvent<HTMLCanvasElement>,
   ) => {
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
+
     const rect =
       ev.currentTarget.getBoundingClientRect();
 
@@ -899,6 +964,10 @@ export function ContinentGrid() {
           ref={canvasRef}
           className="mx-auto block max-w-full touch-none rounded-lg"
           onClick={onCanvasClick}
+          onPointerDown={onCanvasPointerDown}
+          onPointerMove={onCanvasPointerMove}
+          onPointerUp={onCanvasPointerUp}
+          onPointerCancel={onCanvasPointerUp}
         />
 
         <p className="px-2 pt-2 text-[11px] text-muted">

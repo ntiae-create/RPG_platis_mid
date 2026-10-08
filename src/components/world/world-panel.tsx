@@ -24,7 +24,8 @@ export function WorldPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="panel p-4">
+      {role === "mestre" && (
+        <div className="panel p-4">
         <h2 className="font-display text-2xl">Bosses mundiais</h2>
         <p className="text-xs text-muted">
           Permanecem no mundo após a derrota. Progressão Lv.12 → 100 → 200 → 300 → 400. Skoll e Hati recebem +100%
@@ -71,7 +72,8 @@ export function WorldPanel() {
             );
           })}
         </ul>
-      </div>
+        </div>
+      )}
 
       <div className="panel p-4">
         <h2 className="font-display text-2xl">Dungeons · {TOTAL_DUNGEON_COUNT}</h2>
