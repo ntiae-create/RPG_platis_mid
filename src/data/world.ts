@@ -15,6 +15,17 @@ export type Continent = {
   blurb: string;
 };
 
+export type WorldCity = {
+  id: string;
+  continentId: string;
+  name: string;
+  type: "capital" | "city" | "village" | "outpost";
+  x: number;
+  y: number;
+  population?: number;
+  description?: string;
+};
+
 export type WorldBoss = {
   id: string;
   name: string;
@@ -281,6 +292,1549 @@ export const CONTINENTS: Continent[] = [
 ];
 
 export const CONTINENT_BY_ID = Object.fromEntries(CONTINENTS.map((c) => [c.id, c]));
+
+export const WORLD_CITIES: WorldCity[] = [
+  {
+    "id": "city-vindheim-1",
+    "continentId": "vindheim",
+    "name": "Stormheim",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Stormheim é um assentamento de vindheim."
+  },
+  {
+    "id": "city-vindheim-2",
+    "continentId": "vindheim",
+    "name": "Vargard",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Vargard é um assentamento de vindheim."
+  },
+  {
+    "id": "city-vindheim-3",
+    "continentId": "vindheim",
+    "name": "Skjold",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Skjold é um assentamento de vindheim."
+  },
+  {
+    "id": "city-vindheim-4",
+    "continentId": "vindheim",
+    "name": "Ventobravo",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Ventobravo é um assentamento de vindheim."
+  },
+  {
+    "id": "city-vindheim-5",
+    "continentId": "vindheim",
+    "name": "Hrafnvik",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Hrafnvik é um assentamento de vindheim."
+  },
+  {
+    "id": "city-vindheim-6",
+    "continentId": "vindheim",
+    "name": "Pico do Trovão",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Pico do Trovão é um assentamento de vindheim."
+  },
+  {
+    "id": "city-vindheim-7",
+    "continentId": "vindheim",
+    "name": "Posto dos Ventos",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto dos Ventos é um assentamento de vindheim."
+  },
+  {
+    "id": "city-solheim-1",
+    "continentId": "solheim",
+    "name": "Aurora",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Aurora é um assentamento de solheim."
+  },
+  {
+    "id": "city-solheim-2",
+    "continentId": "solheim",
+    "name": "Heliá",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Heliá é um assentamento de solheim."
+  },
+  {
+    "id": "city-solheim-3",
+    "continentId": "solheim",
+    "name": "Solaria",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Solaria é um assentamento de solheim."
+  },
+  {
+    "id": "city-solheim-4",
+    "continentId": "solheim",
+    "name": "Douravento",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Douravento é um assentamento de solheim."
+  },
+  {
+    "id": "city-solheim-5",
+    "continentId": "solheim",
+    "name": "Lúmen",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Lúmen é um assentamento de solheim."
+  },
+  {
+    "id": "city-solheim-6",
+    "continentId": "solheim",
+    "name": "Campo Solar",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Campo Solar é um assentamento de solheim."
+  },
+  {
+    "id": "city-solheim-7",
+    "continentId": "solheim",
+    "name": "Vigia do Sol",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Vigia do Sol é um assentamento de solheim."
+  },
+  {
+    "id": "city-nottland-1",
+    "continentId": "nottland",
+    "name": "Noxheim",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Noxheim é um assentamento de nottland."
+  },
+  {
+    "id": "city-nottland-2",
+    "continentId": "nottland",
+    "name": "Nocturna",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Nocturna é um assentamento de nottland."
+  },
+  {
+    "id": "city-nottland-3",
+    "continentId": "nottland",
+    "name": "Ebon",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Ebon é um assentamento de nottland."
+  },
+  {
+    "id": "city-nottland-4",
+    "continentId": "nottland",
+    "name": "Véu Negro",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Véu Negro é um assentamento de nottland."
+  },
+  {
+    "id": "city-nottland-5",
+    "continentId": "nottland",
+    "name": "Lua Baixa",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Lua Baixa é um assentamento de nottland."
+  },
+  {
+    "id": "city-nottland-6",
+    "continentId": "nottland",
+    "name": "Umbra",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Umbra é um assentamento de nottland."
+  },
+  {
+    "id": "city-nottland-7",
+    "continentId": "nottland",
+    "name": "Posto da Lua",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto da Lua é um assentamento de nottland."
+  },
+  {
+    "id": "city-jordrike-1",
+    "continentId": "jordrike",
+    "name": "Pedrália",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Pedrália é um assentamento de jordrike."
+  },
+  {
+    "id": "city-jordrike-2",
+    "continentId": "jordrike",
+    "name": "Monteserra",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Monteserra é um assentamento de jordrike."
+  },
+  {
+    "id": "city-jordrike-3",
+    "continentId": "jordrike",
+    "name": "Rochaviva",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Rochaviva é um assentamento de jordrike."
+  },
+  {
+    "id": "city-jordrike-4",
+    "continentId": "jordrike",
+    "name": "Eikgard",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Eikgard é um assentamento de jordrike."
+  },
+  {
+    "id": "city-jordrike-5",
+    "continentId": "jordrike",
+    "name": "Vale da Raiz",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Vale da Raiz é um assentamento de jordrike."
+  },
+  {
+    "id": "city-jordrike-6",
+    "continentId": "jordrike",
+    "name": "Pedra Alta",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Pedra Alta é um assentamento de jordrike."
+  },
+  {
+    "id": "city-jordrike-7",
+    "continentId": "jordrike",
+    "name": "Vigia da Montanha",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Vigia da Montanha é um assentamento de jordrike."
+  },
+  {
+    "id": "city-seidheim-1",
+    "continentId": "seidheim",
+    "name": "Runária",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Runária é um assentamento de seidheim."
+  },
+  {
+    "id": "city-seidheim-2",
+    "continentId": "seidheim",
+    "name": "Eldrun",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Eldrun é um assentamento de seidheim."
+  },
+  {
+    "id": "city-seidheim-3",
+    "continentId": "seidheim",
+    "name": "Verden",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Verden é um assentamento de seidheim."
+  },
+  {
+    "id": "city-seidheim-4",
+    "continentId": "seidheim",
+    "name": "Raiz Serena",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Raiz Serena é um assentamento de seidheim."
+  },
+  {
+    "id": "city-seidheim-5",
+    "continentId": "seidheim",
+    "name": "Folhaverde",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Folhaverde é um assentamento de seidheim."
+  },
+  {
+    "id": "city-seidheim-6",
+    "continentId": "seidheim",
+    "name": "Bosque Antigo",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Bosque Antigo é um assentamento de seidheim."
+  },
+  {
+    "id": "city-seidheim-7",
+    "continentId": "seidheim",
+    "name": "Vigia Rúnica",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Vigia Rúnica é um assentamento de seidheim."
+  },
+  {
+    "id": "city-hafsvik-1",
+    "continentId": "hafsvik",
+    "name": "Maré Alta",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Maré Alta é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-hafsvik-2",
+    "continentId": "hafsvik",
+    "name": "Hafn",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Hafn é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-hafsvik-3",
+    "continentId": "hafsvik",
+    "name": "Vikstrand",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Vikstrand é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-hafsvik-4",
+    "continentId": "hafsvik",
+    "name": "Porto Azul",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Porto Azul é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-hafsvik-5",
+    "continentId": "hafsvik",
+    "name": "Ilha Serena",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Ilha Serena é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-hafsvik-6",
+    "continentId": "hafsvik",
+    "name": "Coralmar",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Coralmar é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-hafsvik-7",
+    "continentId": "hafsvik",
+    "name": "Farol Abissal",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Farol Abissal é um assentamento de hafsvik."
+  },
+  {
+    "id": "city-eldfjall-1",
+    "continentId": "eldfjall",
+    "name": "Braseiro",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Braseiro é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-eldfjall-2",
+    "continentId": "eldfjall",
+    "name": "Vulkara",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Vulkara é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-eldfjall-3",
+    "continentId": "eldfjall",
+    "name": "Cinzerra",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Cinzerra é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-eldfjall-4",
+    "continentId": "eldfjall",
+    "name": "Caldeira",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Caldeira é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-eldfjall-5",
+    "continentId": "eldfjall",
+    "name": "Lavaforte",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Lavaforte é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-eldfjall-6",
+    "continentId": "eldfjall",
+    "name": "Fornalha",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Fornalha é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-eldfjall-7",
+    "continentId": "eldfjall",
+    "name": "Posto Ígneo",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Ígneo é um assentamento de eldfjall."
+  },
+  {
+    "id": "city-jarnvidr-1",
+    "continentId": "jarnvidr",
+    "name": "Ferroverde",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Ferroverde é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-jarnvidr-2",
+    "continentId": "jarnvidr",
+    "name": "Jarnborg",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Jarnborg é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-jarnvidr-3",
+    "continentId": "jarnvidr",
+    "name": "Aço Norte",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Aço Norte é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-jarnvidr-4",
+    "continentId": "jarnvidr",
+    "name": "Folha de Ferro",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Folha de Ferro é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-jarnvidr-5",
+    "continentId": "jarnvidr",
+    "name": "Ferrugem",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Ferrugem é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-jarnvidr-6",
+    "continentId": "jarnvidr",
+    "name": "Forja Brava",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Forja Brava é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-jarnvidr-7",
+    "continentId": "jarnvidr",
+    "name": "Posto de Aço",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto de Aço é um assentamento de jarnvidr."
+  },
+  {
+    "id": "city-duat-1",
+    "continentId": "duat",
+    "name": "Anúris",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Anúris é um assentamento de duat."
+  },
+  {
+    "id": "city-duat-2",
+    "continentId": "duat",
+    "name": "Kemet",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Kemet é um assentamento de duat."
+  },
+  {
+    "id": "city-duat-3",
+    "continentId": "duat",
+    "name": "Areia Negra",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Areia Negra é um assentamento de duat."
+  },
+  {
+    "id": "city-duat-4",
+    "continentId": "duat",
+    "name": "Necrópole",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Necrópole é um assentamento de duat."
+  },
+  {
+    "id": "city-duat-5",
+    "continentId": "duat",
+    "name": "Oásis Morto",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Oásis Morto é um assentamento de duat."
+  },
+  {
+    "id": "city-duat-6",
+    "continentId": "duat",
+    "name": "Olho de Rá",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Olho de Rá é um assentamento de duat."
+  },
+  {
+    "id": "city-duat-7",
+    "continentId": "duat",
+    "name": "Vigia Funerária",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Vigia Funerária é um assentamento de duat."
+  },
+  {
+    "id": "city-xibalba-1",
+    "continentId": "xibalba",
+    "name": "Obsidiana",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Obsidiana é um assentamento de xibalba."
+  },
+  {
+    "id": "city-xibalba-2",
+    "continentId": "xibalba",
+    "name": "Xibal",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Xibal é um assentamento de xibalba."
+  },
+  {
+    "id": "city-xibalba-3",
+    "continentId": "xibalba",
+    "name": "Batcán",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Batcán é um assentamento de xibalba."
+  },
+  {
+    "id": "city-xibalba-4",
+    "continentId": "xibalba",
+    "name": "Caverna Alta",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Caverna Alta é um assentamento de xibalba."
+  },
+  {
+    "id": "city-xibalba-5",
+    "continentId": "xibalba",
+    "name": "Pedra Sombria",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Pedra Sombria é um assentamento de xibalba."
+  },
+  {
+    "id": "city-xibalba-6",
+    "continentId": "xibalba",
+    "name": "Eco Negro",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Eco Negro é um assentamento de xibalba."
+  },
+  {
+    "id": "city-xibalba-7",
+    "continentId": "xibalba",
+    "name": "Posto do Abismo",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto do Abismo é um assentamento de xibalba."
+  },
+  {
+    "id": "city-yomi-1",
+    "continentId": "yomi",
+    "name": "Yomira",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Yomira é um assentamento de yomi."
+  },
+  {
+    "id": "city-yomi-2",
+    "continentId": "yomi",
+    "name": "Kage",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Kage é um assentamento de yomi."
+  },
+  {
+    "id": "city-yomi-3",
+    "continentId": "yomi",
+    "name": "Neblina",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Neblina é um assentamento de yomi."
+  },
+  {
+    "id": "city-yomi-4",
+    "continentId": "yomi",
+    "name": "Cedro Sombrio",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Cedro Sombrio é um assentamento de yomi."
+  },
+  {
+    "id": "city-yomi-5",
+    "continentId": "yomi",
+    "name": "Vale das Almas",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Vale das Almas é um assentamento de yomi."
+  },
+  {
+    "id": "city-yomi-6",
+    "continentId": "yomi",
+    "name": "Ponte Cinzenta",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Ponte Cinzenta é um assentamento de yomi."
+  },
+  {
+    "id": "city-yomi-7",
+    "continentId": "yomi",
+    "name": "Vigia do Véu",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Vigia do Véu é um assentamento de yomi."
+  },
+  {
+    "id": "city-wastes-1",
+    "continentId": "wastes",
+    "name": "Wendora",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Wendora é um assentamento de wastes."
+  },
+  {
+    "id": "city-wastes-2",
+    "continentId": "wastes",
+    "name": "Gelo Feroz",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Gelo Feroz é um assentamento de wastes."
+  },
+  {
+    "id": "city-wastes-3",
+    "continentId": "wastes",
+    "name": "Presadouro",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Presadouro é um assentamento de wastes."
+  },
+  {
+    "id": "city-wastes-4",
+    "continentId": "wastes",
+    "name": "Tundra Alta",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Tundra Alta é um assentamento de wastes."
+  },
+  {
+    "id": "city-wastes-5",
+    "continentId": "wastes",
+    "name": "Fome Branca",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Fome Branca é um assentamento de wastes."
+  },
+  {
+    "id": "city-wastes-6",
+    "continentId": "wastes",
+    "name": "Neve Morta",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Neve Morta é um assentamento de wastes."
+  },
+  {
+    "id": "city-wastes-7",
+    "continentId": "wastes",
+    "name": "Posto Congelado",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Congelado é um assentamento de wastes."
+  },
+  {
+    "id": "city-midgard-1",
+    "continentId": "midgard",
+    "name": "Nova Midgard",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Nova Midgard é um assentamento de midgard."
+  },
+  {
+    "id": "city-midgard-2",
+    "continentId": "midgard",
+    "name": "Coração",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Coração é um assentamento de midgard."
+  },
+  {
+    "id": "city-midgard-3",
+    "continentId": "midgard",
+    "name": "Valgard",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Valgard é um assentamento de midgard."
+  },
+  {
+    "id": "city-midgard-4",
+    "continentId": "midgard",
+    "name": "Ponte Central",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Ponte Central é um assentamento de midgard."
+  },
+  {
+    "id": "city-midgard-5",
+    "continentId": "midgard",
+    "name": "Campo Verde",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Campo Verde é um assentamento de midgard."
+  },
+  {
+    "id": "city-midgard-6",
+    "continentId": "midgard",
+    "name": "Mercado Velho",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Mercado Velho é um assentamento de midgard."
+  },
+  {
+    "id": "city-midgard-7",
+    "continentId": "midgard",
+    "name": "Posto Central",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Central é um assentamento de midgard."
+  },
+  {
+    "id": "city-asgard-1",
+    "continentId": "asgard",
+    "name": "Asgard",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Asgard é um assentamento de asgard."
+  },
+  {
+    "id": "city-asgard-2",
+    "continentId": "asgard",
+    "name": "Valhalla",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Valhalla é um assentamento de asgard."
+  },
+  {
+    "id": "city-asgard-3",
+    "continentId": "asgard",
+    "name": "Ouro Alto",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Ouro Alto é um assentamento de asgard."
+  },
+  {
+    "id": "city-asgard-4",
+    "continentId": "asgard",
+    "name": "Bifröst",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Bifröst é um assentamento de asgard."
+  },
+  {
+    "id": "city-asgard-5",
+    "continentId": "asgard",
+    "name": "Cidadela Celeste",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Cidadela Celeste é um assentamento de asgard."
+  },
+  {
+    "id": "city-asgard-6",
+    "continentId": "asgard",
+    "name": "Aurílea",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Aurílea é um assentamento de asgard."
+  },
+  {
+    "id": "city-asgard-7",
+    "continentId": "asgard",
+    "name": "Portão Superior",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Portão Superior é um assentamento de asgard."
+  },
+  {
+    "id": "city-jotunheim-1",
+    "continentId": "jotunheim",
+    "name": "Jotun",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Jotun é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-jotunheim-2",
+    "continentId": "jotunheim",
+    "name": "Gigantheim",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Gigantheim é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-jotunheim-3",
+    "continentId": "jotunheim",
+    "name": "Pedra Colossal",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Pedra Colossal é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-jotunheim-4",
+    "continentId": "jotunheim",
+    "name": "Vale dos Gigantes",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Vale dos Gigantes é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-jotunheim-5",
+    "continentId": "jotunheim",
+    "name": "Punho de Pedra",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Punho de Pedra é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-jotunheim-6",
+    "continentId": "jotunheim",
+    "name": "Campo Antigo",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Campo Antigo é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-jotunheim-7",
+    "continentId": "jotunheim",
+    "name": "Posto Colossal",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Colossal é um assentamento de jotunheim."
+  },
+  {
+    "id": "city-alfheim-1",
+    "continentId": "alfheim",
+    "name": "Alfheim",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Alfheim é um assentamento de alfheim."
+  },
+  {
+    "id": "city-alfheim-2",
+    "continentId": "alfheim",
+    "name": "Lúthien",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Lúthien é um assentamento de alfheim."
+  },
+  {
+    "id": "city-alfheim-3",
+    "continentId": "alfheim",
+    "name": "Elaria",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Elaria é um assentamento de alfheim."
+  },
+  {
+    "id": "city-alfheim-4",
+    "continentId": "alfheim",
+    "name": "Luzverde",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Luzverde é um assentamento de alfheim."
+  },
+  {
+    "id": "city-alfheim-5",
+    "continentId": "alfheim",
+    "name": "Bosque Dourado",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Bosque Dourado é um assentamento de alfheim."
+  },
+  {
+    "id": "city-alfheim-6",
+    "continentId": "alfheim",
+    "name": "Fonte Élfica",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Fonte Élfica é um assentamento de alfheim."
+  },
+  {
+    "id": "city-alfheim-7",
+    "continentId": "alfheim",
+    "name": "Vigia das Fadas",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Vigia das Fadas é um assentamento de alfheim."
+  },
+  {
+    "id": "city-svartalfheim-1",
+    "continentId": "svartalfheim",
+    "name": "Svartborg",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Svartborg é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-svartalfheim-2",
+    "continentId": "svartalfheim",
+    "name": "Nidavellir",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Nidavellir é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-svartalfheim-3",
+    "continentId": "svartalfheim",
+    "name": "Forja Negra",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Forja Negra é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-svartalfheim-4",
+    "continentId": "svartalfheim",
+    "name": "Subferro",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Subferro é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-svartalfheim-5",
+    "continentId": "svartalfheim",
+    "name": "Pedra Profunda",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Pedra Profunda é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-svartalfheim-6",
+    "continentId": "svartalfheim",
+    "name": "Martelo Fundo",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Martelo Fundo é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-svartalfheim-7",
+    "continentId": "svartalfheim",
+    "name": "Posto das Forjas",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto das Forjas é um assentamento de svartalfheim."
+  },
+  {
+    "id": "city-muspelheim-1",
+    "continentId": "muspelheim",
+    "name": "Muspel",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Muspel é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-muspelheim-2",
+    "continentId": "muspelheim",
+    "name": "Ignivar",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Ignivar é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-muspelheim-3",
+    "continentId": "muspelheim",
+    "name": "Brasa Alta",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Brasa Alta é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-muspelheim-4",
+    "continentId": "muspelheim",
+    "name": "Fornalha Rubra",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Fornalha Rubra é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-muspelheim-5",
+    "continentId": "muspelheim",
+    "name": "Cinza Viva",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Cinza Viva é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-muspelheim-6",
+    "continentId": "muspelheim",
+    "name": "Rio de Magma",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Rio de Magma é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-muspelheim-7",
+    "continentId": "muspelheim",
+    "name": "Posto Ardente",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Ardente é um assentamento de muspelheim."
+  },
+  {
+    "id": "city-niflheim-1",
+    "continentId": "niflheim",
+    "name": "Nifl",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Nifl é um assentamento de niflheim."
+  },
+  {
+    "id": "city-niflheim-2",
+    "continentId": "niflheim",
+    "name": "Névoa Alta",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Névoa Alta é um assentamento de niflheim."
+  },
+  {
+    "id": "city-niflheim-3",
+    "continentId": "niflheim",
+    "name": "Gelo Eterno",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Gelo Eterno é um assentamento de niflheim."
+  },
+  {
+    "id": "city-niflheim-4",
+    "continentId": "niflheim",
+    "name": "Brumária",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Brumária é um assentamento de niflheim."
+  },
+  {
+    "id": "city-niflheim-5",
+    "continentId": "niflheim",
+    "name": "Vale Branco",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Vale Branco é um assentamento de niflheim."
+  },
+  {
+    "id": "city-niflheim-6",
+    "continentId": "niflheim",
+    "name": "Frio Antigo",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Frio Antigo é um assentamento de niflheim."
+  },
+  {
+    "id": "city-niflheim-7",
+    "continentId": "niflheim",
+    "name": "Posto da Névoa",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto da Névoa é um assentamento de niflheim."
+  },
+  {
+    "id": "city-helheim-1",
+    "continentId": "helheim",
+    "name": "Helgard",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Helgard é um assentamento de helheim."
+  },
+  {
+    "id": "city-helheim-2",
+    "continentId": "helheim",
+    "name": "Garm",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Garm é um assentamento de helheim."
+  },
+  {
+    "id": "city-helheim-3",
+    "continentId": "helheim",
+    "name": "Portão Morto",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Portão Morto é um assentamento de helheim."
+  },
+  {
+    "id": "city-helheim-4",
+    "continentId": "helheim",
+    "name": "Cinza Inferior",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Cinza Inferior é um assentamento de helheim."
+  },
+  {
+    "id": "city-helheim-5",
+    "continentId": "helheim",
+    "name": "Vale Silencioso",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Vale Silencioso é um assentamento de helheim."
+  },
+  {
+    "id": "city-helheim-6",
+    "continentId": "helheim",
+    "name": "Última Ponte",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Última Ponte é um assentamento de helheim."
+  },
+  {
+    "id": "city-helheim-7",
+    "continentId": "helheim",
+    "name": "Posto dos Mortos",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto dos Mortos é um assentamento de helheim."
+  },
+  {
+    "id": "city-vanaheim-1",
+    "continentId": "vanaheim",
+    "name": "Vana",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Vana é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-vanaheim-2",
+    "continentId": "vanaheim",
+    "name": "Verdália",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Verdália é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-vanaheim-3",
+    "continentId": "vanaheim",
+    "name": "Fertília",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Fertília é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-vanaheim-4",
+    "continentId": "vanaheim",
+    "name": "Campo Dourado",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Campo Dourado é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-vanaheim-5",
+    "continentId": "vanaheim",
+    "name": "Jardim dos Vanir",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Jardim dos Vanir é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-vanaheim-6",
+    "continentId": "vanaheim",
+    "name": "Rio Fértil",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Rio Fértil é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-vanaheim-7",
+    "continentId": "vanaheim",
+    "name": "Posto Verde",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Verde é um assentamento de vanaheim."
+  },
+  {
+    "id": "city-platis-1",
+    "continentId": "platis",
+    "name": "Platis",
+    "type": "capital",
+    "x": 993,
+    "y": 1492,
+    "population": 25000,
+    "description": "Platis é um assentamento de platis."
+  },
+  {
+    "id": "city-platis-2",
+    "continentId": "platis",
+    "name": "Nova Platis",
+    "type": "city",
+    "x": 997,
+    "y": 1493,
+    "population": 5000,
+    "description": "Nova Platis é um assentamento de platis."
+  },
+  {
+    "id": "city-platis-3",
+    "continentId": "platis",
+    "name": "Brasília",
+    "type": "city",
+    "x": 1001,
+    "y": 1494,
+    "population": 5000,
+    "description": "Brasília é um assentamento de platis."
+  },
+  {
+    "id": "city-platis-4",
+    "continentId": "platis",
+    "name": "Coração de Platis",
+    "type": "city",
+    "x": 1003,
+    "y": 1496,
+    "population": 5000,
+    "description": "Coração de Platis é um assentamento de platis."
+  },
+  {
+    "id": "city-platis-5",
+    "continentId": "platis",
+    "name": "Cidade dos Brasões",
+    "type": "village",
+    "x": 994,
+    "y": 1498,
+    "population": 800,
+    "description": "Cidade dos Brasões é um assentamento de platis."
+  },
+  {
+    "id": "city-platis-6",
+    "continentId": "platis",
+    "name": "Mercado Central",
+    "type": "village",
+    "x": 999,
+    "y": 1499,
+    "population": 800,
+    "description": "Mercado Central é um assentamento de platis."
+  },
+  {
+    "id": "city-platis-7",
+    "continentId": "platis",
+    "name": "Posto Real",
+    "type": "outpost",
+    "x": 1004,
+    "y": 1500,
+    "population": 250,
+    "description": "Posto Real é um assentamento de platis."
+  }
+];
 
 export const BOSSES: WorldBoss[] = [
   {

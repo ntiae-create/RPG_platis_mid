@@ -4,6 +4,7 @@ import {
   GRID_W,
   CONTINENT_BY_ID,
   dungeonsFor,
+  WORLD_CITIES,
 } from "@/data/world";
 import { usePlatis } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -451,6 +452,57 @@ export function ContinentGrid() {
         );
       }
     });
+
+    /* ASSENTAMENTOS DE PLATIS */
+    /*
+     * ============================================================
+     * ASSENTAMENTOS DE PLATIS
+     * ============================================================
+     */
+    WORLD_CITIES
+      .filter((city) => city.continentId === continentId)
+      .forEach((city) => {
+        const col = city.x - viewX;
+        const row = city.y - viewY;
+
+        if (col < 0 || row < 0 || col >= COLS || row >= ROWS) return;
+
+        if (
+          role !== "mestre" &&
+          !exploredSet.has(`${city.x},${city.y}`)
+        ) return;
+
+        const px = col * CELL + CELL / 2;
+        const py = row * CELL + CELL / 2;
+
+        const size =
+          city.type === "capital" ? 7 :
+          city.type === "city" ? 5 :
+          city.type === "village" ? 4 : 3;
+
+        ctx.fillStyle =
+          city.type === "capital" ? "#e6bd62" :
+          city.type === "city" ? "#c5a66b" :
+          city.type === "village" ? "#a39475" : "#817b6b";
+
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(236,232,220,0.85)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (layer >= 1 || city.type === "capital") {
+          ctx.fillStyle = "#ece8dc";
+          ctx.font = city.type === "capital"
+            ? "bold 9px Figtree, sans-serif"
+            : "8px Figtree, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(city.name, px, py - size - 2);
+        }
+      });
 
     /*
      * ============================================================
