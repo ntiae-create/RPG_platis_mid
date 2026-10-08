@@ -67,6 +67,7 @@ export function MasterPanel({
   p2pPeers,
   remoteCharacters,
   onKickPeer,
+  onPatchRemoteCharacter,
 }: {
   p2pPeers: {
     id: string;
@@ -76,6 +77,7 @@ export function MasterPanel({
   }[];
   remoteCharacters: Record<string, Character>;
   onKickPeer: (peerId: string) => void;
+  onPatchRemoteCharacter: (characterId: string, patch: Partial<Character>) => void;
 }) {
   const [section, setSection] = useState<MasterSection | null>(null);
   const [eventType, setEventType] = useState<string | null>(null);
@@ -101,6 +103,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const allowBossEscape = usePlatis((s) => s.allowBossEscape);
   const setAllowBossEscape = usePlatis((s) => s.setAllowBossEscape);
   const masterId = usePlatis((s) => s.masterId);
+  const setActiveMasterCharacter = usePlatis((s) => s.setActiveMasterCharacter);
   const grantXp = usePlatis((s) => s.grantXp);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
   const masterCharacter = masterId ? characters[masterId] : Object.values(characters).find((character) => character.isMaster);
@@ -165,6 +168,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
           p2pPeers={p2pPeers}
           remoteCharacters={remoteCharacters}
           onKickPeer={onKickPeer}
+          onPatchRemoteCharacter={onPatchRemoteCharacter}
         />
       </div>
     );
@@ -846,9 +850,19 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               <p className="font-medium">XP do Mestre</p>
               <p className="mt-1 text-xs text-muted">Progressão exclusiva do personagem do Mestre.</p>
             </div>
-            <div className="rounded-md border border-line p-3">
-              <p className="font-medium">{masterCharacter!.name}</p>
-              <p className="mt-1 text-xs text-muted">Nível {masterCharacter!.level}</p>
+            <div className="rounded-md border border-line p-3 space-y-3">
+              <div>
+                <p className="font-medium">{masterCharacter!.name}</p>
+                <p className="mt-1 text-xs text-muted">Nível {masterCharacter!.level}</p>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-medium text-muted">Personagem ativo</p>
+                <select value={masterCharacter!.id} onChange={(e) => setActiveMasterCharacter(e.target.value)} className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm">
+                  {Object.values(characters).filter((character) => character.isMaster).map((character) => (
+                    <option key={character.id} value={character.id}>{character.name} — Nível {character.level}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <label className="block space-y-1">
               <span className="text-xs font-medium text-muted">Quantidade de XP</span>

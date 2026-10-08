@@ -2,6 +2,7 @@ import { CharacterCard } from "@/components/character/character-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RACES } from "@/data/races";
+import { CLASSES } from "@/data/classes";
 import type { Character, InventoryItem } from "@/data/types";
 import { usePlatis } from "@/lib/store";
 import { Gift, UserPlus } from "lucide-react";
@@ -264,12 +265,14 @@ export function PlayerSlots({
   }[];
   remoteCharacters?: Record<string, Character>;
   onKickPeer: (peerId: string) => void;
+  onPatchRemoteCharacter?: (characterId: string, patch: Partial<Character>) => void;
 }) {
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
   const grantXp = usePlatis((s) => s.grantXp);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
   const unlockRace = usePlatis((s) => s.unlockRace);
+  const patchCharacter = usePlatis((s) => s.patchCharacter);
   const removeCharacter = usePlatis((s) => s.removeCharacter);
   const centerOn = usePlatis((s) => s.centerOn);
   const selectFighter = usePlatis((s) => s.selectFighter);
@@ -327,6 +330,27 @@ export function PlayerSlots({
                       </Button>
                     )}
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      className="h-11 w-full rounded-md bg-raised px-2 text-sm"
+                      value={ch.raceId}
+                      onChange={(e) => patchCharacter(ch.id, { raceId: e.target.value })}
+                    >
+                      {RACES.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="h-11 w-full rounded-md bg-raised px-2 text-sm"
+                      value={ch.classId}
+                      onChange={(e) => patchCharacter(ch.id, { classId: e.target.value })}
+                    >
+                      {CLASSES.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <select
                     className="h-11 w-full rounded-md bg-raised px-2 text-sm"
                     defaultValue=""

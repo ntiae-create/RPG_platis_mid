@@ -46,6 +46,7 @@ function Mesa() {
     activeMasterEventId ? s.masterEvents.find((event) => event.id === activeMasterEventId) ?? null : null,
   );
   const respondToCte = usePlatis((s) => s.respondToCte);
+  const patchCharacter = usePlatis((s) => s.patchCharacter);
 
   useEffect(() => {
     if (!selfId) nav({ to: "/criar" });
@@ -106,6 +107,19 @@ function Mesa() {
           }
 
         console.log("[Mesa P2P] mensagem:", from, channel, data);
+        if (
+          channel === "state" &&
+          typeof data === "object" &&
+          data !== null &&
+          "type" in data &&
+          data.type === "master-character-patch"
+        ) {
+          const message = data as { type: "master-character-patch"; characterId: string; patch: Partial<Character> };
+          if (message.characterId === usePlatis.getState().selfId) {
+            patchCharacter(message.characterId, message.patch);
+          }
+        }
+
         if (
           channel === "state" &&
           typeof data === "object" &&
@@ -280,6 +294,13 @@ function Mesa() {
             p2pPeers={p2pPeers}
             remoteCharacters={remoteCharacters}
             onKickPeer={(peerId) => p2pRef.current?.kick(peerId)}
+            onPatchRemoteCharacter={(characterId, patch) => {
+              patchCharacter(characterId, patch);
+              const targetPeerId = Object.entries(remoteCharacters).find(([, character]) => character.id === characterId)?.[0];
+              if (targetPeerId) {
+                p2pRef.current?.send({ type: "master-character-patch", characterId, patch }, targetPeerId);
+              }
+            }}
           />
         )}
         </div>

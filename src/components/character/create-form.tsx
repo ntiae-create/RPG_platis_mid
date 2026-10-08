@@ -320,19 +320,8 @@ export function CreateForm({
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
 
             {RACES.map((r) => {
-              const locked =
-                r.unlock !== "start" &&
-                !(
-                  isMaster &&
-                  r.unlock === "master"
-                );
-
-              const masterOnly =
-                r.unlock === "master" &&
-                isMaster;
-
-              const can =
-                !locked || masterOnly;
+              const locked = !isMaster && r.unlock !== "start";
+              const can = !locked;
 
               /*
                * A miniatura também acompanha
