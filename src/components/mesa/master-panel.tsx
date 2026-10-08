@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { usePlatis } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
@@ -50,7 +51,7 @@ const SECTIONS = [
   { id: "log", label: "Log", icon: FileText, desc: "Histórico das ações da mesa." },
   { id: "bosses", label: "Bosses Mundiais", icon: Crosshair, desc: "Controle dos Bosses do mundo." },
   { id: "mundo", label: "Mundo", icon: Globe2, desc: "Controle geral do mundo de Platis." },
-  { id: "xp-mestre", label: "XP do Mestre", icon: Coins, desc: "Experiência e XP de Brasão do personagem do Mestre." },
+  { id: "xp-mestre", label: "Personagens do Mestre", icon: Coins, desc: "Experiência e XP de Brasão do personagem do Mestre." },
   { id: "jogadores", label: "Jogadores", icon: Users, desc: "Gerencie os oito slots da mesa." },
 ] as const;
 
@@ -841,8 +842,8 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
           ← Menu do Mestre
         </Button>
         <div>
-          <h2 className="font-display text-3xl">XP do Mestre</h2>
-          <p className="mt-1 text-sm text-muted">Experiência e XP de Brasão do personagem do Mestre.</p>
+          <h2 className="font-display text-3xl">Personagens do Mestre</h2>
+          <p className="mt-1 text-sm text-muted">Gerencie os personagens do Mestre e escolha qual está ativo.</p>
         </div>
         {masterCharacter && (
           <div className="panel space-y-4 p-4">
