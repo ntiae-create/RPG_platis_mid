@@ -34,8 +34,9 @@ function makeTerritory(
   height: number,
   seed: number,
 ) {
-  const points: Vector3[] = [];
-  const count = 24;
+  const count = 64;
+  const radius = 1.025;
+  const boundary: Vector3[] = [];
 
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2;
@@ -43,21 +44,33 @@ function makeTerritory(
       0.76 +
       0.16 * Math.sin(angle * 3 + seed * 1.7) +
       0.09 * Math.cos(angle * 5 + seed);
+
     const lat = latitude + Math.sin(angle) * height * irregularity;
     const lon = longitude + Math.cos(angle) * width * irregularity;
-    points.push(geoToVector(lat, lon, 1.055));
+    boundary.push(geoToVector(lat, lon, radius));
   }
 
-  const center = geoToVector(latitude, longitude, 1.055);
+  const center = geoToVector(latitude, longitude, radius);
   const vertices: number[] = [];
-  for (let i = 0; i < points.length; i++) {
-    const a = points[i];
-    const b = points[(i + 1) % points.length];
-    vertices.push(
-      center.x, center.y, center.z,
-      a.x, a.y, a.z,
-      b.x, b.y, b.z,
-    );
+  const subdivisions = 8;
+
+  for (let i = 0; i < boundary.length; i++) {
+    const a = boundary[i];
+    const b = boundary[(i + 1) % boundary.length];
+
+    for (let step = 0; step < subdivisions; step++) {
+      const t0 = step / subdivisions;
+      const t1 = (step + 1) / subdivisions;
+
+      const edge0 = a.clone().lerp(b, t0).normalize().multiplyScalar(radius);
+      const edge1 = a.clone().lerp(b, t1).normalize().multiplyScalar(radius);
+
+      vertices.push(
+        center.x, center.y, center.z,
+        edge0.x, edge0.y, edge0.z,
+        edge1.x, edge1.y, edge1.z,
+      );
+    }
   }
 
   return new Float32Array(vertices);
