@@ -647,6 +647,13 @@ export function ContinentGrid() {
           return;
         }
 
+        if (
+          role !== "mestre" &&
+          !exploredSet.has(`${e.x},${e.y}`)
+        ) {
+          return;
+        }
+
         const color =
           e.kind === "boss"
             ? "#b54a3c"
@@ -870,10 +877,10 @@ export function ContinentGrid() {
     setSelectedCell({ x, y });
 
     /*
-     * Nos dois primeiros níveis, tocar em uma célula
-     * entra no próximo nível.
+     * Camadas 1 e 2: navegar para o próximo nível.
+     * Camada 3: área local; não criar outra camada.
      */
-    if (layer < 2) {
+    if (layer < 3) {
       zoomIntoCell(x, y);
       return;
     }
@@ -894,11 +901,11 @@ export function ContinentGrid() {
     : null;
 
   const zoomLabel =
-    layer === 0
-      ? "Visão do continente"
-      : layer === 1
-        ? "Bloco interno"
-        : "Área detalhada";
+    layer === 1
+      ? "Mapa do continente"
+      : layer === 2
+        ? "Cidades e localidades"
+        : "Área local do jogador";
 
   return (
     <div className="space-y-3">
@@ -952,7 +959,7 @@ export function ContinentGrid() {
             {zoomLabel}
           </span>
 
-          {layer < 2 && (
+          {layer < 3 && (
             <span className="flex items-center gap-1 text-[11px] text-muted">
               <ZoomIn className="size-3.5" />
               Toque em uma área para ampliar
