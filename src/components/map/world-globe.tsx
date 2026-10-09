@@ -45,10 +45,10 @@ function makeTerritory(
       0.09 * Math.cos(angle * 5 + seed);
     const lat = latitude + Math.sin(angle) * height * irregularity;
     const lon = longitude + Math.cos(angle) * width * irregularity;
-    points.push(geoToVector(lat, lon));
+    points.push(geoToVector(lat, lon, 1.055));
   }
 
-  const center = geoToVector(latitude, longitude);
+  const center = geoToVector(latitude, longitude, 1.055);
   const vertices: number[] = [];
   for (let i = 0; i < points.length; i++) {
     const a = points[i];
