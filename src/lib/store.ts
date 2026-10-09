@@ -176,6 +176,7 @@ type AppState = {
   masterId: string | null;
   movementLocked: boolean;
   showGrid: boolean;
+  worldMapView: "map" | "globe";
   continentId: string | null;
   layer: number;
   layers: LayerFrame[];
@@ -244,6 +245,7 @@ type AppState = {
   spendAttr: (key: StatKey, pool?: boolean) => void;
   unlockRace: (characterId: string, raceId: string) => void;
 
+  setWorldMapView: (view: "map" | "globe") => void;
   openContinent: (id: string) => void;
   closeContinent: () => void;
   zoomIntoCell: (x: number, y: number) => void;
@@ -316,6 +318,7 @@ function empty(): Pick<
   | "masterId"
   | "movementLocked"
   | "showGrid"
+  | "worldMapView"
   | "continentId"
   | "layer"
   | "layers"
@@ -357,6 +360,7 @@ function empty(): Pick<
     masterId: null,
     movementLocked: false,
     showGrid: true,
+    worldMapView: "map",
     continentId: null,
     layer: 0,
     layers: [],
@@ -466,8 +470,8 @@ function hash(s: string) {
   return Math.abs(h);
 }
 
-function exploreKey(continentId: string, layer: number) {
-  return `${continentId}:${layer}`;
+function exploreKey(characterId: string, continentId: string, layer: number) {
+  return `${characterId}:${continentId}:${layer}`;
 }
 
 function addWorldBossEffect(
@@ -1009,10 +1013,11 @@ export const usePlatis = create<AppState>()(
         });
       },
 
+      setWorldMapView: (view) => set({ worldMapView: view }),
       openContinent: (id) =>
         set({
           continentId: id,
-          layer: 0,
+          layer: 1,
           layers: [],
           viewX: 990,
           viewY: 1490,
@@ -1021,6 +1026,7 @@ export const usePlatis = create<AppState>()(
       closeContinent: () => set({ continentId: null, layer: 0, layers: [] }),
       zoomIntoCell: (x, y) => {
         const s = get();
+        if (s.layer >= 3 || !s.continentId) return;
         set({
           layer: s.layer + 1,
           layers: [...s.layers, { x, y }],
@@ -1030,8 +1036,14 @@ export const usePlatis = create<AppState>()(
       },
       zoomOut: () => {
         const s = get();
-        if (s.layer <= 0) {
-          set({ continentId: null });
+        if (s.layer <= 1) {
+          set({
+            continentId: null,
+            layer: 0,
+            layers: [],
+            viewX: 990,
+            viewY: 1490,
+          });
           return;
         }
         const layers = s.layers.slice(0, -1);
@@ -1055,9 +1067,22 @@ export const usePlatis = create<AppState>()(
         if (!s.continentId) return;
         const x = Math.max(0, Math.min(GRID_W - 1, ch.position.x + dx));
         const y = Math.max(0, Math.min(GRID_H - 1, ch.position.y + dy));
-        const key = exploreKey(s.continentId, s.layer);
+        const key = exploreKey(id, s.continentId, s.layer);
         const setExplored = new Set(s.explored[key] ?? []);
-        setExplored.add(`${x},${y}`);
+        for (let oy = -1; oy <= 1; oy++) {
+          for (let ox = -1; ox <= 1; ox++) {
+            const seenX = x + ox;
+            const seenY = y + oy;
+            if (
+              seenX >= 0 &&
+              seenX < GRID_W &&
+              seenY >= 0 &&
+              seenY < GRID_H
+            ) {
+              setExplored.add(`${seenX},${seenY}`);
+            }
+          }
+        }
 
         const reachedBoss = s.entities.find(
           (entity) =>
@@ -2519,6 +2544,7 @@ export const usePlatis = create<AppState>()(
         masterId: s.masterId,
         movementLocked: s.movementLocked,
         showGrid: s.showGrid,
+        worldMapView: s.worldMapView,
         continentId: s.continentId,
         layer: s.layer,
         layers: s.layers,
