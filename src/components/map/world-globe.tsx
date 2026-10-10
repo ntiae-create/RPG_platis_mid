@@ -34,54 +34,41 @@ function makeTerritory(
   height: number,
   seed: number,
 ) {
-  const count = 64;
+  const segments = 64;
   const radius = 1.035;
+  const vertices: number[] = [];
   const centerLat = (latitude * Math.PI) / 180;
   const centerLon = (longitude * Math.PI) / 180;
-  const boundary: Vector3[] = [];
 
-  for (let i = 0; i < count; i++) {
-    const angle = (i / count) * Math.PI * 2;
+  function project(u: number, v: number) {
+    const angle = Math.atan2(v, u);
+    const distance = Math.sqrt(u * u + v * v);
     const irregularity =
       0.76 +
       0.16 * Math.sin(angle * 3 + seed * 1.7) +
       0.09 * Math.cos(angle * 5 + seed);
-
-    const localLat = (Math.sin(angle) * height * irregularity * Math.PI) / 180;
-    const localLon = (Math.cos(angle) * width * irregularity * Math.PI) / 180;
-
-    const lat = centerLat + localLat;
-    const lon = centerLon + localLon;
-
-    boundary.push(
-      new Vector3(
-        radius * Math.cos(lat) * Math.sin(lon),
-        radius * Math.sin(lat),
-        radius * Math.cos(lat) * Math.cos(lon),
-      ),
+    const lat = centerLat + (v * height * irregularity * Math.PI) / 180;
+    const lon = centerLon + (u * width * irregularity * Math.PI) / 180;
+    return new Vector3(
+      radius * Math.cos(lat) * Math.sin(lon),
+      radius * Math.sin(lat),
+      radius * Math.cos(lat) * Math.cos(lon),
     );
   }
 
-  const center = geoToVector(latitude, longitude, radius);
-  const vertices: number[] = [];
-  const subdivisions = 8;
+  const center = project(0, 0);
 
-  for (let i = 0; i < boundary.length; i++) {
-    const a = boundary[i];
-    const b = boundary[(i + 1) % boundary.length];
+  for (let i = 0; i < segments; i++) {
+    const a0 = (i / segments) * Math.PI * 2;
+    const a1 = ((i + 1) / segments) * Math.PI * 2;
+    const edge0 = project(Math.cos(a0), Math.sin(a0));
+    const edge1 = project(Math.cos(a1), Math.sin(a1));
 
-    for (let step = 0; step < subdivisions; step++) {
-      const t0 = step / subdivisions;
-      const t1 = (step + 1) / subdivisions;
-      const edge0 = a.clone().lerp(b, t0).normalize().multiplyScalar(radius);
-      const edge1 = a.clone().lerp(b, t1).normalize().multiplyScalar(radius);
-
-      vertices.push(
-        center.x, center.y, center.z,
-        edge0.x, edge0.y, edge0.z,
-        edge1.x, edge1.y, edge1.z,
-      );
-    }
+    vertices.push(
+      center.x, center.y, center.z,
+      edge0.x, edge0.y, edge0.z,
+      edge1.x, edge1.y, edge1.z,
+    );
   }
 
   return new Float32Array(vertices);
