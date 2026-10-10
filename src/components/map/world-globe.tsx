@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Sphere } from "@react-three/drei";
-import { Shape, Vector3 } from "three";
+import { Vector3 } from "three";
 import { CONTINENTS } from "@/data/world";
 import { GLOBE_CONTINENTS } from "@/data/globe-geography";
 import { usePlatis } from "@/lib/store";
@@ -35,7 +35,9 @@ function makeTerritory(
   seed: number,
 ) {
   const count = 64;
-  const radius = 1.025;
+  const radius = 1.035;
+  const centerLat = (latitude * Math.PI) / 180;
+  const centerLon = (longitude * Math.PI) / 180;
   const boundary: Vector3[] = [];
 
   for (let i = 0; i < count; i++) {
@@ -45,9 +47,19 @@ function makeTerritory(
       0.16 * Math.sin(angle * 3 + seed * 1.7) +
       0.09 * Math.cos(angle * 5 + seed);
 
-    const lat = latitude + Math.sin(angle) * height * irregularity;
-    const lon = longitude + Math.cos(angle) * width * irregularity;
-    boundary.push(geoToVector(lat, lon, radius));
+    const localLat = (Math.sin(angle) * height * irregularity * Math.PI) / 180;
+    const localLon = (Math.cos(angle) * width * irregularity * Math.PI) / 180;
+
+    const lat = centerLat + localLat;
+    const lon = centerLon + localLon;
+
+    boundary.push(
+      new Vector3(
+        radius * Math.cos(lat) * Math.sin(lon),
+        radius * Math.sin(lat),
+        radius * Math.cos(lat) * Math.cos(lon),
+      ),
+    );
   }
 
   const center = geoToVector(latitude, longitude, radius);
@@ -61,7 +73,6 @@ function makeTerritory(
     for (let step = 0; step < subdivisions; step++) {
       const t0 = step / subdivisions;
       const t1 = (step + 1) / subdivisions;
-
       const edge0 = a.clone().lerp(b, t0).normalize().multiplyScalar(radius);
       const edge1 = a.clone().lerp(b, t1).normalize().multiplyScalar(radius);
 
