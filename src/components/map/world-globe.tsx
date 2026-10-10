@@ -129,6 +129,7 @@ function Territory({
         side={2}
         transparent
         opacity={selected ? 0.98 : 0.84}
+        depthWrite={false}
       />
     </mesh>
   );
@@ -142,6 +143,7 @@ function GlobeSphere() {
           color="#173b49"
           roughness={0.92}
           metalness={0.04}
+          depthWrite={false}
         />
       </Sphere>
       <Sphere args={[1.008, 48, 48]}>
