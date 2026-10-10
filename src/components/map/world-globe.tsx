@@ -34,8 +34,9 @@ function makeTerritory(
   height: number,
   seed: number,
 ) {
-  const segments = 64;
   const radius = 1.035;
+  const segments = 64;
+  const rings = 20;
   const vertices: number[] = [];
   const centerLat = (latitude * Math.PI) / 180;
   const centerLon = (longitude * Math.PI) / 180;
@@ -47,8 +48,10 @@ function makeTerritory(
       0.76 +
       0.16 * Math.sin(angle * 3 + seed * 1.7) +
       0.09 * Math.cos(angle * 5 + seed);
-    const lat = centerLat + (v * height * irregularity * Math.PI) / 180;
-    const lon = centerLon + (u * width * irregularity * Math.PI) / 180;
+
+    const lat = centerLat + v * height * irregularity * Math.PI / 180;
+    const lon = centerLon + u * width * irregularity * Math.PI / 180;
+
     return new Vector3(
       radius * Math.cos(lat) * Math.sin(lon),
       radius * Math.sin(lat),
@@ -56,19 +59,29 @@ function makeTerritory(
     );
   }
 
-  const center = project(0, 0);
+  for (let ring = 0; ring < rings; ring++) {
+    const r0 = ring / rings;
+    const r1 = (ring + 1) / rings;
 
-  for (let i = 0; i < segments; i++) {
-    const a0 = (i / segments) * Math.PI * 2;
-    const a1 = ((i + 1) / segments) * Math.PI * 2;
-    const edge0 = project(Math.cos(a0), Math.sin(a0));
-    const edge1 = project(Math.cos(a1), Math.sin(a1));
+    for (let i = 0; i < segments; i++) {
+      const a0 = (i / segments) * Math.PI * 2;
+      const a1 = ((i + 1) / segments) * Math.PI * 2;
 
-    vertices.push(
-      center.x, center.y, center.z,
-      edge0.x, edge0.y, edge0.z,
-      edge1.x, edge1.y, edge1.z,
-    );
+      const p00 = project(Math.cos(a0) * r0, Math.sin(a0) * r0);
+      const p01 = project(Math.cos(a1) * r0, Math.sin(a1) * r0);
+      const p10 = project(Math.cos(a0) * r1, Math.sin(a0) * r1);
+      const p11 = project(Math.cos(a1) * r1, Math.sin(a1) * r1);
+
+      vertices.push(
+        p00.x, p00.y, p00.z,
+        p10.x, p10.y, p10.z,
+        p11.x, p11.y, p11.z,
+
+        p00.x, p00.y, p00.z,
+        p11.x, p11.y, p11.z,
+        p01.x, p01.y, p01.z,
+      );
+    }
   }
 
   return new Float32Array(vertices);
@@ -130,8 +143,6 @@ function GlobeSphere() {
           color="#173b49"
           roughness={0.92}
           metalness={0.04}
-          transparent
-          opacity={0.25}
         />
       </Sphere>
       <Sphere args={[1.008, 48, 48]}>
