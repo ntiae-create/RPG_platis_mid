@@ -143,6 +143,7 @@ function GlobeSphere() {
           color="#173b49"
           roughness={0.92}
           metalness={0.04}
+          depthWrite={false}
         />
       </Sphere>
       <Sphere args={[1.008, 48, 48]}>
