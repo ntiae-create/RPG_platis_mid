@@ -76,7 +76,10 @@ export function MinimalistWorldMap() {
 
   return (
     <div className="panel overflow-hidden">
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#050b12]">
+      <div
+        className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#050b12] bg-cover bg-center"
+        style={{ backgroundImage: 'url("/world/map.jpg")' }}
+      >
         <svg
           viewBox="0 0 100 62.5"
           className="size-full"
