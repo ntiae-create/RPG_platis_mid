@@ -251,20 +251,10 @@ function ContinentMarker({
       {selected && (
         <Html
           center
-<<<<<<< HEAD
-          distanceFactor={6}
-          style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
-=======
-          style={{
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-            maxWidth: "76px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
->>>>>>> ba1d8d5 (fix: reduce globe continent and capital labels)
+distanceFactor={3}
+          style={{ pointerEvents: "none", whiteSpace: "nowrap", maxWidth: "76px", overflow: "hidden", textOverflow: "ellipsis" }}
         >
-          <div className="rounded border border-white/20 bg-black/75 px-2 py-1 text-[8px] leading-tight text-white shadow-lg backdrop-blur-sm">
+          <div className="rounded border border-white/20 bg-black/75 px-2 py-1 text-[6px] leading-tight text-white shadow-lg backdrop-blur-sm">
             {name}
           </div>
         </Html>
@@ -321,21 +311,11 @@ function CapitalMarker({
       </mesh>
       <Html
         center
-<<<<<<< HEAD
-        distanceFactor={8}
-        style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
-=======
-        style={{
-          pointerEvents: "none",
-          whiteSpace: "nowrap",
-          maxWidth: "64px",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
->>>>>>> ba1d8d5 (fix: reduce globe continent and capital labels)
+distanceFactor={4}
+        style={{ pointerEvents: "none", whiteSpace: "nowrap", maxWidth: "64px", overflow: "hidden", textOverflow: "ellipsis" }}
         zIndexRange={[50, 0]}
       >
-        <div className="rounded bg-black/60 px-1 py-0.5 text-[7px] leading-tight text-[#e6bd62] opacity-80">
+        <div className="rounded bg-black/60 px-1 py-0.5 text-[5px] leading-tight text-[#e6bd62] opacity-80">
           {name}
         </div>
       </Html>
