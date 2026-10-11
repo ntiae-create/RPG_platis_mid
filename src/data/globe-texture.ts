@@ -1,12 +1,13 @@
-/** Textura oficial do globo Platis (arte dos 22 continentes). */
-import { GLOBE_TEX_PART_0 } from "./globe-texture-part0";
-import { GLOBE_TEX_PART_1 } from "./globe-texture-part1";
-import { GLOBE_TEX_PART_2 } from "./globe-texture-part2";
-import { GLOBE_TEX_PART_3 } from "./globe-texture-part3";
+/**
+ * Textura oficial do globo Platis (arte dos 22 continentes).
+ *
+ * Asset: public/world/globe-platis.jpg
+ * (mesma arte da legenda "OS 22 CONTINENTES")
+ *
+ * Fallback: public/world/map.jpg se a arte oficial ainda não estiver no repo.
+ */
+export const GLOBE_TEXTURE_URL = "/world/globe-platis.jpg";
+export const GLOBE_TEXTURE_FALLBACK_URL = "/world/map.jpg";
 
-export const GLOBE_TEXTURE_DATA_URL =
-  "data:image/jpeg;base64," +
-  GLOBE_TEX_PART_0 +
-  GLOBE_TEX_PART_1 +
-  GLOBE_TEX_PART_2 +
-  GLOBE_TEX_PART_3;
+/** Alias de compatibilidade com imports anteriores */
+export const GLOBE_TEXTURE_DATA_URL = GLOBE_TEXTURE_URL;

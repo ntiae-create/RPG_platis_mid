@@ -9,13 +9,9 @@ import {
 import { DoubleSide, Vector3, SRGBColorSpace } from "three";
 import { CONTINENTS, BOSSES, WORLD_CITIES } from "@/data/world";
 import { GLOBE_CONTINENTS } from "@/data/globe-geography";
-import { GLOBE_TEXTURE_DATA_URL } from "@/data/globe-texture";
+import { GLOBE_TEXTURE_URL } from "@/data/globe-texture";
 import { usePlatis } from "@/lib/store";
 
-/**
- * Cores por afinidade — dark fantasy, legíveis no globo.
- * Continentes sem affinity usam o fallback oliva-acinzentado.
- */
 const AFFINITY_COLORS: Record<string, string> = {
   vento: "#6a9e94",
   luz: "#c4a84a",
@@ -30,18 +26,11 @@ const AFFINITY_COLORS: Record<string, string> = {
 const FALLBACK_COLOR = "#7a8a6e";
 const CAPITAL_COLOR = "#e6bd62";
 
-/** Raio da superfície do planeta (unidade Three.js). */
 const PLANET_RADIUS = 1;
-/** Raio ligeiramente acima da superfície para territórios e marcadores. */
 const SURFACE_RADIUS = 1.012;
 const MARKER_RADIUS = 1.028;
 const CAPITAL_RADIUS = 1.032;
 
-/**
- * Converte latitude/longitude (graus) em posição 3D na esfera.
- * Convenção: Y = eixo polar, XZ = equador; longitude 0 no +Z.
- * Não alterar a fórmula sem recalibrar GLOBE_CONTINENTS.
- */
 export function geoToVector(
   latitude: number,
   longitude: number,
@@ -56,10 +45,6 @@ export function geoToVector(
   );
 }
 
-/**
- * Gera malha irregular de continente na superfície da esfera.
- * Formato estável: seed fixo por índice → mesma forma a cada reload.
- */
 function makeTerritory(
   latitude: number,
   longitude: number,
@@ -107,25 +92,12 @@ function makeTerritory(
       const p11 = project(Math.cos(a1) * r1, Math.sin(a1) * r1);
 
       vertices.push(
-        p00.x,
-        p00.y,
-        p00.z,
-        p10.x,
-        p10.y,
-        p10.z,
-        p11.x,
-        p11.y,
-        p11.z,
-
-        p00.x,
-        p00.y,
-        p00.z,
-        p11.x,
-        p11.y,
-        p11.z,
-        p01.x,
-        p01.y,
-        p01.z,
+        p00.x, p00.y, p00.z,
+        p10.x, p10.y, p10.z,
+        p11.x, p11.y, p11.z,
+        p00.x, p00.y, p00.z,
+        p11.x, p11.y, p11.z,
+        p01.x, p01.y, p01.z,
       );
     }
   }
@@ -134,41 +106,21 @@ function makeTerritory(
 }
 
 function TerritoryMesh({
-  latitude,
-  longitude,
-  width,
-  height,
-  seed,
-  color,
-  selected,
-  hovered,
-  onSelect,
-  onHover,
+  latitude, longitude, width, height, seed, color, selected, hovered, onSelect, onHover,
 }: {
-  latitude: number;
-  longitude: number;
-  width: number;
-  height: number;
-  seed: number;
-  color: string;
-  selected: boolean;
-  hovered: boolean;
-  onSelect: () => void;
-  onHover: (v: boolean) => void;
+  latitude: number; longitude: number; width: number; height: number; seed: number;
+  color: string; selected: boolean; hovered: boolean;
+  onSelect: () => void; onHover: (v: boolean) => void;
 }) {
   const positions = useMemo(
     () => makeTerritory(latitude, longitude, width, height, seed),
     [latitude, longitude, width, height, seed],
   );
-
-  const opacity = selected ? 0.55 : hovered ? 0.42 : 0.28;
+  const opacity = selected ? 0.5 : hovered ? 0.35 : 0.18;
 
   return (
     <mesh
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect();
-      }}
+      onClick={(event) => { event.stopPropagation(); onSelect(); }}
       onPointerOver={(event) => {
         event.stopPropagation();
         onHover(true);
@@ -198,21 +150,10 @@ function TerritoryMesh({
 }
 
 function ContinentMarker({
-  latitude,
-  longitude,
-  color,
-  selected,
-  name,
-  hasBoss,
-  onSelect,
+  latitude, longitude, color, selected, name, hasBoss, onSelect,
 }: {
-  latitude: number;
-  longitude: number;
-  color: string;
-  selected: boolean;
-  name: string;
-  hasBoss: boolean;
-  onSelect: () => void;
+  latitude: number; longitude: number; color: string; selected: boolean;
+  name: string; hasBoss: boolean; onSelect: () => void;
 }) {
   const position = useMemo(
     () => geoToVector(latitude, longitude, MARKER_RADIUS),
@@ -222,17 +163,12 @@ function ContinentMarker({
   return (
     <group position={position}>
       <mesh
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
+        onClick={(e) => { e.stopPropagation(); onSelect(); }}
         onPointerOver={(e) => {
           e.stopPropagation();
           document.body.style.cursor = "pointer";
         }}
-        onPointerOut={() => {
-          document.body.style.cursor = "auto";
-        }}
+        onPointerOut={() => { document.body.style.cursor = "auto"; }}
       >
         <sphereGeometry args={[selected ? 0.028 : 0.018, 12, 12]} />
         <meshStandardMaterial
@@ -250,11 +186,7 @@ function ContinentMarker({
         </mesh>
       )}
       {selected && (
-        <Html
-          center
-          distanceFactor={6}
-          style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
-        >
+        <Html center distanceFactor={6} style={{ pointerEvents: "none", whiteSpace: "nowrap" }}>
           <div className="rounded border border-white/20 bg-black/75 px-2 py-1 text-[11px] text-white shadow-lg backdrop-blur-sm">
             {name}
           </div>
@@ -265,41 +197,26 @@ function ContinentMarker({
 }
 
 function CapitalMarker({
-  latitude,
-  longitude,
-  name,
-  seed,
-  onSelect,
+  latitude, longitude, name, seed, onSelect,
 }: {
-  latitude: number;
-  longitude: number;
-  name: string;
-  seed: number;
-  onSelect: () => void;
+  latitude: number; longitude: number; name: string; seed: number; onSelect: () => void;
 }) {
   const latOff = ((seed % 5) - 2) * 1.2;
   const lonOff = (((seed * 3) % 7) - 3) * 1.4;
-
   const position = useMemo(
-    () =>
-      geoToVector(latitude + latOff, longitude + lonOff, CAPITAL_RADIUS),
+    () => geoToVector(latitude + latOff, longitude + lonOff, CAPITAL_RADIUS),
     [latitude, longitude, latOff, lonOff],
   );
 
   return (
     <group position={position}>
       <mesh
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
+        onClick={(e) => { e.stopPropagation(); onSelect(); }}
         onPointerOver={(e) => {
           e.stopPropagation();
           document.body.style.cursor = "pointer";
         }}
-        onPointerOut={() => {
-          document.body.style.cursor = "auto";
-        }}
+        onPointerOut={() => { document.body.style.cursor = "auto"; }}
       >
         <sphereGeometry args={[0.012, 10, 10]} />
         <meshStandardMaterial
@@ -310,12 +227,7 @@ function CapitalMarker({
           metalness={0.3}
         />
       </mesh>
-      <Html
-        center
-        distanceFactor={8}
-        style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
-        zIndexRange={[50, 0]}
-      >
+      <Html center distanceFactor={8} style={{ pointerEvents: "none", whiteSpace: "nowrap" }} zIndexRange={[50, 0]}>
         <div className="rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-[#e6bd62] opacity-80">
           {name}
         </div>
@@ -324,14 +236,8 @@ function CapitalMarker({
   );
 }
 
-/**
- * Esfera com a arte oficial dos 22 continentes de Platis.
- * Textura embutida em src/data/globe-texture.ts (data URL).
- * Quando o GLB estiver em /public/models/platis-globe.glb,
- * ative USE_GLB_MODEL e troque por useGLTF.
- */
 function GlobeSphere() {
-  const mapTexture = useTexture(GLOBE_TEXTURE_DATA_URL);
+  const mapTexture = useTexture(GLOBE_TEXTURE_URL);
 
   useMemo(() => {
     if (mapTexture) {
@@ -343,28 +249,13 @@ function GlobeSphere() {
   return (
     <group>
       <Sphere args={[PLANET_RADIUS * 0.998, 64, 64]}>
-        <meshStandardMaterial
-          color="#061018"
-          roughness={0.95}
-          metalness={0.05}
-        />
+        <meshStandardMaterial color="#061018" roughness={0.95} metalness={0.05} />
       </Sphere>
-
       <Sphere args={[PLANET_RADIUS, 96, 96]}>
-        <meshStandardMaterial
-          map={mapTexture}
-          roughness={0.82}
-          metalness={0.05}
-        />
+        <meshStandardMaterial map={mapTexture} roughness={0.8} metalness={0.04} />
       </Sphere>
-
       <Sphere args={[PLANET_RADIUS + 0.003, 36, 36]}>
-        <meshBasicMaterial
-          color="#3a6a78"
-          wireframe
-          transparent
-          opacity={0.04}
-        />
+        <meshBasicMaterial color="#3a6a78" wireframe transparent opacity={0.04} />
       </Sphere>
     </group>
   );
@@ -388,10 +279,7 @@ const USE_GLB_MODEL = false;
 const GLB_PATH = "/models/platis-globe.glb";
 
 function GlobeTerritories({
-  selectedId,
-  hoveredId,
-  onSelect,
-  onHover,
+  selectedId, hoveredId, onSelect, onHover,
 }: {
   selectedId: string | null;
   hoveredId: string | null;
@@ -404,8 +292,7 @@ function GlobeTerritories({
         const continent = CONTINENTS.find((item) => item.id === region.id);
         if (!continent) return null;
 
-        const color =
-          AFFINITY_COLORS[continent.affinity ?? ""] ?? FALLBACK_COLOR;
+        const color = AFFINITY_COLORS[continent.affinity ?? ""] ?? FALLBACK_COLOR;
         const boss = BOSSES.find((b) => b.continentId === region.id);
         const capital = WORLD_CITIES.find(
           (c) => c.continentId === region.id && c.type === "capital",
@@ -451,10 +338,7 @@ function GlobeTerritories({
 }
 
 function GlobeScene({
-  selectedId,
-  hoveredId,
-  onSelect,
-  onHover,
+  selectedId, hoveredId, onSelect, onHover,
 }: {
   selectedId: string | null;
   hoveredId: string | null;
@@ -464,13 +348,9 @@ function GlobeScene({
   return (
     <>
       <color attach="background" args={["#03080e"]} />
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[5, 3, 4]} intensity={1.9} color="#fff8f0" />
-      <directionalLight
-        position={[-4, -2, -3]}
-        intensity={0.4}
-        color="#3a6a88"
-      />
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[5, 3, 4]} intensity={2.0} color="#fff8f0" />
+      <directionalLight position={[-4, -2, -3]} intensity={0.4} color="#3a6a88" />
       <pointLight position={[0, 2, 3]} intensity={0.4} color="#5a9aaa" />
 
       <Suspense
@@ -507,9 +387,7 @@ function GlobeScene({
 }
 
 function ContinentDetailPanel({
-  continentId,
-  onExplore,
-  onDismiss,
+  continentId, onExplore, onDismiss,
 }: {
   continentId: string;
   onExplore: () => void;
@@ -521,47 +399,30 @@ function ContinentDetailPanel({
   const bosses = BOSSES.filter((b) => b.continentId === continentId);
   const cities = WORLD_CITIES.filter((c) => c.continentId === continentId);
   const capital = cities.find((c) => c.type === "capital");
-  const color =
-    AFFINITY_COLORS[continent.affinity ?? ""] ?? FALLBACK_COLOR;
+  const color = AFFINITY_COLORS[continent.affinity ?? ""] ?? FALLBACK_COLOR;
 
   return (
     <div className="pointer-events-auto absolute right-3 top-3 z-10 w-[min(100%-1.5rem,260px)] rounded-lg border border-white/15 bg-black/80 p-3 text-left shadow-xl backdrop-blur-md">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <span
-              className="inline-block size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-            <h3 className="text-sm font-semibold text-white">
-              {continent.name}
-            </h3>
+            <span className="inline-block size-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+            <h3 className="text-sm font-semibold text-white">{continent.name}</h3>
           </div>
           <p className="mt-0.5 text-[11px] text-slate-400">{continent.biome}</p>
         </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="rounded px-1.5 py-0.5 text-xs text-slate-400 hover:bg-white/10 hover:text-white"
-          aria-label="Fechar"
-        >
+        <button type="button" onClick={onDismiss} className="rounded px-1.5 py-0.5 text-xs text-slate-400 hover:bg-white/10 hover:text-white" aria-label="Fechar">
           ✕
         </button>
       </div>
-
-      <p className="mb-2 text-[11px] leading-relaxed text-slate-300">
-        {continent.blurb}
-      </p>
-
+      <p className="mb-2 text-[11px] leading-relaxed text-slate-300">{continent.blurb}</p>
       <dl className="mb-3 grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
         <dt className="text-slate-500">Dungeons</dt>
         <dd className="text-right text-slate-200">{continent.dungeonCount}</dd>
         {continent.affinity && (
           <>
             <dt className="text-slate-500">Afinidade</dt>
-            <dd className="text-right capitalize text-slate-200">
-              {continent.affinity}
-            </dd>
+            <dd className="text-right capitalize text-slate-200">{continent.affinity}</dd>
           </>
         )}
         {capital && (
@@ -573,26 +434,17 @@ function ContinentDetailPanel({
         <dt className="text-slate-500">Assentamentos</dt>
         <dd className="text-right text-slate-200">{cities.length}</dd>
       </dl>
-
       {bosses.length > 0 && (
         <div className="mb-3 rounded border border-red-900/40 bg-red-950/30 px-2 py-1.5">
-          <p className="text-[10px] uppercase tracking-wide text-red-400/80">
-            Boss mundial
-          </p>
+          <p className="text-[10px] uppercase tracking-wide text-red-400/80">Boss mundial</p>
           {bosses.map((b) => (
             <p key={b.id} className="text-xs text-red-200">
-              {b.name}
-              {b.brasao && b.brasao !== "—" ? ` · ${b.brasao}` : ""}
+              {b.name}{b.brasao && b.brasao !== "—" ? ` · ${b.brasao}` : ""}
             </p>
           ))}
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={onExplore}
-        className="w-full rounded-md border border-accent/50 bg-accent/15 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/25"
-      >
+      <button type="button" onClick={onExplore} className="w-full rounded-md border border-accent/50 bg-accent/15 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/25">
         Explorar mapa do continente
       </button>
     </div>
@@ -605,27 +457,19 @@ export function WorldGlobe() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const panelId = selectedId ?? hoveredId;
 
-  const handleSelect = (id: string) => {
-    setSelectedId(id);
-  };
-
   return (
     <div className="panel overflow-hidden">
       <div className="relative h-[360px] w-full overflow-hidden rounded-xl bg-[#03080e] sm:h-[480px]">
         <Canvas
           dpr={[1, 1.5]}
           camera={{ position: [0, 0.25, 3.05], fov: 42 }}
-          gl={{
-            antialias: true,
-            powerPreference: "high-performance",
-            alpha: false,
-          }}
+          gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
           style={{ touchAction: "none" }}
         >
           <GlobeScene
             selectedId={selectedId}
             hoveredId={hoveredId}
-            onSelect={handleSelect}
+            onSelect={setSelectedId}
             onHover={setHoveredId}
           />
         </Canvas>
@@ -655,11 +499,8 @@ export function WorldGlobe() {
         </div>
       </div>
       <p className="px-4 py-3 text-xs text-muted">
-        Arraste para girar · Pinça para aproximar · Marcadores dourados =
-        capitais · Ponto vermelho = boss mundial.
-        {USE_GLB_MODEL
-          ? ` Modelo 3D: ${GLB_PATH}`
-          : " Textura: arte oficial dos 22 continentes · GLB preparado em /models/platis-globe.glb"}
+        Arraste para girar · Pinça para aproximar · Marcadores dourados = capitais · Ponto vermelho = boss mundial.
+        {" "}Textura: /world/globe-platis.jpg · GLB preparado em /models/platis-globe.glb
       </p>
     </div>
   );
