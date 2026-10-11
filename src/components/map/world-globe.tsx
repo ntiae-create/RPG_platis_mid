@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sphere } from "@react-three/drei";
+import { OrbitControls, Sphere, useTexture } from "@react-three/drei";
 import { Vector3 } from "three";
 import { CONTINENTS } from "@/data/world";
 import { GLOBE_CONTINENTS } from "@/data/globe-geography";
@@ -111,6 +111,7 @@ function Territory({
     [latitude, longitude, width, height, seed],
   );
 
+
   return (
     <mesh
       onClick={(event) => {
@@ -130,20 +131,23 @@ function Territory({
         transparent
         opacity={selected ? 0.98 : 0.84}
         depthWrite={false}
+
       />
     </mesh>
   );
 }
 
 function GlobeSphere() {
+  const mapTexture = useTexture("/world/map.jpg");
+
   return (
     <group>
       <Sphere args={[1, 72, 72]}>
         <meshStandardMaterial
-          color="#173b49"
-          roughness={0.92}
+          map={mapTexture}
+          color="#ffffff"
+          roughness={0.95}
           metalness={0.04}
-          depthWrite={false}
         />
       </Sphere>
       <Sphere args={[1.008, 48, 48]}>
