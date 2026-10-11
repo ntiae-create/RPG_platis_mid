@@ -2001,8 +2001,8 @@ export const usePlatis = create<AppState>()(
       },
 
       selectFighter: (which, id) => {
-        if (which === "attacker") set({ attackerId: id });
-        else set({ defenderId: id });
+        if (which === "attacker") set({ attackerId: id, combatActive: true });
+        else set({ defenderId: id, combatActive: true });
       },
 
       rollCombat: (kind, skillId) => {
