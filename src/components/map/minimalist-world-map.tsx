@@ -124,7 +124,6 @@ export function MinimalistWorldMap() {
 
           {nodes.map((n) => {
             const isActive = activeId === n.id;
-            const wobble = 0.6 + (n.seed % 5) * 0.08;
             return (
               <g
                 key={n.id}
@@ -136,33 +135,17 @@ export function MinimalistWorldMap() {
                 onPointerEnter={() => setHovered(n.id)}
                 onPointerLeave={() => setHovered(null)}
               >
-                <ellipse
-                  cx={n.x}
-                  cy={n.y * 0.625}
-                  rx={n.rx * wobble}
-                  ry={n.ry * wobble}
-                  fill={
-                    isActive
-                      ? `${n.stroke}33`
-                      : "rgba(8,16,22,0.55)"
-                  }
-                  stroke={n.stroke}
-                  strokeWidth={isActive ? 0.45 : 0.28}
-                  opacity={isActive ? 1 : 0.85}
-                />
-                <circle
-                  cx={n.x}
-                  cy={n.y * 0.625}
-                  r={isActive ? 0.55 : 0.4}
-                  fill="#e6bd62"
-                  opacity={0.95}
-                />
                 <text
                   x={n.x}
-                  y={n.y * 0.625 + n.ry * wobble + 1.6}
+                  y={n.y * 0.625}
                   textAnchor="middle"
-                  fill={isActive ? "#f5f0e6" : "#c8c4b8"}
-                  fontSize={isActive ? 1.7 : 1.45}
+                  dominantBaseline="middle"
+                  fill={isActive ? "#ffffff" : "#f1e8d5"}
+                  stroke="#101820"
+                  strokeWidth="0.35"
+                  paintOrder="stroke"
+                  fontSize={isActive ? 1.8 : 1.5}
+                  fontWeight={isActive ? 700 : 500}
                   fontFamily="Figtree, system-ui, sans-serif"
                   style={{ pointerEvents: "none" }}
                 >
