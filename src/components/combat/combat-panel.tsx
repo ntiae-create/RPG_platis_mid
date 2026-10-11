@@ -96,7 +96,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid gap-4 pb-28 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-4">
         {trap?.armed && (
           <div className="panel p-4">
