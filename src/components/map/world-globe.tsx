@@ -251,10 +251,10 @@ function ContinentMarker({
       {selected && (
         <Html
           center
-distanceFactor={3}
+distanceFactor={1.5}
           style={{ pointerEvents: "none", whiteSpace: "nowrap", maxWidth: "76px", overflow: "hidden", textOverflow: "ellipsis" }}
         >
-          <div className="rounded border border-white/20 bg-black/75 px-2 py-1 text-[6px] leading-tight text-white shadow-lg backdrop-blur-sm">
+          <div className="rounded border border-white/20 bg-black/75 px-2 py-1 text-[4px] leading-tight text-white shadow-lg backdrop-blur-sm">
             {name}
           </div>
         </Html>
@@ -311,11 +311,11 @@ function CapitalMarker({
       </mesh>
       <Html
         center
-distanceFactor={4}
+distanceFactor={2}
         style={{ pointerEvents: "none", whiteSpace: "nowrap", maxWidth: "64px", overflow: "hidden", textOverflow: "ellipsis" }}
         zIndexRange={[50, 0]}
       >
-        <div className="rounded bg-black/60 px-1 py-0.5 text-[5px] leading-tight text-[#e6bd62] opacity-80">
+        <div className="rounded bg-black/60 px-1 py-0.5 text-[3px] leading-tight text-[#e6bd62] opacity-80">
           {name}
         </div>
       </Html>
