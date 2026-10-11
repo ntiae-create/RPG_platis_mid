@@ -70,6 +70,11 @@ function makeTerritory(
   const segments = 48;
   const rings = 16;
   const vertices: number[] = [];
+
+  // Reduz a extensão visual das regiões sem alterar suas coordenadas centrais.
+  const territoryScale = 0.72;
+  width *= territoryScale;
+  height *= territoryScale;
   const centerLat = (latitude * Math.PI) / 180;
   const centerLon = (longitude * Math.PI) / 180;
 
@@ -160,7 +165,7 @@ function TerritoryMesh({
     [latitude, longitude, width, height, seed],
   );
 
-  const opacity = selected ? 0.92 : hovered ? 0.78 : 0.55;
+  const opacity = selected ? 0.72 : hovered ? 0.48 : 0.28;
 
   return (
     <mesh
