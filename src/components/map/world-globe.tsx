@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sphere, useTexture } from "@react-three/drei";
+import { OrbitControls, Sphere, Text, useTexture } from "@react-three/drei";
 import { Vector3 } from "three";
 import { CONTINENTS } from "@/data/world";
 import { GLOBE_CONTINENTS } from "@/data/globe-geography";
@@ -183,18 +183,45 @@ function GlobeTerritories({
         const continent = CONTINENTS.find((item) => item.id === region.id);
         if (!continent) return null;
 
+        const lat = (region.latitude * Math.PI) / 180;
+        const lon = (region.longitude * Math.PI) / 180;
+        const labelPosition: [number, number, number] = [
+          1.045 * Math.cos(lat) * Math.sin(lon),
+          1.045 * Math.sin(lat),
+          1.045 * Math.cos(lat) * Math.cos(lon),
+        ];
+
         return (
-          <Territory
-            key={region.id}
-            latitude={region.latitude}
-            longitude={region.longitude}
-            width={region.width}
-            height={region.height}
-            seed={index + 1}
-            color={AFFINITY_COLORS[continent.affinity ?? ""] ?? "#8b9d86"}
-            selected={selectedId === region.id}
-            onSelect={() => onSelect(region.id)}
-          />
+          <group key={region.id}>
+            <Territory
+              latitude={region.latitude}
+              longitude={region.longitude}
+              width={region.width}
+              height={region.height}
+              seed={index + 1}
+              color={AFFINITY_COLORS[continent.affinity ?? ""] ?? "#8b9d86"}
+              selected={selectedId === region.id}
+              onSelect={() => onSelect(region.id)}
+            />
+            <Text
+              position={labelPosition}
+              fontSize={0.025}
+              color="#fff3d6"
+              outlineColor="#101820"
+              outlineWidth={0.0025}
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={0.24}
+              textAlign="center"
+              renderOrder={10}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelect(region.id);
+              }}
+            >
+              {continent.name}
+            </Text>
+          </group>
         );
       })}
     </group>
