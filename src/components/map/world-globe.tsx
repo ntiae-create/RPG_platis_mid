@@ -9,6 +9,7 @@ import {
 import { DoubleSide, Vector3, SRGBColorSpace } from "three";
 import { CONTINENTS, BOSSES, WORLD_CITIES } from "@/data/world";
 import { GLOBE_CONTINENTS } from "@/data/globe-geography";
+import { GLOBE_TEXTURE_DATA_URL } from "@/data/globe-texture";
 import { usePlatis } from "@/lib/store";
 
 /**
@@ -70,11 +71,6 @@ function makeTerritory(
   const segments = 48;
   const rings = 16;
   const vertices: number[] = [];
-
-  // Reduz a extensão visual das regiões sem alterar suas coordenadas centrais.
-  const territoryScale = 0.72;
-  width *= territoryScale;
-  height *= territoryScale;
   const centerLat = (latitude * Math.PI) / 180;
   const centerLon = (longitude * Math.PI) / 180;
 
@@ -165,7 +161,7 @@ function TerritoryMesh({
     [latitude, longitude, width, height, seed],
   );
 
-  const opacity = selected ? 0.72 : hovered ? 0.48 : 0.28;
+  const opacity = selected ? 0.55 : hovered ? 0.42 : 0.28;
 
   return (
     <mesh
@@ -195,16 +191,12 @@ function TerritoryMesh({
         roughness={0.85}
         metalness={0.08}
         emissive={selected || hovered ? color : "#000000"}
-        emissiveIntensity={selected ? 0.35 : hovered ? 0.2 : 0}
+        emissiveIntensity={selected ? 0.45 : hovered ? 0.25 : 0}
       />
     </mesh>
   );
 }
 
-/**
- * Marcador pontual no centro geográfico do continente.
- * Fica sempre na superfície e acompanha a rotação do planeta.
- */
 function ContinentMarker({
   latitude,
   longitude,
@@ -260,13 +252,8 @@ function ContinentMarker({
       {selected && (
         <Html
           center
-          style={{
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-            maxWidth: "120px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
+          distanceFactor={6}
+          style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
         >
           <div className="rounded border border-white/20 bg-black/75 px-2 py-1 text-[11px] text-white shadow-lg backdrop-blur-sm">
             {name}
@@ -277,11 +264,6 @@ function ContinentMarker({
   );
 }
 
-/**
- * Marcador de capital: offset leve do centro do continente para não
- * coincidir com o marcador principal. Coordenadas de grade 2D não são
- * latitude/longitude — usamos o centro geográfico oficial do continente.
- */
 function CapitalMarker({
   latitude,
   longitude,
@@ -330,13 +312,8 @@ function CapitalMarker({
       </mesh>
       <Html
         center
-        style={{
-          pointerEvents: "none",
-          whiteSpace: "nowrap",
-          maxWidth: "100px",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
+        distanceFactor={8}
+        style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
         zIndexRange={[50, 0]}
       >
         <div className="rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-[#e6bd62] opacity-80">
@@ -348,12 +325,13 @@ function CapitalMarker({
 }
 
 /**
- * Esfera planetária com textura do mapa 2D (equiretangular aproximada)
- * e material dark fantasy. Quando o GLB estiver em /public/models/platis-globe.glb,
- * pode substituir esta geometria pelo modelo carregado via useGLTF.
+ * Esfera com a arte oficial dos 22 continentes de Platis.
+ * Textura embutida em src/data/globe-texture.ts (data URL).
+ * Quando o GLB estiver em /public/models/platis-globe.glb,
+ * ative USE_GLB_MODEL e troque por useGLTF.
  */
 function GlobeSphere() {
-  const mapTexture = useTexture("/world/map.jpg");
+  const mapTexture = useTexture(GLOBE_TEXTURE_DATA_URL);
 
   useMemo(() => {
     if (mapTexture) {
@@ -366,29 +344,26 @@ function GlobeSphere() {
     <group>
       <Sphere args={[PLANET_RADIUS * 0.998, 64, 64]}>
         <meshStandardMaterial
-          color="#0c1a22"
+          color="#061018"
           roughness={0.95}
           metalness={0.05}
         />
       </Sphere>
 
-      <Sphere args={[PLANET_RADIUS, 72, 72]}>
+      <Sphere args={[PLANET_RADIUS, 96, 96]}>
         <meshStandardMaterial
           map={mapTexture}
-          color="#c8b8a0"
-          roughness={0.88}
-          metalness={0.06}
-          transparent
-          opacity={0.92}
+          roughness={0.82}
+          metalness={0.05}
         />
       </Sphere>
 
-      <Sphere args={[PLANET_RADIUS + 0.004, 36, 36]}>
+      <Sphere args={[PLANET_RADIUS + 0.003, 36, 36]}>
         <meshBasicMaterial
-          color="#4a7a88"
+          color="#3a6a78"
           wireframe
           transparent
-          opacity={0.06}
+          opacity={0.04}
         />
       </Sphere>
     </group>
@@ -397,11 +372,11 @@ function GlobeSphere() {
 
 function GlobeAtmosphere() {
   return (
-    <Sphere args={[PLANET_RADIUS + 0.085, 32, 32]}>
+    <Sphere args={[PLANET_RADIUS + 0.09, 32, 32]}>
       <meshBasicMaterial
-        color="#2a6a7a"
+        color="#2a6a8a"
         transparent
-        opacity={0.08}
+        opacity={0.1}
         side={DoubleSide}
         depthWrite={false}
       />
@@ -488,20 +463,20 @@ function GlobeScene({
 }) {
   return (
     <>
-      <color attach="background" args={["#050b12"]} />
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[5, 3, 4]} intensity={1.8} color="#fff5e6" />
+      <color attach="background" args={["#03080e"]} />
+      <ambientLight intensity={0.65} />
+      <directionalLight position={[5, 3, 4]} intensity={1.9} color="#fff8f0" />
       <directionalLight
         position={[-4, -2, -3]}
-        intensity={0.45}
+        intensity={0.4}
         color="#3a6a88"
       />
-      <pointLight position={[0, 2, 3]} intensity={0.35} color="#5a9aaa" />
+      <pointLight position={[0, 2, 3]} intensity={0.4} color="#5a9aaa" />
 
       <Suspense
         fallback={
           <Sphere args={[PLANET_RADIUS, 32, 32]}>
-            <meshStandardMaterial color="#173b49" roughness={0.9} />
+            <meshStandardMaterial color="#0c1a24" roughness={0.9} />
           </Sphere>
         }
       >
@@ -531,10 +506,6 @@ function GlobeScene({
   );
 }
 
-/**
- * Painel de detalhes do continente (hover ou seleção).
- * Não abre o mapa sozinho — só informa. O botão Explorar chama openContinent.
- */
 function ContinentDetailPanel({
   continentId,
   onExplore,
@@ -632,7 +603,6 @@ export function WorldGlobe() {
   const openContinent = usePlatis((state) => state.openContinent);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  /** Painel: mostra o selecionado, ou o hovered se nada selecionado. */
   const panelId = selectedId ?? hoveredId;
 
   const handleSelect = (id: string) => {
@@ -641,10 +611,10 @@ export function WorldGlobe() {
 
   return (
     <div className="panel overflow-hidden">
-      <div className="relative h-[360px] w-full overflow-hidden rounded-xl bg-[#050b12] sm:h-[480px]">
+      <div className="relative h-[360px] w-full overflow-hidden rounded-xl bg-[#03080e] sm:h-[480px]">
         <Canvas
           dpr={[1, 1.5]}
-          camera={{ position: [0, 0.35, 3.15], fov: 42 }}
+          camera={{ position: [0, 0.25, 3.05], fov: 42 }}
           gl={{
             antialias: true,
             powerPreference: "high-performance",
@@ -680,7 +650,7 @@ export function WorldGlobe() {
 
         <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">
           <div className="rounded-md bg-black/55 px-3 py-2 text-xs text-slate-300">
-            22 territórios · Toque para selecionar · Explorar abre a camada 1
+            22 territórios · Arte oficial · Toque para selecionar
           </div>
         </div>
       </div>
@@ -689,7 +659,7 @@ export function WorldGlobe() {
         capitais · Ponto vermelho = boss mundial.
         {USE_GLB_MODEL
           ? ` Modelo 3D: ${GLB_PATH}`
-          : " Textura: /world/map.jpg · GLB preparado em /models/platis-globe.glb"}
+          : " Textura: arte oficial dos 22 continentes · GLB preparado em /models/platis-globe.glb"}
       </p>
     </div>
   );
