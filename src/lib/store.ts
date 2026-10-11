@@ -2001,8 +2001,33 @@ export const usePlatis = create<AppState>()(
       },
 
       selectFighter: (which, id) => {
-        if (which === "attacker") set({ attackerId: id, combatActive: true });
-        else set({ defenderId: id, combatActive: true });
+        const state = get();
+        const fighter = id ? (state.characters[id] ?? state.combatEnemies[id] ?? null) : null;
+        const combatParticipants = id && fighter
+          ? [...new Set([...state.combatParticipants, id])]
+          : state.combatParticipants;
+        const combatPositions = { ...state.combatPositions };
+
+        if (id && fighter && !(id in combatPositions)) {
+          const isEnemy = Boolean(state.combatEnemies[id]);
+          const sameSideCount = combatParticipants.filter((participantId) =>
+            isEnemy
+              ? Boolean(state.combatEnemies[participantId])
+              : Boolean(state.characters[participantId])
+          ).length - 1;
+
+          combatPositions[id] = {
+            x: isEnemy ? 13 : 1,
+            y: Math.min(19, 2 + Math.max(0, sameSideCount) * 2),
+          };
+        }
+
+        set({
+          ...(which === "attacker" ? { attackerId: id } : { defenderId: id }),
+          combatParticipants,
+          combatPositions,
+          combatActive: true,
+        });
       },
 
       rollCombat: (kind, skillId) => {
