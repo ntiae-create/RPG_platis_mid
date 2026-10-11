@@ -1163,8 +1163,8 @@ export const usePlatis = create<AppState>()(
       moveCombatParticipant: (id, x, y) => {
         if (!get().combatParticipants.includes(id)) return;
 
-        const nextX = Math.max(0, Math.min(29, Math.round(x)));
-        const nextY = Math.max(0, Math.min(29, Math.round(y)));
+        const nextX = Math.max(0, Math.min(14, Math.round(x)));
+        const nextY = Math.max(0, Math.min(19, Math.round(y)));
 
         set({
           combatPositions: {
@@ -1847,13 +1847,13 @@ export const usePlatis = create<AppState>()(
           if (s.characters[id]) {
             combatPositions[id] = {
               x: 1,
-              y: 2 + playerIndex * 2,
+              y: Math.min(19, 2 + playerIndex * 2),
             };
             playerIndex += 1;
           } else if (s.combatEnemies[id]) {
             combatPositions[id] = {
-              x: 28,
-              y: 2 + enemyIndex * 2,
+              x: 13,
+              y: Math.min(19, 2 + enemyIndex * 2),
             };
             enemyIndex += 1;
           }
