@@ -9,6 +9,29 @@ import { useState, useEffect, useCallback } from "react";
 
 export function CombatPanel() {
   const [movingParticipantId, setMovingParticipantId] = useState<string | null>(null);
+  const [selectedArena, setSelectedArena] = useState("basic_arena.jpg");
+  const arenas = [
+    ["basic_arena.jpg", "Arena clássica"],
+    ["basic2_arena.jpg", "Arena clássica II"],
+    ["break_arena.jpg", "Arena destruída"],
+    ["circle_arena.jpg", "Arena circular"],
+    ["earth_arena.jpg", "Terra"],
+    ["fire_arena.jpg", "Vulcânica"],
+    ["water_arena.jpg", "Aquática"],
+    ["magic_arena.jpg", "Mágica"],
+    ["fisic_arena.jpg", "Física"],
+    ["forest_arena.jpg", "Floresta"],
+    ["ruin_arena.jpg", "Ruínas"],
+    ["sanctuary_arena.jpg", "Santuário"],
+    ["roses_arena.jpg", "Rosas"],
+    ["sund_arena.jpg", "Sund"],
+    ["ammit_arena.jpg", "Domínio de Ammit"],
+    ["camazotz_arena.jpg", "Domínio de Camazotz"],
+    ["jormungandr_arena.jpg", "Domínio de Jörmungandr"],
+    ["skoll_e_hati_arena.jpg", "Domínio de Skoll e Hati"],
+    ["tsuchigumo_arena.jpg", "Domínio de Tsuchigumo"],
+    ["wendigo_arena.jpg", "Domínio de Wendigo"],
+  ] as const;
   const combatActive = usePlatis((s) => s.combatActive);
   const combatMode = usePlatis((s) => s.combatMode);
   const worldBossId = usePlatis((s) => s.worldBossId);
@@ -128,6 +151,20 @@ const nextTurn = usePlatis((s) => s.nextTurn);
               </span>
             </div>
 
+            {usePlatis.getState().role === "mestre" && (
+              <div className="mt-3">
+                <label className="mb-1 block text-xs text-muted">Escolher arena</label>
+                <select
+                  className="h-10 w-full rounded-md border border-line bg-raised px-3 text-sm"
+                  value={selectedArena}
+                  onChange={(event) => setSelectedArena(event.target.value)}
+                >
+                  {arenas.map(([file, label]) => (
+                    <option key={file} value={file}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-y-auto">
               {Object.entries(combatPositions).map(([id]) => {
                 const fighter = characters[id] ?? combatEnemies[id] ?? null;
@@ -151,9 +188,12 @@ const nextTurn = usePlatis((s) => s.nextTurn);
               <div
                 className="relative aspect-[4/3] w-full"
                 style={{
-                  backgroundSize: "6.25% 8.333333%",
-                  backgroundImage:
-                    "linear-gradient(to right, hsl(var(--line) / 0.75) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.75) 1px, transparent 1px)",
+                  backgroundColor: "#171717",
+                  backgroundImage: `linear-gradient(to right, hsl(var(--line) / 0.8) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.8) 1px, transparent 1px), url("/images/arenas/${selectedArena}")`,
+                  backgroundSize: "6.25% 8.333333%, 6.25% 8.333333%, 100% 100%",
+                  backgroundPosition: "0 0, 0 0, center",
+                  backgroundRepeat: "repeat, repeat, no-repeat",
+                  backgroundBlendMode: "normal, normal, normal",
                 }}
                 onClick={(event) => {
                   if (!movingParticipantId) return;
