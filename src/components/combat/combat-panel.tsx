@@ -116,9 +116,9 @@ const nextTurn = usePlatis((s) => s.nextTurn);
           <div className="panel p-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="font-display text-lg">Arena · 20 × 15</h2>
+                <h2 className="font-display text-lg">Arena · 16 × 12</h2>
                 <p className="text-[10px] text-muted">
-                  20 colunas de largura · 15 linhas de altura
+                  16 colunas de largura · 12 linhas de altura
                 </p>
               </div>
               <span className="text-[10px] text-muted">
@@ -151,15 +151,15 @@ const nextTurn = usePlatis((s) => s.nextTurn);
               <div
                 className="relative aspect-[4/3] w-full"
                 style={{
-                  backgroundSize: "5% 6.666667%",
+                  backgroundSize: "6.25% 8.333333%",
                   backgroundImage:
                     "linear-gradient(to right, hsl(var(--line) / 0.75) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.75) 1px, transparent 1px)",
                 }}
                 onClick={(event) => {
                   if (!movingParticipantId) return;
                   const rect = event.currentTarget.getBoundingClientRect();
-                  const x = Math.min(19, Math.floor(((event.clientX - rect.left) / rect.width) * 20));
-                  const y = Math.min(14, Math.floor(((event.clientY - rect.top) / rect.height) * 15));
+                  const x = Math.min(15, Math.floor(((event.clientX - rect.left) / rect.width) * 16));
+                  const y = Math.min(11, Math.floor(((event.clientY - rect.top) / rect.height) * 12));
                   moveCombatParticipant(movingParticipantId, x, y);
                 }}
               >
@@ -171,10 +171,10 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                   return (
                     <div
                       key={id}
-                      className={`absolute z-10 flex h-[6.666667%] w-[5%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded border-2 ${isEnemy ? "border-red-500 bg-red-950" : "border-sky-400 bg-sky-950"} ${movingParticipantId === id ? "ring-2 ring-yellow-300" : ""}`}
+                      className={`absolute z-10 flex h-[8.333333%] w-[6.25%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded border-2 ${isEnemy ? "border-red-500 bg-red-950" : "border-sky-400 bg-sky-950"} ${movingParticipantId === id ? "ring-2 ring-yellow-300" : ""}`}
                       style={{
-                        left: `${((position.x + 0.5) / 15) * 100}%`,
-                        top: `${((position.y + 0.5) / 20) * 100}%`,
+                        left: `${((position.x + 0.5) / 16) * 100}%`,
+                        top: `${((position.y + 0.5) / 12) * 100}%`,
                       }}
                       title={fighter.name}
                     >
