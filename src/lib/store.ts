@@ -1847,13 +1847,13 @@ export const usePlatis = create<AppState>()(
           if (s.characters[id]) {
             combatPositions[id] = {
               x: 1,
-              y: Math.min(19, 2 + playerIndex * 2),
+              y: Math.min(14, 2 + playerIndex * 2),
             };
             playerIndex += 1;
           } else if (s.combatEnemies[id]) {
             combatPositions[id] = {
-              x: 13,
-              y: Math.min(19, 2 + enemyIndex * 2),
+              x: 18,
+              y: Math.min(14, 2 + enemyIndex * 2),
             };
             enemyIndex += 1;
           }
@@ -2017,8 +2017,8 @@ export const usePlatis = create<AppState>()(
           ).length - 1;
 
           combatPositions[id] = {
-            x: isEnemy ? 13 : 1,
-            y: Math.min(19, 2 + Math.max(0, sameSideCount) * 2),
+            x: isEnemy ? 18 : 1,
+            y: Math.min(14, 2 + Math.max(0, sameSideCount) * 2),
           };
         }
 

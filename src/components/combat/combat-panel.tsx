@@ -41,7 +41,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
     const x = position.x + dx;
     const y = position.y + dy;
 
-    if (x < 0 || x > 14 || y < 0 || y > 19) {
+    if (x < 0 || x > 19 || y < 0 || y > 14) {
       if (state.characters[id]) attemptEscape(id);
       return;
     }
@@ -116,9 +116,9 @@ const nextTurn = usePlatis((s) => s.nextTurn);
           <div className="panel p-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="font-display text-lg">Arena · 15 × 20</h2>
+                <h2 className="font-display text-lg">Arena · 20 × 15</h2>
                 <p className="text-[10px] text-muted">
-                  15 células de largura · 20 de profundidade
+                  20 colunas de largura · 15 linhas de altura
                 </p>
               </div>
               <span className="text-[10px] text-muted">
@@ -147,19 +147,19 @@ const nextTurn = usePlatis((s) => s.nextTurn);
               })}
             </div>
 
-            <div className="mx-auto mt-2 w-full max-w-[300px] overflow-hidden rounded-md border border-line">
+            <div className="mx-auto mt-2 w-full max-w-[760px] overflow-hidden rounded-md border border-line">
               <div
-                className="relative aspect-[3/4] w-full"
+                className="relative aspect-[4/3] w-full"
                 style={{
-                  backgroundSize: "6.666667% 5%",
+                  backgroundSize: "5% 6.666667%",
                   backgroundImage:
-                    "linear-gradient(to right, hsl(var(--line) / 0.35) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.35) 1px, transparent 1px)",
+                    "linear-gradient(to right, hsl(var(--line) / 0.75) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.75) 1px, transparent 1px)",
                 }}
                 onClick={(event) => {
                   if (!movingParticipantId) return;
                   const rect = event.currentTarget.getBoundingClientRect();
-                  const x = Math.min(14, Math.floor(((event.clientX - rect.left) / rect.width) * 15));
-                  const y = Math.min(19, Math.floor(((event.clientY - rect.top) / rect.height) * 20));
+                  const x = Math.min(19, Math.floor(((event.clientX - rect.left) / rect.width) * 20));
+                  const y = Math.min(14, Math.floor(((event.clientY - rect.top) / rect.height) * 15));
                   moveCombatParticipant(movingParticipantId, x, y);
                 }}
               >
@@ -171,14 +171,18 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                   return (
                     <div
                       key={id}
-                      className="absolute z-10 flex h-[5%] min-w-[6.666667%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded border border-line bg-panel px-0.5 text-[7px] font-bold leading-none"
+                      className={`absolute z-10 flex h-[6.666667%] w-[5%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded border-2 ${isEnemy ? "border-red-500 bg-red-950" : "border-sky-400 bg-sky-950"} ${movingParticipantId === id ? "ring-2 ring-yellow-300" : ""}`}
                       style={{
                         left: `${((position.x + 0.5) / 15) * 100}%`,
                         top: `${((position.y + 0.5) / 20) * 100}%`,
                       }}
                       title={fighter.name}
                     >
-                      {isEnemy ? "E" : "P"}
+                      {fighter.image ? (
+                        <img src={fighter.image} alt={fighter.name} className="h-full w-full object-cover" draggable={false} />
+                      ) : (
+                        <span className="text-[10px] font-bold text-white">{isEnemy ? "E" : "P"}</span>
+                      )}
                     </div>
                   );
                 })}
