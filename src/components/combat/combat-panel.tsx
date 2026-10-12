@@ -187,14 +187,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
             <div className="mx-auto mt-2 w-full max-w-[760px] overflow-hidden rounded-md border border-line">
               <div
                 className="relative aspect-[4/3] w-full"
-                style={{
-                  backgroundColor: "#171717",
-                  backgroundImage: `linear-gradient(to right, hsl(var(--line) / 0.8) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--line) / 0.8) 1px, transparent 1px), url("/images/arenas/${selectedArena}")`,
-                  backgroundSize: "6.25% 8.333333%, 6.25% 8.333333%, 100% 100%",
-                  backgroundPosition: "0 0, 0 0, center",
-                  backgroundRepeat: "repeat, repeat, no-repeat",
-                  backgroundBlendMode: "normal, normal, normal",
-                }}
+                style={{ backgroundColor: "#171717" }}
                 onClick={(event) => {
                   if (!movingParticipantId) return;
                   const rect = event.currentTarget.getBoundingClientRect();
@@ -203,6 +196,24 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                   moveCombatParticipant(movingParticipantId, x, y);
                 }}
               >
+                <img
+                  src={`/images/arenas/${selectedArena}`}
+                  alt=""
+                  className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                  draggable={false}
+                  onError={(event) => {
+                    console.error("Falha ao carregar arena:", event.currentTarget.src);
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 z-[1]"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(to right, rgba(220,220,220,0.65) 1px, transparent 1px), linear-gradient(to bottom, rgba(220,220,220,0.65) 1px, transparent 1px)",
+                    backgroundSize: "6.25% 8.333333%",
+                  }}
+                />
                 {Object.entries(combatPositions).map(([id, position]) => {
                   const fighter = characters[id] ?? combatEnemies[id] ?? null;
                   if (!fighter) return null;
