@@ -2136,7 +2136,11 @@ export const usePlatis = create<AppState>()(
         );
 
         const combatFinished =
-          remainingPlayers.length === 0 || remainingEnemies.length === 0;
+          Boolean(defeatedId) &&
+          (
+            remainingPlayers.length === 0 ||
+            remainingEnemies.length === 0
+          );
 
         if (combatFinished) {
           set({

@@ -210,7 +210,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                   className="pointer-events-none absolute inset-0 z-[1]"
                   style={{
                     backgroundImage:
-                      "linear-gradient(to right, rgba(220,220,220,0.65) 1px, transparent 1px), linear-gradient(to bottom, rgba(220,220,220,0.65) 1px, transparent 1px)",
+                      "linear-gradient(to right, rgba(220,220,220,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(220,220,220,0.18) 1px, transparent 1px)",
                     backgroundSize: "6.25% 8.333333%",
                   }}
                 />
