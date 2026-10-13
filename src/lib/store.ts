@@ -1831,7 +1831,16 @@ export const usePlatis = create<AppState>()(
               return bStats.int - aStats.int;
             }
 
-            return bStats.est - aStats.est;
+            if (bStats.est !== aStats.est) {
+              return bStats.est - aStats.est;
+            }
+
+            const aName = (s.characters[a] ?? s.combatEnemies[a]).name;
+            const bName = (s.characters[b] ?? s.combatEnemies[b]).name;
+
+            return aName.localeCompare(bName, "pt-BR", {
+              sensitivity: "base",
+            });
           });
 
         if (order.length < 2) return;
@@ -1884,15 +1893,34 @@ export const usePlatis = create<AppState>()(
       nextTurn: () => {
         const s = get();
 
-        if (!s.combatActive || s.combatOrder.length === 0) return;
+        if (!s.combatActive) return;
 
-        let index = s.combatTurnIndex;
+        const aliveParticipants = s.combatParticipants.filter((id) => {
+          const character = s.characters[id];
+          const enemy = s.combatEnemies[id];
+          return Boolean(
+            (character && character.current.hp > 0) ||
+            (enemy && enemy.current.hp > 0)
+          );
+        });
+
+        const turnOrder = s.combatOrder.length > 0
+          ? s.combatOrder.filter((id) => aliveParticipants.includes(id))
+          : aliveParticipants;
+
+        if (turnOrder.length === 0) return;
+
+        const currentId = s.attackerId;
+        const currentIndex = currentId ? turnOrder.indexOf(currentId) : -1;
+        const baseIndex = currentIndex >= 0 ? currentIndex : s.combatTurnIndex;
+
+        let index = baseIndex;
         let wrapped = false;
         let nextId: string | undefined;
 
-        for (let step = 1; step <= s.combatOrder.length; step += 1) {
-          const candidateIndex = (s.combatTurnIndex + step) % s.combatOrder.length;
-          const candidateId = s.combatOrder[candidateIndex];
+        for (let step = 1; step <= turnOrder.length; step += 1) {
+          const candidateIndex = (baseIndex + step) % turnOrder.length;
+          const candidateId = turnOrder[candidateIndex];
 
           const character = s.characters[candidateId];
           const enemy = s.combatEnemies[candidateId];
@@ -1912,15 +1940,15 @@ export const usePlatis = create<AppState>()(
 
         const isEnemyTurn = Boolean(s.combatEnemies[nextId]);
         const targetId = isEnemyTurn
-          ? s.combatOrder.find(
+          ? turnOrder.find(
               (id) =>
                 Boolean(s.characters[id]) &&
-                s.combatParticipants.includes(id) &&
                 s.characters[id].current.hp > 0,
             ) ?? null
           : null;
 
         set({
+          combatOrder: turnOrder,
           combatTurnIndex: index,
           combatRound: wrapped ? s.combatRound + 1 : s.combatRound,
           attackerId: nextId,
