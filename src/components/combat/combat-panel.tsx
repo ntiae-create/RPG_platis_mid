@@ -111,7 +111,9 @@ const nextTurn = usePlatis((s) => s.nextTurn);
   const roster: (Character | CombatEnemy)[] = [];
   for (const id of slots) {
     if (id && characters[id]) roster.push(characters[id]);
-  for (const enemy of Object.values(combatEnemies)) roster.push(enemy);
+  }
+  for (const enemy of Object.values(combatEnemies)) {
+    roster.push(enemy);
   }
 
   if (combatMode === "world-boss") {
