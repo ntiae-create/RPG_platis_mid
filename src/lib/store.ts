@@ -1892,7 +1892,6 @@ export const usePlatis = create<AppState>()(
 
       nextTurn: () => {
         const s = get();
-
         if (!s.combatActive) return;
 
         const aliveParticipants = s.combatParticipants.filter((id) => {
@@ -1910,46 +1909,30 @@ export const usePlatis = create<AppState>()(
 
         if (turnOrder.length === 0) return;
 
-        const currentId = s.attackerId;
-        const currentIndex = currentId ? turnOrder.indexOf(currentId) : -1;
-        const baseIndex = currentIndex >= 0 ? currentIndex : s.combatTurnIndex;
+        const currentIndex = s.attackerId
+          ? turnOrder.indexOf(s.attackerId)
+          : -1;
+        const baseIndex = currentIndex >= 0
+          ? currentIndex
+          : Math.max(-1, s.combatTurnIndex);
 
-        let index = baseIndex;
-        let wrapped = false;
-        let nextId: string | undefined;
-
-        for (let step = 1; step <= turnOrder.length; step += 1) {
-          const candidateIndex = (baseIndex + step) % turnOrder.length;
-          const candidateId = turnOrder[candidateIndex];
-
-          const character = s.characters[candidateId];
-          const enemy = s.combatEnemies[candidateId];
-
-          if (
-            (character && character.current.hp > 0) ||
-            (enemy && enemy.current.hp > 0)
-          ) {
-            index = candidateIndex;
-            wrapped = candidateIndex <= s.combatTurnIndex;
-            nextId = candidateId;
-            break;
-          }
-        }
-
+        const nextIndex = (baseIndex + 1) % turnOrder.length;
+        const nextId = turnOrder[nextIndex];
         if (!nextId) return;
 
+        const wrapped = nextIndex <= baseIndex;
         const isEnemyTurn = Boolean(s.combatEnemies[nextId]);
         const targetId = isEnemyTurn
           ? turnOrder.find(
               (id) =>
                 Boolean(s.characters[id]) &&
-                s.characters[id].current.hp > 0,
+                s.characters[id].current.hp > 0
             ) ?? null
           : null;
 
         set({
           combatOrder: turnOrder,
-          combatTurnIndex: index,
+          combatTurnIndex: nextIndex,
           combatRound: wrapped ? s.combatRound + 1 : s.combatRound,
           attackerId: nextId,
           defenderId: targetId,
@@ -1960,6 +1943,7 @@ export const usePlatis = create<AppState>()(
           get().rollCombat("physical");
         }
       },
+
       clearCombatLog: () => set({ combatLog: [] }),
 
       endCombat: () => {
