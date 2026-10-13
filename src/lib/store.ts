@@ -1812,8 +1812,21 @@ export const usePlatis = create<AppState>()(
       startCombat: () => {
         const s = get();
 
-        const order = s.combatParticipants
-          .filter((id) => Boolean(s.characters[id] || s.combatEnemies[id]))
+        const allParticipants = [...new Set([
+          ...s.combatParticipants,
+          ...s.slots.filter((id): id is string => Boolean(id)),
+          ...Object.keys(s.combatEnemies),
+        ])];
+
+        const order = allParticipants
+          .filter((id) => {
+            const character = s.characters[id];
+            const enemy = s.combatEnemies[id];
+            return Boolean(
+              (character && character.current.hp > 0) ||
+              (enemy && enemy.current.hp > 0)
+            );
+          })
           .sort((a, b) => {
             const aStats = s.characters[a]
               ? finalStats(s.characters[a])
@@ -1870,8 +1883,8 @@ export const usePlatis = create<AppState>()(
 
         set({
           combatActive: true,
-          combatParticipants: [...s.combatParticipants],
-          combatXpParticipants: [...s.combatParticipants],
+          combatParticipants: [...order],
+          combatXpParticipants: [...order],
           combatOrder: order,
           combatPositions,
           combatTurnIndex: 0,
