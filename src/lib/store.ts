@@ -1927,15 +1927,13 @@ export const usePlatis = create<AppState>()(
           : -1;
         const baseIndex = currentIndex >= 0
           ? currentIndex
-          : Math.min(Math.max(s.combatTurnIndex, -1), turnOrder.length - 1);
+          : Math.max(-1, s.combatTurnIndex);
 
         const nextIndex = (baseIndex + 1) % turnOrder.length;
         const nextId = turnOrder[nextIndex];
         if (!nextId) return;
 
-        const wrapped = currentIndex >= 0
-          ? nextIndex <= currentIndex
-          : nextIndex === 0;
+        const wrapped = nextIndex <= baseIndex;
         const isEnemyTurn = Boolean(s.combatEnemies[nextId]);
         const targetId = isEnemyTurn
           ? turnOrder.find(
