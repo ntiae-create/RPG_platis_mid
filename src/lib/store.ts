@@ -71,6 +71,7 @@ export type MesaTab =
   | "personagem"
   | "mapa"
   | "combate"
+  | "config-combate"
   | "habilidades"
   | "inventario"
   | "mundo"

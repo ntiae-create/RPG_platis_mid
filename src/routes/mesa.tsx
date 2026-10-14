@@ -287,13 +287,14 @@ function Mesa() {
       </div>
       <CtePanel />
 
-      {tab === "mesa" && (
+      {(tab === "mesa" || tab === "config-combate") && (
         <div className="space-y-4">
           {role === "mestre" && (
           <MasterPanel
             p2pPeers={p2pPeers}
             remoteCharacters={remoteCharacters}
             onKickPeer={(peerId) => p2pRef.current?.kick(peerId)}
+            initialSection={tab === "config-combate" ? "combate" : undefined}
             onPatchRemoteCharacter={(characterId, patch) => {
               patchCharacter(characterId, patch);
               const targetPeerId = Object.entries(remoteCharacters).find(([, character]) => character.id === characterId)?.[0];

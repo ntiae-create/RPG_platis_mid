@@ -69,6 +69,7 @@ export function MasterPanel({
   remoteCharacters,
   onKickPeer,
   onPatchRemoteCharacter,
+  initialSection,
 }: {
   p2pPeers: {
     id: string;
@@ -79,8 +80,9 @@ export function MasterPanel({
   remoteCharacters: Record<string, Character>;
   onKickPeer: (peerId: string) => void;
   onPatchRemoteCharacter: (characterId: string, patch: Partial<Character>) => void;
+  initialSection?: MasterSection;
 }) {
-  const [section, setSection] = useState<MasterSection | null>(null);
+  const [section, setSection] = useState<MasterSection | null>(initialSection ?? null);
   const nav = useNavigate();
   const [eventType, setEventType] = useState<string | null>(null);
   const [cteTimerMs, setCteTimerMs] = useState(3000);
