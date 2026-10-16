@@ -1,31 +1,43 @@
+import { useState } from "react";
 import { usePlatis } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { WorldGlobe } from "@/components/map/world-globe";
-import { MinimalistWorldMap } from "@/components/map/minimalist-world-map";
+import { ExplorationMap } from "@/components/map/exploration-map";
+
+type MapView = "exploration" | "globe";
 
 export function WorldMap() {
-  const view = usePlatis((s) => s.worldMapView);
+  const savedView = usePlatis((s) => s.worldMapView);
   const setWorldMapView = usePlatis((s) => s.setWorldMapView);
+  const [localView, setLocalView] = useState<MapView | null>(null);
+
+  const view =
+    localView ?? (savedView === "globe" ? "globe" : "exploration");
+
+  function changeView(next: MapView) {
+    setLocalView(next);
+    setWorldMapView(next === "globe" ? "globe" : "map");
+  }
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => setWorldMapView("map")}
-          aria-pressed={view === "map"}
+          onClick={() => changeView("exploration")}
+          aria-pressed={view === "exploration"}
           className={cn(
             "rounded-lg border px-4 py-2 text-sm",
-            view === "map"
+            view === "exploration"
               ? "border-accent bg-accent/15 text-accent"
               : "border-line text-muted",
           )}
         >
-          Mapa 2D
+          Exploração 3D
         </button>
         <button
           type="button"
-          onClick={() => setWorldMapView("globe")}
+          onClick={() => changeView("globe")}
           aria-pressed={view === "globe"}
           className={cn(
             "rounded-lg border px-4 py-2 text-sm",
@@ -38,7 +50,7 @@ export function WorldMap() {
         </button>
       </div>
 
-      {view === "globe" ? <WorldGlobe /> : <MinimalistWorldMap />}
+      {view === "globe" ? <WorldGlobe /> : <ExplorationMap />}
     </div>
   );
 }
