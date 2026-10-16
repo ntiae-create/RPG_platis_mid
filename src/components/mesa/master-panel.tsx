@@ -20,7 +20,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { usePlatis } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
-import type { Character, Skill } from "@/data/types";
+import type { Character, Skill, InventoryItem } from "@/data/types"
 
 type MasterSection =
   | "eventos"
@@ -94,6 +94,7 @@ export function MasterPanel({
   const masterEvents = usePlatis((s) => s.masterEvents);
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
+  const grantItem = usePlatis((s) => s.grantItem);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
   const combatParticipants = usePlatis((s) => s.combatParticipants);
   const toggleCombatParticipant = usePlatis((s) => s.toggleCombatParticipant);
@@ -112,6 +113,15 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const grantBrasao = usePlatis((s) => s.grantBrasaoXp);
   const masterCharacter = masterId ? characters[masterId] : Object.values(characters).find((character) => character.isMaster);
 
+  const [itemFormName, setItemFormName] = useState("");
+  const [itemFormRarity, setItemFormRarity] = useState<InventoryItem["rarity"]>("R");
+  const [itemFormCategory, setItemFormCategory] = useState("consumível");
+  const [itemFormSlot, setItemFormSlot] = useState<InventoryItem["slot"] | "">("");
+  const [itemFormEffect, setItemFormEffect] = useState("");
+  const [itemFormDesc, setItemFormDesc] = useState("");
+  const [itemFormPrice, setItemFormPrice] = useState(0);
+  const [itemFormTarget, setItemFormTarget] = useState("");
+  const [itemFormBonus, setItemFormBonus] = useState({hp:0,mp:0,est:0,san:0,atk:0,atkMgc:0,def:0,res:0,agi:0,int:0});
   const [xpTargetId, setXpTargetId] = useState<string>("");
   const [xpAmount, setXpAmount] = useState(100);
   const [masterXpAmount, setMasterXpAmount] = useState(100);
@@ -756,6 +766,91 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
             </Button>
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (section === "itens") {
+    const bonusKeys = ["hp","mp","est","san","atk","atkMgc","def","res","agi","int"] as const;
+    const createItem = () => {
+      if (!itemFormName.trim() || !itemFormTarget) return;
+      const bonus = Object.fromEntries(bonusKeys.filter((k) => itemFormBonus[k] !== 0).map((k) => [k,itemFormBonus[k]])) as InventoryItem["bonus"];
+      grantItem(itemFormTarget, {
+        id: "item-" + Date.now(),
+        name: itemFormName.trim(),
+        rarity: itemFormRarity,
+        category: itemFormCategory,
+        slot: itemFormSlot || undefined,
+        effect: itemFormEffect.trim() || undefined,
+        desc: itemFormDesc.trim() || itemFormName.trim(),
+        price: Math.max(0,itemFormPrice),
+        qty: 1,
+        bonus,
+      });
+      setItemFormName("");
+      setItemFormEffect("");
+      setItemFormDesc("");
+      setItemFormPrice(0);
+      setItemFormBonus({hp:0,mp:0,est:0,san:0,atk:0,atkMgc:0,def:0,res:0,agi:0,int:0});
+    };
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSection(null)}>← Menu do Mestre</Button>
+        <div>
+          <h2 className="font-display text-3xl">Itens e Inventário</h2>
+          <p className="mt-1 text-sm text-muted">Crie itens e entregue diretamente aos personagens.</p>
+        </div>
+        <div className="panel space-y-4 p-4">
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Nome do item</span>
+            <input className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormName} onChange={(e) => setItemFormName(e.target.value)} placeholder="Nome do item" />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block space-y-1">
+              <span className="text-xs text-muted">Raridade</span>
+              <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormRarity} onChange={(e) => setItemFormRarity(e.target.value as InventoryItem["rarity"])}>
+                {["R","SR","SSR","UR","UR MÁX.","LR","LR EXTRA"].map((v) => <option key={v}>{v}</option>)}
+              </select>
+            </label>
+            <label className="block space-y-1">
+              <span className="text-xs text-muted">Categoria</span>
+              <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormCategory} onChange={(e) => setItemFormCategory(e.target.value)}>
+                {["consumível","arma","armadura","acessório","material","missão","especial","outro"].map((v) => <option key={v}>{v}</option>)}
+              </select>
+            </label>
+          </div>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Descrição</span>
+            <textarea className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormDesc} onChange={(e) => setItemFormDesc(e.target.value)} placeholder="Descrição do item" />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Slot de equipamento</span>
+            <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormSlot} onChange={(e) => setItemFormSlot(e.target.value as InventoryItem["slot"] | "")}>
+              <option value="">Sem slot</option>
+              {["arma","armadura","botas","reliquia","colar"].map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </label>
+          <p className="text-sm font-medium">Bônus de atributos</p>
+          <div className="grid grid-cols-2 gap-3">
+            {bonusKeys.map((k) => <label key={k} className="block space-y-1"><span className="text-xs text-muted">{k === "atkMgc" ? "Ataque mágico" : k.toUpperCase()}</span><input type="number" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormBonus[k]} onChange={(e) => setItemFormBonus((old) => ({...old,[k]:Number(e.target.value)||0}))} /></label>)}
+          </div>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Efeito especial</span>
+            <textarea className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormEffect} onChange={(e) => setItemFormEffect(e.target.value)} placeholder="Efeito do item" />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Preço</span>
+            <input type="number" min="0" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormPrice} onChange={(e) => setItemFormPrice(Math.max(0,Number(e.target.value)||0))} />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Entregar para</span>
+            <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormTarget} onChange={(e) => setItemFormTarget(e.target.value)}>
+              <option value="">Selecione um personagem</option>
+              {slots.map((id) => { if (!id) return null; const ch = characters[id]; if (!ch) return null; return <option key={ch.id} value={ch.id}>{ch.name} — Nv. {ch.level}</option>; })}
+            </select>
+          </label>
+          <Button onClick={createItem} disabled={!itemFormName.trim() || !itemFormTarget}>Criar e entregar item</Button>
+        </div>
       </div>
     );
   }

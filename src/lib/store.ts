@@ -2500,6 +2500,7 @@ export const usePlatis = create<AppState>()(
           inventory: [
             ...ch.inventory,
             {
+              ...loot,
               id: uid("it"),
               name: loot.name,
               desc: loot.desc,

@@ -432,23 +432,20 @@ export type Skill = {
    INVENTÁRIO
    ========================================================= */
 
+export type ItemRarity = "R" | "SR" | "SSR" | "UR" | "UR MÁX." | "LR" | "LR EXTRA";
+
 export type InventoryItem = {
   id: string;
   name: string;
   slot?: "arma" | "armadura" | "botas" | "reliquia" | "colar";
   tier?: "basic" | "medium" | "rare";
+  rarity?: ItemRarity;
+  category?: string;
+  effect?: string;
   desc: string;
   qty: number;
   price?: number;
-  bonus?: Partial<{
-    hp: number;
-    mp: number;
-    atk: number;
-    atkMgc: number;
-    def: number;
-    agi: number;
-    int: number;
-  }>;
+  bonus?: Partial<{ hp: number; mp: number; est: number; san: number; atk: number; atkMgc: number; def: number; res: number; agi: number; int: number }>;
 };
 
 /* =========================================================
