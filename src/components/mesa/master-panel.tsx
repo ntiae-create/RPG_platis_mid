@@ -85,6 +85,21 @@ export function MasterPanel({
 }) {
   const [skillCommandSearch, setSkillCommandSearch] = useState("");
   const [skillCommandCategory, setSkillCommandCategory] = useState("todas");
+  const [skillCommandFormName, setSkillCommandFormName] = useState("");
+  const [skillCommandFormCategory, setSkillCommandFormCategory] = useState<"dano" | "debuff" | "buff" | "cura" | "controle" | "utilidade">("dano");
+  const [skillCommandFormDescription, setSkillCommandFormDescription] = useState("");
+  const [skillCommandFormSyntax, setSkillCommandFormSyntax] = useState("");
+  const [skillCommandFormParameters, setSkillCommandFormParameters] = useState("");
+  const [skillCommandFormStatus, setSkillCommandFormStatus] = useState<"documentado" | "planejado">("planejado");
+  const [skillCommandFormOpen, setSkillCommandFormOpen] = useState(false);
+  const [customSkillCommands, setCustomSkillCommands] = useState<typeof SKILL_COMMANDS>(() => {
+    try {
+      const saved = localStorage.getItem("platis-custom-skill-commands");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [section, setSection] = useState<MasterSection | null>(initialSection ?? null);
   const [questTitle, setQuestTitle] = useState("");
   const [questDescription, setQuestDescription] = useState("");
@@ -1226,8 +1241,9 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
 
 
   if (section === "comunicacao") {
+    const allSkillCommands = [...SKILL_COMMANDS, ...customSkillCommands];
     const query = skillCommandSearch.trim().toLocaleLowerCase("pt-BR");
-    const filteredCommands = SKILL_COMMANDS.filter((item) => {
+    const filteredCommands = allSkillCommands.filter((item) => {
       const matchesCategory =
         skillCommandCategory === "todas" || item.category === skillCommandCategory;
       const searchable = [
@@ -1253,6 +1269,94 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               não o executa no combate.
             </p>
           </div>
+
+          <div className="rounded-lg border border-line p-3 space-y-3">
+            <Button
+              variant="secondary"
+              onClick={() => setSkillCommandFormOpen((open) => !open)}
+            >
+              {skillCommandFormOpen ? "Cancelar" : "+ Adicionar comando"}
+            </Button>
+
+            {skillCommandFormOpen && (
+              <div className="space-y-3">
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Nome do comando</span>
+                  <input
+                    value={skillCommandFormName}
+                    onChange={(event) => setSkillCommandFormName(event.target.value)}
+                    placeholder="Ex.: Cura percentual"
+                    className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Categoria</span>
+                  <select
+                    value={skillCommandFormCategory}
+                    onChange={(event) => setSkillCommandFormCategory(event.target.value as typeof skillCommandFormCategory)}
+                    className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+                  >
+                    {SKILL_COMMAND_CATEGORIES.map((category) => (
+                      <option key={category.id} value={category.id}>{category.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Sintaxe</span>
+                  <input value={skillCommandFormSyntax} onChange={(event) => setSkillCommandFormSyntax(event.target.value)} placeholder="/cura 25%" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Descrição do efeito</span>
+                  <textarea value={skillCommandFormDescription} onChange={(event) => setSkillCommandFormDescription(event.target.value)} placeholder="Explique o efeito..." rows={3} className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Parâmetros (separados por vírgula)</span>
+                  <input value={skillCommandFormParameters} onChange={(event) => setSkillCommandFormParameters(event.target.value)} placeholder="porcentagem, alvo, duração" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-muted">Estado</span>
+                  <select value={skillCommandFormStatus} onChange={(event) => setSkillCommandFormStatus(event.target.value as typeof skillCommandFormStatus)} className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm">
+                    <option value="planejado">Planejado</option>
+                    <option value="documentado">Documentado</option>
+                  </select>
+                </label>
+                <Button onClick={() => {
+                  const name = skillCommandFormName.trim();
+                  const syntax = skillCommandFormSyntax.trim();
+                  const description = skillCommandFormDescription.trim();
+                  if (!name || !syntax || !description) {
+                    alert("Preencha o nome, a sintaxe e a descrição.");
+                    return;
+                  }
+                  const updated = [...customSkillCommands, {
+                    command: name,
+                    category: skillCommandFormCategory,
+                    syntax,
+                    description,
+                    parameters: skillCommandFormParameters.split(",").map((value) => value.trim()).filter(Boolean),
+                    status: skillCommandFormStatus,
+                  }];
+                  try {
+                    localStorage.setItem("platis-custom-skill-commands", JSON.stringify(updated));
+                    setCustomSkillCommands(updated);
+                    setSkillCommandFormName("");
+                    setSkillCommandFormSyntax("");
+                    setSkillCommandFormDescription("");
+                    setSkillCommandFormParameters("");
+                    setSkillCommandFormStatus("planejado");
+                    setSkillCommandFormOpen(false);
+                  } catch {
+                    alert("Não foi possível salvar o comando neste dispositivo.");
+                  }
+                }}>
+                  Salvar comando
+                </Button>
+              </div>
+            )}
+          </div>
+
 
           <input
             type="search"
@@ -1296,7 +1400,16 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
                 <p className="mt-2 text-sm">{item.description}</p>
 
                 <div className="mt-3 rounded-md bg-bg p-3">
-                  <code className="break-all text-sm">{item.syntax}</code>
+                  <code className="break-all text-sm">
+                    {item.syntax.split(/(\/\/[\w-]+|\/[\w-]+|\[[^\]]*\]|\{[^}]*\}|\b\d+(?:\.\d+)?%)/g).filter(Boolean).map((part, index) => {
+                      let color = "text-foreground";
+                      if (part.startsWith("/")) color = "text-sky-400 font-semibold";
+                      else if (part.startsWith("[") && part.endsWith("]")) color = "text-amber-400";
+                      else if (part.startsWith("{") && part.endsWith("}")) color = "text-violet-400";
+                      else if (/^\d+(?:\.\d+)?%$/.test(part)) color = "text-emerald-400 font-semibold";
+                      return <span key={index} className={color}>{part}</span>;
+                    })}
+                  </code>
                   <div className="mt-2">
                     <Button
                       variant="secondary"
