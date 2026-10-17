@@ -136,6 +136,20 @@ export type MasterEventReward = {
   itemIds?: string[];
 };
 
+export type QuestStatus = "rascunho" | "publicada" | "concluida" | "cancelada";
+export type Quest = {
+  id: string;
+  title: string;
+  description: string;
+  objective: string;
+  difficulty: string;
+  status: QuestStatus;
+  createdAt: number;
+  completedAt?: number;
+  reward: { xp?: number; brasao?: number; bronze?: number; silver?: number; gold?: number; platinum?: number };
+  participations: { characterId: string; status: "aceita" | "recusada" | "concluida"; acceptedAt?: number; rewardedAt?: number; rewardSnapshot?: { xp?: number; brasao?: number; bronze?: number; silver?: number; gold?: number; platinum?: number } }[];
+};
+
 export type MasterEvent = {
   id: string;
   type: MasterEventType;
@@ -214,6 +228,12 @@ type AppState = {
   tab: MesaTab;
   trap: { cell: string; remaining: number; armed: boolean } | null;
   masterEvents: MasterEvent[];
+  createQuest: (quest: Quest) => void;
+  updateQuest: (id: string, updates: Partial<Quest>) => void;
+  respondToQuest: (questId: string, characterId: string, accept: boolean) => void;
+  completeQuest: (questId: string, characterId: string) => void;
+  quests: Quest[];
+  syncQuests: (quests: Quest[]) => void;
   activeMasterEventId: string | null;
 
   setRole: (role: Role) => void;
@@ -243,6 +263,7 @@ type AppState = {
 
   grantXp: (characterId: string, amount: number) => void;
   grantBrasaoXp: (characterId: string, amount: number) => void;
+  completeQuestAndReward: (questId: string) => string[];
   spendAttr: (key: StatKey, pool?: boolean) => void;
   unlockRace: (characterId: string, raceId: string) => void;
 
@@ -352,6 +373,7 @@ function empty(): Pick<
   | "trap"
   | "masterEvents"
   | "activeMasterEventId"
+  | "quests"
 > {
   return {
     version: SAVE_VERSION,
@@ -393,6 +415,7 @@ function empty(): Pick<
     tab: "personagem",
     trap: null,
     masterEvents: [],
+    quests: [],
     activeMasterEventId: null,
   };
 }
@@ -720,6 +743,38 @@ export const usePlatis = create<AppState>()(
       setRole: (role) => set({ role, tab: role === "mestre" ? "mesa" : "personagem" }),
       setTab: (tab) => set({ tab }),
 
+      syncQuests: (quests) => set({ quests }),
+      createQuest: (quest) =>
+        set((s) => ({ quests: [...s.quests, quest] })),
+      updateQuest: (id, updates) =>
+        set((s) => ({ quests: s.quests.map((q) => q.id === id ? { ...q, ...updates } : q) })),
+      respondToQuest: (questId, characterId, accept) =>
+        set((s) => ({ quests: s.quests.map((q) => {
+          if (q.id !== questId || q.status !== "publicada") return q;
+          const old = q.participations.find((p) => p.characterId === characterId);
+          if (old) return q;
+          return { ...q, participations: [...q.participations, {
+            characterId, status: accept ? "aceita" as const : "recusada" as const,
+            ...(accept ? { acceptedAt: Date.now() } : {})
+          }] };
+        }) })),
+      completeQuest: (questId, characterId) =>
+        set((s) => ({ quests: s.quests.map((q) => q.id !== questId ? q : {
+          ...q, participations: q.participations.map((p) =>
+            p.characterId === characterId && p.status === "aceita"
+              ? { ...p, status: "concluida" as const } : p)
+        }) })),
+      completeQuestAndReward: (questId) => {
+        const state = get();
+        if (state.role !== "mestre") return [];
+        const quest = state.quests.find((q) => q.id === questId && q.status === "publicada");
+        if (!quest) return [];
+        const eligible = quest.participations.filter(
+          (p) => p.status === "aceita" && !p.rewardedAt
+        );
+        if (eligible.length === 0) return [];
+        return eligible.map((p) => p.characterId);
+      },
       createMasterEvent: (event) =>
         set((s) => ({
           masterEvents: [...s.masterEvents, event],
@@ -2630,6 +2685,7 @@ export const usePlatis = create<AppState>()(
         role: s.role,
         selfId: s.selfId,
         characters: s.characters,
+        quests: s.quests,
         slots: s.slots,
         masterId: s.masterId,
         movementLocked: s.movementLocked,

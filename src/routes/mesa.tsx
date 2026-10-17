@@ -7,6 +7,7 @@ import { ContinentGrid } from "@/components/map/continent-grid";
 import { WorldMap } from "@/components/map/world-map";
 import { ChatPanel } from "@/components/mesa/chat-panel";
 import { CtePanel } from "@/components/mesa/cte-panel";
+import { QuestBoard } from "@/components/mesa/quest-board";
 import { MasterPanel } from "@/components/mesa/master-panel";
 import { MesaShell } from "@/components/mesa/shell";
 import { PersistGate } from "@/components/persist-gate";
@@ -47,6 +48,8 @@ function Mesa() {
   );
   const respondToCte = usePlatis((s) => s.respondToCte);
   const patchCharacter = usePlatis((s) => s.patchCharacter);
+  const quests = usePlatis((s) => s.quests);
+  const syncQuests = usePlatis((s) => s.syncQuests);
 
   useEffect(() => {
     if (!selfId) nav({ to: "/criar" });
@@ -105,6 +108,16 @@ function Mesa() {
               );
             }
           }
+
+        if (channel === "reliable" && typeof data === "object" && data !== null && "type" in data) {
+          const message = data as { type: string; quests?: import("@/lib/store").Quest[]; questId?: string; characterId?: string; accept?: boolean };
+          if (message.type === "quests-sync" && role !== "mestre" && Array.isArray(message.quests)) {
+            syncQuests(message.quests);
+          }
+          if (message.type === "quest-response" && role === "mestre" && message.questId && message.characterId && typeof message.accept === "boolean") {
+            usePlatis.getState().respondToQuest(message.questId, message.characterId, message.accept);
+          }
+        }
 
         console.log("[Mesa P2P] mensagem:", from, channel, data);
         if (
@@ -213,6 +226,11 @@ function Mesa() {
 
 
 
+  useEffect(() => {
+    if (role !== "mestre" || !p2pRef.current) return;
+    p2pRef.current.send({ type: "quests-sync", quests });
+  }, [quests, role, p2pConnected]);
+
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
 
@@ -286,6 +304,19 @@ function Mesa() {
         ))}
       </div>
       <CtePanel />
+      {role === "jogador" && tab === "mesa" && (
+        <QuestBoard
+          onRespond={(questId, accept) => {
+            const master = p2pPeers.find((peer) => peer.role === "mestre");
+            p2pRef.current?.send({
+              type: "quest-response",
+              questId,
+              characterId: ch.id,
+              accept,
+            }, master?.id);
+          }}
+        />
+      )}
 
       {(tab === "mesa" || tab === "config-combate") && (
         <div className="space-y-4">

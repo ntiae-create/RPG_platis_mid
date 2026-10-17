@@ -83,6 +83,19 @@ export function MasterPanel({
   initialSection?: MasterSection;
 }) {
   const [section, setSection] = useState<MasterSection | null>(initialSection ?? null);
+  const [questTitle, setQuestTitle] = useState("");
+  const [questDescription, setQuestDescription] = useState("");
+  const [questObjective, setQuestObjective] = useState("");
+  const [questDifficulty, setQuestDifficulty] = useState("Normal");
+  const [questXp, setQuestXp] = useState("100");
+  const [questBrasao, setQuestBrasao] = useState("0");
+  const [questBronze, setQuestBronze] = useState("0");
+  const [questSilver, setQuestSilver] = useState("0");
+  const [questGold, setQuestGold] = useState("0");
+  const [questPlatinum, setQuestPlatinum] = useState("0");
+  const quests = usePlatis((s) => s.quests);
+  const createQuest = usePlatis((s) => s.createQuest);
+  const updateQuest = usePlatis((s) => s.updateQuest);
   const nav = useNavigate();
   const [eventType, setEventType] = useState<string | null>(null);
   const [cteTimerMs, setCteTimerMs] = useState(3000);
@@ -618,6 +631,146 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               Iniciar combate
             </Button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (section === "missoes") {
+    const field = "w-full rounded-md border border-line bg-panel p-3 text-sm";
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSection(null)}>← Menu do Mestre</Button>
+        <div>
+          <h2 className="font-display text-3xl">Quadro de Missões</h2>
+          <p className="text-sm text-muted">Crie cartazes e publique objetivos para os jogadores.</p>
+        </div>
+        <form className="panel space-y-3 p-4" onSubmit={(e) => {
+          e.preventDefault();
+          if (!questTitle.trim() || !questDescription.trim() || !questObjective.trim()) return;
+          createQuest({
+            id: crypto.randomUUID(), title: questTitle.trim(),
+            description: questDescription.trim(), objective: questObjective.trim(),
+            difficulty: questDifficulty, status: "publicada", createdAt: Date.now(),
+            reward: {
+              xp: Math.max(0, Number(questXp) || 0),
+              brasao: Math.max(0, Number(questBrasao) || 0),
+              bronze: Math.max(0, Number(questBronze) || 0),
+              silver: Math.max(0, Number(questSilver) || 0),
+              gold: Math.max(0, Number(questGold) || 0),
+              platinum: Math.max(0, Number(questPlatinum) || 0),
+            }, participations: []
+          });
+          setQuestTitle(""); setQuestDescription(""); setQuestObjective("");
+        }}>
+          <h3 className="font-semibold">Criar cartaz</h3>
+          <input className={field} placeholder="Título da missão" value={questTitle} onChange={(e) => setQuestTitle(e.target.value)} />
+          <textarea className={field} placeholder="Descrição e contexto" value={questDescription} onChange={(e) => setQuestDescription(e.target.value)} />
+          <textarea className={field} placeholder="Objetivo a cumprir" value={questObjective} onChange={(e) => setQuestObjective(e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <select className={field} value={questDifficulty} onChange={(e) => setQuestDifficulty(e.target.value)}>
+              <option>Fácil</option><option>Normal</option><option>Difícil</option><option>Extrema</option><option>Lendária</option>
+            </select>
+            <input className={field} type="number" min="0" placeholder="Recompensa XP" value={questXp} onChange={(e) => setQuestXp(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <input className={field} type="number" min="0" placeholder="XP de Brasão" value={questBrasao} onChange={(e) => setQuestBrasao(e.target.value)} />
+            <input className={field} type="number" min="0" placeholder="Bronze" value={questBronze} onChange={(e) => setQuestBronze(e.target.value)} />
+            <input className={field} type="number" min="0" placeholder="Prata" value={questSilver} onChange={(e) => setQuestSilver(e.target.value)} />
+            <input className={field} type="number" min="0" placeholder="Ouro" value={questGold} onChange={(e) => setQuestGold(e.target.value)} />
+            <input className={field} type="number" min="0" placeholder="Platina" value={questPlatinum} onChange={(e) => setQuestPlatinum(e.target.value)} />
+          </div>
+          <Button type="submit">Publicar missão</Button>
+        </form>
+        <div className="space-y-3">
+          <h3 className="font-semibold">Cartazes publicados</h3>
+          {quests.length === 0 && <p className="text-sm text-muted">Nenhuma missão criada ainda.</p>}
+          {quests.map((q) => (
+            <article key={q.id} className="panel space-y-2 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">{q.title}</h3>
+                <span className="text-xs text-muted">{q.difficulty} · {q.status}</span>
+              </div>
+              <p className="text-sm">{q.description}</p>
+              <p className="text-sm"><strong>Objetivo:</strong> {q.objective}</p>
+              <p className="text-xs text-muted">Recompensa: {q.reward.xp ?? 0} XP · Participantes: {q.participations.filter((x) => x.status === "aceita").length}</p>
+              <div className="mt-3 space-y-2 rounded-lg border border-line p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Participantes</p>
+                {q.participations.length === 0 ? (
+                  <p className="text-sm text-muted">Nenhum jogador respondeu ainda.</p>
+                ) : q.participations.map((p) => {
+                  const character = characters[p.characterId] ?? Object.values(remoteCharacters).find((c) => c.id === p.characterId);
+                  const statusLabel = p.status === "aceita" ? "Aceitou" : p.status === "recusada" ? "Recusou" : "Concluiu";
+                  return (
+                    <div key={p.characterId} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span>{character?.name ?? "Personagem"} </span>
+                      <span className="text-muted">{statusLabel}{p.rewardedAt ? " · Recompensa entregue" : ""}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {q.status === "rascunho" && <Button onClick={() => updateQuest(q.id, { status: "publicada" })}>Publicar</Button>}
+              {q.status === "publicada" && <Button onClick={() => {
+                const state = usePlatis.getState();
+                const pending = q.participations.filter((p) => p.status === "aceita" && !p.rewardedAt);
+                const missing = pending.filter((p) =>
+                  !state.characters[p.characterId] &&
+                  !Object.values(remoteCharacters).some((c) => c.id === p.characterId)
+                );
+                if (missing.length > 0) {
+                  window.alert("Não foi possível entregar as recompensas: há personagem(ns) indisponível(is). Peça para o(s) jogador(es) reconectar(em) e tente novamente.");
+                  return;
+                }
+                for (const p of pending) {
+                  const remoteCharacter = Object.values(remoteCharacters).find((c) => c.id === p.characterId);
+                  if (!usePlatis.getState().characters[p.characterId] && remoteCharacter) {
+                    usePlatis.getState().addCharacter(remoteCharacter, false);
+                  }
+                }
+                const eligible = usePlatis.getState().completeQuestAndReward(q.id);
+                const reward = q.reward;
+                for (const characterId of eligible) {
+                  const remoteCharacter = Object.values(remoteCharacters).find((c) => c.id === characterId);
+                  if (!usePlatis.getState().characters[characterId] && remoteCharacter) {
+                    usePlatis.getState().addCharacter(remoteCharacter, false);
+                  }
+                  if (reward.xp) grantXp(characterId, reward.xp);
+                  if (reward.brasao) grantBrasao(characterId, reward.brasao);
+                  const character = usePlatis.getState().characters[characterId];
+                  if (character && (reward.bronze || reward.silver || reward.gold || reward.platinum)) {
+                    usePlatis.getState().patchCharacter(characterId, {
+                      currency: {
+                        ...character.currency,
+                        bronze: character.currency.bronze + (reward.bronze ?? 0),
+                        silver: character.currency.silver + (reward.silver ?? 0),
+                        gold: character.currency.gold + (reward.gold ?? 0),
+                        platinum: character.currency.platinum + (reward.platinum ?? 0),
+                      },
+                    });
+                  }
+                  const updated = usePlatis.getState().characters[characterId];
+                  if (updated) onPatchRemoteCharacter(characterId, updated);
+                }
+                usePlatis.getState().updateQuest(q.id, {
+                  status: "concluida",
+                  completedAt: Date.now(),
+                  participations: usePlatis.getState().quests
+                    .find((quest) => quest.id === q.id)!
+                    .participations.map((p) =>
+                      eligible.includes(p.characterId) && p.status === "aceita"
+                        ? {
+                            ...p,
+                            status: "concluida" as const,
+                            rewardedAt: Date.now(),
+                            rewardSnapshot: { ...reward },
+                          }
+                        : p
+                    ),
+                });
+              }}>Concluir missão e entregar recompensas</Button>}
+              {q.status === "publicada" && <Button variant="ghost" onClick={() => updateQuest(q.id, { status: "cancelada" })}>Cancelar missão</Button>}
+            </article>
+          ))}
         </div>
       </div>
     );
