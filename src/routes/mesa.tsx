@@ -69,6 +69,12 @@ function Mesa() {
       onPeerReady: (peerId) => {
         setPeerReadyCount((count) => count + 1);
         console.log("[Mesa P2P] canal reliable pronto:", peerId);
+        if (role === "mestre") {
+          p2pRef.current?.send(
+            { type: "quests-sync", quests: usePlatis.getState().quests },
+            peerId,
+          );
+        }
         const currentCharacter = selfId
           ? usePlatis.getState().characters[selfId]
           : null;
@@ -302,6 +308,81 @@ function Mesa() {
           </div>
         ))}
       </div>
+      {role === "jogador" && (
+        <section className="panel space-y-4 border border-line p-4">
+          <div>
+            <h2 className="font-display text-2xl">Missões disponíveis</h2>
+            <p className="text-sm text-muted">
+              Leia os objetivos e escolha se deseja participar. Sua resposta será enviada ao Mestre.
+            </p>
+          </div>
+          {quests.filter((quest) => quest.status === "publicada").length === 0 ? (
+            <p className="text-sm text-muted">Nenhuma missão publicada no momento.</p>
+          ) : quests.filter((quest) => quest.status === "publicada").map((quest) => {
+            const participation = quest.participations.find((p) => p.characterId === selfId);
+            return (
+              <article key={quest.id} className="space-y-3 rounded-lg border border-line p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-semibold">{quest.title}</h3>
+                  <span className="text-xs text-muted">Dificuldade: {quest.difficulty}</span>
+                </div>
+                <p className="text-sm">{quest.description}</p>
+                <p className="text-sm"><strong>Objetivo:</strong> {quest.objective}</p>
+                <div className="rounded-md bg-panel p-3 text-sm">
+                  <p className="font-medium">Recompensas por personagem</p>
+                  <p className="text-muted">
+                    XP: {quest.reward.xp ?? 0} · XP de Brasão: {quest.reward.brasao ?? 0}
+                  </p>
+                  <p className="text-muted">
+                    Bronze: {quest.reward.bronze ?? 0} · Prata: {quest.reward.silver ?? 0} · Ouro: {quest.reward.gold ?? 0} · Platina: {quest.reward.platinum ?? 0}
+                  </p>
+                </div>
+                {participation ? (
+                  <p className="text-sm font-medium">
+                    {participation.status === "aceita"
+                      ? "Você aceitou esta missão."
+                      : participation.status === "recusada"
+                        ? "Você recusou esta missão."
+                        : "Esta missão já foi concluída por você."}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => {
+                        if (!selfId) return;
+                        usePlatis.getState().respondToQuest(quest.id, selfId, true);
+                        p2pRef.current?.send({
+                          type: "quest-response",
+                          questId: quest.id,
+                          characterId: selfId,
+                          accept: true,
+                        }, p2pPeers.find((peer) => peer.role === "mestre")?.id);
+                      }}
+                    >
+                      Aceitar missão
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        if (!selfId) return;
+                        usePlatis.getState().respondToQuest(quest.id, selfId, false);
+                        p2pRef.current?.send({
+                          type: "quest-response",
+                          questId: quest.id,
+                          characterId: selfId,
+                          accept: false,
+                        }, p2pPeers.find((peer) => peer.role === "mestre")?.id);
+                      }}
+                    >
+                      Recusar missão
+                    </Button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      )}
       <CtePanel />
 
       {(tab === "mesa" || tab === "config-combate") && (
