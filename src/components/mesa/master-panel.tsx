@@ -121,6 +121,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const [itemFormDesc, setItemFormDesc] = useState("");
   const [itemFormPrice, setItemFormPrice] = useState(0);
   const [itemFormTarget, setItemFormTarget] = useState("");
+  const [potionAmount, setPotionAmount] = useState(25);
   const [itemFormBonus, setItemFormBonus] = useState({hp:0,mp:0,est:0,san:0,atk:0,atkMgc:0,def:0,res:0,agi:0,int:0});
   const [xpTargetId, setXpTargetId] = useState<string>("");
   const [xpAmount, setXpAmount] = useState(100);
@@ -772,6 +773,25 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
 
   if (section === "itens") {
     const bonusKeys = ["hp","mp","est","san","atk","atkMgc","def","res","agi","int"] as const;
+    const potionTypes = [
+      { stat: "hp", name: "Poção de HP", desc: "Recupera pontos de vida." },
+      { stat: "mp", name: "Poção de MP", desc: "Recupera pontos de mana." },
+      { stat: "est", name: "Poção de Estamina", desc: "Recupera pontos de estamina." },
+      { stat: "san", name: "Poção de Sanidade", desc: "Recupera pontos de sanidade." },
+    ] as const;
+    const createPotion = (potion: typeof potionTypes[number]) => {
+      if (!itemFormTarget || potionAmount < 1) return;
+      grantItem(itemFormTarget, {
+        id: "potion-" + crypto.randomUUID(),
+        name: potion.name,
+        rarity: "R",
+        category: "consumível",
+        effect: `potion:${potion.stat}:${Math.floor(potionAmount)}`,
+        desc: `${potion.desc} Recupera até ${Math.floor(potionAmount)} pontos por uso.`,
+        price: 0,
+        qty: 1,
+      });
+    };
     const createItem = () => {
       if (!itemFormName.trim() || !itemFormTarget) return;
       const bonus = Object.fromEntries(bonusKeys.filter((k) => itemFormBonus[k] !== 0).map((k) => [k,itemFormBonus[k]])) as InventoryItem["bonus"];
@@ -799,6 +819,21 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
         <div>
           <h2 className="font-display text-3xl">Itens e Inventário</h2>
           <p className="mt-1 text-sm text-muted">Crie itens e entregue diretamente aos personagens.</p>
+        </div>
+        <div className="panel space-y-4 p-4">
+          <h3 className="font-medium">Poções de recuperação</h3>
+          <p className="text-xs text-muted">Defina quanto cada poção recupera e selecione o personagem no campo de entrega abaixo.</p>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Pontos recuperados por uso</span>
+            <input type="number" min="1" step="1" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={potionAmount} onChange={(e) => setPotionAmount(Math.max(1, Math.floor(Number(e.target.value) || 1)))} />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {potionTypes.map((potion) => (
+              <Button key={potion.stat} variant="secondary" disabled={!itemFormTarget} onClick={() => createPotion(potion)}>
+                Entregar {potion.name}
+              </Button>
+            ))}
+          </div>
         </div>
         <div className="panel space-y-4 p-4">
           <label className="block space-y-1">

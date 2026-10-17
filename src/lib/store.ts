@@ -292,6 +292,7 @@ type AppState = {
   equipItem: (itemId: string) => void;
   unequipItem: (slot: "arma" | "armadura" | "botas" | "reliquia" | "colar") => void;
   discardItem: (itemId: string) => void;
+  useItem: (itemId: string) => void;
   grantItem: (characterId: string, item: InventoryItem) => void;
   disarmTrap: () => void;
 };
@@ -2555,6 +2556,39 @@ export const usePlatis = create<AppState>()(
           inventory: [...ch.inventory, item],
         });
       },
+      useItem: (itemId) => {
+        const id = get().selfId;
+        if (!id) return;
+        const ch = get().characters[id];
+        if (!ch) return;
+
+        const item = ch.inventory.find((entry) => entry.id === itemId);
+        if (!item || item.qty < 1) return;
+
+        const match = item.effect?.match(/^potion:(hp|mp|est|san):(\d+)$/i);
+        if (!match) return;
+
+        const stat = match[1].toLowerCase() as "hp" | "mp" | "est" | "san";
+        const amount = Math.max(0, Number(match[2]) || 0);
+        if (amount <= 0) return;
+
+        const maximum = finalStats(ch)[stat];
+        const currentValue = ch.current[stat];
+        const recovered = Math.min(amount, Math.max(0, maximum - currentValue));
+        if (recovered <= 0) return;
+
+        const inventory = ch.inventory
+          .map((entry) => entry.id === itemId
+            ? { ...entry, qty: entry.qty - 1 }
+            : entry)
+          .filter((entry) => entry.qty > 0);
+
+        get().patchCharacter(id, {
+          current: { ...ch.current, [stat]: currentValue + recovered },
+          inventory,
+        });
+      },
+
       discardItem: (itemId) => {
         const id = get().selfId;
         if (!id) return;

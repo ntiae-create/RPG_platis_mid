@@ -11,6 +11,7 @@ export function InventoryPanel() {
   const equip = usePlatis((s) => s.equipItem);
   const unequip = usePlatis((s) => s.unequipItem);
   const discard = usePlatis((s) => s.discardItem);
+  const useItem = usePlatis((s) => s.useItem);
   const spend = usePlatis((s) => s.spendAttr);
   if (!ch) return null;
   const cap = inventorySlots(ch.level);
@@ -65,9 +66,10 @@ export function InventoryPanel() {
                 <div className="text-[11px] text-muted">{it.desc}</div>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => equip(it.id)}>
+                <>{it.effect?.match(/^potion:(hp|mp|est|san):(\d+)$/i) && <Button size="sm" variant="secondary" onClick={() => useItem(it.id)}>Usar</Button>}
+                <Button size="sm" variant="outline" disabled={!it.slot} onClick={() => equip(it.id)}>
                   Equipar
-                </Button>
+                </Button></>
                 <Button size="sm" variant="outline" onClick={() => { if (window.confirm(`Descartar "${it.name}"?`)) discard(it.id); }}>
                   Descartar
                 </Button>
