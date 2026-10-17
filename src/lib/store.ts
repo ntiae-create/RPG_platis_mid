@@ -1,3 +1,4 @@
+import { parseSkillCommands, normalizeSkillPercent } from "./skill-command-runtime";
 import {
   blockAffinityReaction,
   isAffinityReactionBlocked,
@@ -8,6 +9,7 @@ import {
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STATUS_EFFECTS } from "@/data/types";
+import type { StatusEffectInstance } from "@/data/types";
 import type {
   Character,
   CombatEnemy,
@@ -209,6 +211,7 @@ type AppState = {
   attackerId: string | null;
   defenderId: string | null;
   combatEnemies: Record<string, CombatEnemy>;
+  combatStatusEffects: StatusEffectInstance[];
   worldBossCombat: WorldBossCombatState | null;
   worldBossId: string | null;
   combatOrder: string[];
@@ -291,6 +294,9 @@ type AppState = {
   nextWorldBossTurn: () => void;
   nextTurn: () => void;
   endCombat: () => void;
+  applyCombatStatusEffect: (effectId: string, targetId: string, options?: { sourceId?: string; stacks?: number; duration?: number | null; power?: number }) => boolean;
+  removeCombatStatusEffect: (effectId: string, targetId: string) => void;
+  clearCombatStatusEffects: () => void;
   addCombatEnemy: (enemy: Omit<CombatEnemy, "id">) => void;
   setWorldBoss: (id: string | null) => void;
   removeCombatEnemy: (id: string) => void;
@@ -361,6 +367,7 @@ function empty(): Pick<
   | "combatRound"
   | "attackerId"
   | "combatEnemies"
+  | "combatStatusEffects"
   | "worldBossId"
   | "worldBossCombat"
   | "defenderId"
@@ -401,6 +408,7 @@ function empty(): Pick<
     allowBossEscape: false,
     attackerId: null,
     combatEnemies: {},
+    combatStatusEffects: [],
     worldBossId: null,
     worldBossCombat: null,
     defenderId: null,
@@ -1964,56 +1972,307 @@ export const usePlatis = create<AppState>()(
       },
 
       nextTurn: () => {
-        const s = get();
-        if (!s.combatActive) return;
+        const initial = get();
+        if (!initial.combatActive) return;
 
-        const aliveParticipants = s.combatParticipants.filter((id) => {
-          const character = s.characters[id];
-          const enemy = s.combatEnemies[id];
+        const aliveParticipants = initial.combatParticipants.filter((id) => {
+          const character = initial.characters[id];
+          const enemy = initial.combatEnemies[id];
           return Boolean(
             (character && character.current.hp > 0) ||
             (enemy && enemy.current.hp > 0)
           );
         });
 
-        const turnOrder = s.combatOrder.length > 0
-          ? s.combatOrder.filter((id) => aliveParticipants.includes(id))
-          : aliveParticipants;
+        const turnOrder = (initial.combatOrder.length > 0
+          ? initial.combatOrder
+          : aliveParticipants
+        ).filter((id) => aliveParticipants.includes(id));
 
         if (turnOrder.length === 0) return;
 
-        const currentIndex = s.attackerId
-          ? turnOrder.indexOf(s.attackerId)
+        let currentState = initial;
+        let currentIndex = currentState.attackerId
+          ? turnOrder.indexOf(currentState.attackerId)
           : -1;
-        const baseIndex = currentIndex >= 0
-          ? currentIndex
-          : Math.max(-1, s.combatTurnIndex);
+        if (currentIndex < 0) {
+          currentIndex = Math.max(-1, currentState.combatTurnIndex);
+        }
 
-        const nextIndex = (baseIndex + 1) % turnOrder.length;
-        const nextId = turnOrder[nextIndex];
-        if (!nextId) return;
+        // Avança iterativamente para evitar recursão entre inimigos incapacitados.
+        for (let attempts = 0; attempts < turnOrder.length; attempts++) {
+          const nextIndex = (currentIndex + 1) % turnOrder.length;
+          const nextId = turnOrder[nextIndex];
+          if (!nextId) return;
 
-        const wrapped = nextIndex <= baseIndex;
-        const isEnemyTurn = Boolean(s.combatEnemies[nextId]);
-        const targetId = isEnemyTurn
-          ? turnOrder.find(
-              (id) =>
-                Boolean(s.characters[id]) &&
-                s.characters[id].current.hp > 0
-            ) ?? null
-          : null;
+          const wrapped = nextIndex <= currentIndex;
+          const isEnemyTurn = Boolean(currentState.combatEnemies[nextId]);
+          const effectsAtTurnStart = currentState.combatStatusEffects.filter(
+            (effect) => effect.targetId === nextId
+          );
 
-        set({
-          combatOrder: turnOrder,
-          combatTurnIndex: nextIndex,
-          combatRound: wrapped ? s.combatRound + 1 : s.combatRound,
-          attackerId: nextId,
-          defenderId: targetId,
-          pendingCounter: null,
-        });
+          const blockingEffect = effectsAtTurnStart.find(
+            (effect) =>
+              effect.stacks > 0 &&
+              ["stun", "freeze", "immobilize"].includes(effect.id)
+          );
 
-        if (isEnemyTurn && targetId) {
-          get().rollCombat("physical");
+          let nextCharacters = currentState.characters;
+          let nextEnemies = currentState.combatEnemies;
+
+          for (const bleedingEffect of effectsAtTurnStart.filter((effect) => effect.id === "bleeding")) {
+            const character = nextCharacters[nextId];
+            const enemy = nextEnemies[nextId];
+            const actor = character ?? enemy;
+            if (!actor || actor.current.hp <= 0) continue;
+
+            const maxHp = character ? finalStats(character).hp : enemy.stats.hp;
+            const damage = bleedingEffect.power == null
+              ? 2
+              : Math.max(1, Math.ceil(maxHp * Math.min(100, Math.max(1, bleedingEffect.power)) / 100));
+
+            if (character) {
+              nextCharacters = {
+                ...nextCharacters,
+                [nextId]: {
+                  ...character,
+                  current: {
+                    ...character.current,
+                    hp: Math.max(0, character.current.hp - damage),
+                  },
+                },
+              };
+            } else if (enemy) {
+              nextEnemies = {
+                ...nextEnemies,
+                [nextId]: {
+                  ...enemy,
+                  current: {
+                    ...enemy.current,
+                    hp: Math.max(0, enemy.current.hp - damage),
+                  },
+                },
+              };
+            }
+          }
+
+          for (const poisonEffect of effectsAtTurnStart.filter((effect) => effect.id === "poison")) {
+            const character = nextCharacters[nextId];
+            const enemy = nextEnemies[nextId];
+            const actor = character ?? enemy;
+            if (!actor || actor.current.hp <= 0) continue;
+
+            const maxHp = character ? finalStats(character).hp : enemy.stats.hp;
+            const damage = poisonEffect.power == null
+              ? 2
+              : Math.max(1, Math.ceil(maxHp * normalizeSkillPercent(poisonEffect.power) / 100));
+
+            if (character) {
+              nextCharacters = {
+                ...nextCharacters,
+                [nextId]: {
+                  ...character,
+                  current: {
+                    ...character.current,
+                    hp: Math.max(0, character.current.hp - damage),
+                  },
+                },
+              };
+            } else if (enemy) {
+              nextEnemies = {
+                ...nextEnemies,
+                [nextId]: {
+                  ...enemy,
+                  current: {
+                    ...enemy.current,
+                    hp: Math.max(0, enemy.current.hp - damage),
+                  },
+                },
+              };
+            }
+          }
+
+          /* SKILL_GRADUAL_RECOVERY_TICK */
+          for (const effect of effectsAtTurnStart) {
+            if (effect.id !== "recovery" && effect.id !== "regeneration") continue;
+
+            const character = nextCharacters[nextId];
+            const enemy = nextEnemies[nextId];
+            const actor = character ?? enemy;
+            if (!actor || actor.current.hp <= 0) continue;
+
+            const maxHp = character
+              ? finalStats(character).hp
+              : enemy.stats.hp;
+            const totalPercent = Math.max(1, Math.min(100, effect.power ?? 10));
+            const healAmount = Math.max(1, Math.ceil(maxHp * totalPercent / 200));
+            const nextHp = Math.min(maxHp, actor.current.hp + healAmount);
+
+            if (character) {
+              nextCharacters = {
+                ...nextCharacters,
+                [nextId]: {
+                  ...character,
+                  current: { ...character.current, hp: nextHp },
+                },
+              };
+            } else if (enemy) {
+              nextEnemies = {
+                ...nextEnemies,
+                [nextId]: {
+                  ...enemy,
+                  current: { ...enemy.current, hp: nextHp },
+                },
+              };
+            }
+          }
+
+          // NORMAL_EXPLOSION_DURATION_TICK
+          if (currentState.combatMode === "normal") {
+            for (const effect of currentState.combatStatusEffects) {
+              if (
+                effect.id !== "explosion" ||
+                effect.targetId !== currentState.attackerId ||
+                effect.duration === null ||
+                effect.duration > 1
+              ) continue;
+
+              const damage = Math.max(0, (effect.initialDuration ?? effect.duration ?? 1) * 2);
+              const character = nextCharacters[effect.targetId];
+              const enemy = nextEnemies[effect.targetId];
+
+              if (damage > 0 && character) {
+                nextCharacters = {
+                  ...nextCharacters,
+                  [effect.targetId]: {
+                    ...character,
+                    current: {
+                      ...character.current,
+                      hp: Math.max(0, character.current.hp - damage),
+                    },
+                  },
+                };
+              } else if (damage > 0 && enemy) {
+                nextEnemies = {
+                  ...nextEnemies,
+                  [effect.targetId]: {
+                    ...enemy,
+                    current: {
+                      ...enemy.current,
+                      hp: Math.max(0, enemy.current.hp - damage),
+                    },
+                  },
+                };
+              }
+
+              if (damage > 0 && (character || enemy)) {
+                currentState = {
+                  ...currentState,
+                  combatLog: [{
+                    id: uid("lg"),
+                    at: Date.now(),
+                    kind: "system" as const,
+                    text: `Explosão causa ${damage} de dano em ${(character ?? enemy)!.name}.`,
+                  }, ...currentState.combatLog].slice(0, 80),
+                };
+              }
+            }
+          }
+
+          const previousId = currentState.attackerId;
+          const nextStatusEffects = currentState.combatStatusEffects
+            .map((effect) => {
+              if (effect.targetId !== previousId || effect.duration === null) {
+                return effect;
+              }
+              return {
+                ...effect,
+                duration: Math.max(0, effect.duration - 1),
+              };
+            })
+            .filter(
+              (effect) => effect.duration === null || effect.duration > 0
+            );
+
+          const nextActor = nextCharacters[nextId] ?? nextEnemies[nextId];
+          if (!nextActor || nextActor.current.hp <= 0) {
+            const updatedOrder = turnOrder.filter((id) => {
+              const character = nextCharacters[id];
+              const enemy = nextEnemies[id];
+              return Boolean(
+                (character && character.current.hp > 0) ||
+                (enemy && enemy.current.hp > 0)
+              );
+            });
+
+            set({
+              characters: nextCharacters,
+              combatEnemies: nextEnemies,
+              combatStatusEffects: nextStatusEffects,
+              combatOrder: updatedOrder,
+              combatTurnIndex: updatedOrder.length
+                ? updatedOrder.indexOf(nextId)
+                : 0,
+              combatLog: currentState.combatLog,
+              pendingCounter: null,
+            });
+
+            if (updatedOrder.length === 0) return;
+            currentState = get();
+            const survivingIndex = updatedOrder.indexOf(nextId);
+            currentIndex = survivingIndex >= 0
+              ? survivingIndex
+              : Math.min(nextIndex, updatedOrder.length - 1);
+            continue;
+          }
+
+          const survivingCharacters = Object.values(nextCharacters).filter(
+            (character) =>
+              turnOrder.includes(character.id) && character.current.hp > 0
+          );
+          const targetId = isEnemyTurn
+            ? survivingCharacters[0]?.id ?? null
+            : null;
+
+          const logEntries = blockingEffect
+            ? [{
+                id: uid("log"),
+                at: Date.now(),
+                kind: "system" as const,
+                text: `${(nextCharacters[nextId] ?? nextEnemies[nextId]).name} não pode agir: ${({
+                  stun: "Atordoamento",
+                  freeze: "Congelamento",
+                  immobilize: "Imobilização",
+                } as Record<string, string>)[blockingEffect.id] ?? blockingEffect.id}.`,
+              }, ...currentState.combatLog].slice(0, 80)
+            : currentState.combatLog;
+
+          set({
+            characters: nextCharacters,
+            combatEnemies: nextEnemies,
+            combatStatusEffects: nextStatusEffects,
+            combatOrder: turnOrder,
+            combatTurnIndex: nextIndex,
+            combatRound: wrapped
+              ? currentState.combatRound + 1
+              : currentState.combatRound,
+            attackerId: nextId,
+            defenderId: targetId,
+            pendingCounter: null,
+            combatLog: logEntries,
+          });
+
+          currentState = get();
+          currentIndex = nextIndex;
+
+          // Se o próximo combatente estiver incapacitado, avança sem chamar
+          // rollCombat recursivamente. O efeito continua ativo até seu turno acabar.
+          if (blockingEffect) continue;
+
+          if (isEnemyTurn && targetId) {
+            get().rollCombat("physical");
+          }
+          return;
         }
       },
 
@@ -2021,6 +2280,7 @@ export const usePlatis = create<AppState>()(
 
       endCombat: () => {
         const s = get();
+        if (s.combatMode === "world-boss") return;
 
         set({
           combatActive: false,
@@ -2030,11 +2290,103 @@ export const usePlatis = create<AppState>()(
           combatTurnIndex: 0,
           combatRound: 0,
           attackerId: null,
-    combatEnemies: {},
+          combatEnemies: {},
+          combatStatusEffects: [],
           defenderId: null,
           pendingCounter: null,
         });
       },
+
+      applyCombatStatusEffect: (effectId, targetId, options = {}) => {
+        const s = get();
+        if (!s.combatActive || s.combatMode !== "normal") return false;
+        if (!s.combatParticipants.includes(targetId)) return false;
+        const target = s.characters[targetId] ?? s.combatEnemies[targetId];
+        const definition = STATUS_EFFECTS[effectId];
+        if (!target || target.current.hp <= 0 || !definition) return false;
+
+        // CLEAN_IMMUNITY_NORMAL_COMBAT
+        const hasCleanImmunity = s.combatStatusEffects.some(
+          (effect) =>
+            effect.targetId === targetId &&
+            effect.id === "clean" &&
+            (effect.duration === null || (effect.duration ?? 0) > 0)
+        );
+        if (hasCleanImmunity && definition.category === "debuff") {
+          set({
+            combatLog: [...s.combatLog, {
+              id: uid("log"),
+              at: Date.now(),
+              kind: "system",
+              text: `${target.name} está protegido contra debuffs por Limpeza.`,
+            }],
+          });
+          return false;
+        }
+
+        const existing = s.combatStatusEffects.find(
+          (effect) => effect.id === effectId && effect.targetId === targetId
+        );
+        const requestedStacks = Math.max(1, Math.floor(options.stacks ?? 1));
+        const stacks = Math.min(
+          definition.maxStacks ?? Number.MAX_SAFE_INTEGER,
+          (existing?.stacks ?? 0) + requestedStacks
+        );
+        const duration = options.duration === undefined
+          ? (existing?.duration ?? 1)
+          : options.duration;
+
+        const nextEffects = existing
+          ? s.combatStatusEffects.map((effect) =>
+              effect.id === effectId && effect.targetId === targetId
+                ? {
+                    ...effect,
+                    stacks,
+                    duration,
+                    power: options.power ?? effect.power,
+                    sourceId: options.sourceId ?? effect.sourceId,
+                    ...(effectId === "explosion"
+                      ? {
+                          initialDuration: options.duration === undefined
+                            ? (effect.initialDuration ?? effect.duration ?? duration ?? 1)
+                            : (duration ?? 1),
+                          damageValues: effect.damageValues ?? [],
+                        }
+                      : {}),
+                  }
+                : effect
+            )
+          : [...s.combatStatusEffects, {
+              id: effectId,
+              targetId,
+              sourceId: options.sourceId,
+              stacks,
+              duration,
+              power: options.power,
+              ...(effectId === "explosion" ? { initialDuration: duration ?? 1 } : {}),
+            }];
+
+        set({
+          combatStatusEffects: nextEffects,
+          combatLog: [...s.combatLog, {
+            id: uid("log"),
+            at: Date.now(),
+            kind: "system",
+            text: `${definition.name} aplicado em ${target.name}.`,
+          }],
+        });
+        return true;
+      },
+
+      removeCombatStatusEffect: (effectId, targetId) => {
+        set({
+          combatStatusEffects: get().combatStatusEffects.filter(
+            (effect) => effect.id !== effectId || effect.targetId !== targetId
+          ),
+        });
+      },
+
+      clearCombatStatusEffects: () => set({ combatStatusEffects: [] }),
 
       setWorldBoss: (id) => set({ worldBossId: id }),
 
@@ -2129,7 +2481,35 @@ export const usePlatis = create<AppState>()(
           return;
         }
 
+        const blockingEffect = get().combatStatusEffects.find(
+          (effect) =>
+            effect.targetId === atk.id &&
+            effect.stacks > 0 &&
+            ["stun", "freeze", "immobilize"].includes(effect.id)
+        );
+        if (blockingEffect) {
+          const effectNames: Record<string, string> = {
+            stun: "Atordoamento",
+            freeze: "Congelamento",
+            immobilize: "Imobilização",
+          };
+          set({
+            combatLog: [{
+              id: uid("log"),
+              at: Date.now(),
+              kind: "system" as const,
+              text: `${atk.name} não pode agir: ${effectNames[blockingEffect.id] ?? blockingEffect.id}.`,
+            }, ...get().combatLog].slice(0, 80),
+            pendingCounter: null,
+          });
+          if (!get().combatEnemies[atk.id]) get().nextTurn();
+          return;
+        }
+
         const skill = "raceId" in atk ? (skillId ? atk.skills.find((k) => k.id === skillId) : undefined) : undefined;
+        const parsedSkillCommands = skill?.commandText
+          ? parseSkillCommands(skill.commandText)
+          : [];
         if (skill && skill.status !== "approved") return;
         if (skill && "raceId" in atk) {
           const cur = { ...atk.current };
@@ -2144,6 +2524,7 @@ export const usePlatis = create<AppState>()(
               attacker: atk,
               defender: def,
               kind,
+              statusEffects: s.combatStatusEffects,
               skill: skill && skill.status === "approved" ? skill : null,
               allyNearby: s.slots.filter(Boolean).length > 1,
             })
@@ -2151,7 +2532,34 @@ export const usePlatis = create<AppState>()(
               attacker: atk,
               defender: def,
               kind,
+              statusEffects: s.combatStatusEffects,
             });
+        const burnEffects = get().combatStatusEffects
+          .filter((effect) => effect.targetId === def.id && effect.id === "burn");
+        const burnMultiplier = burnEffects.reduce(
+          (total, effect) =>
+            total + effect.stacks * ((effect.power ?? 10) / 100),
+          0,
+        );
+        if (res.hit && res.damage > 0 && burnMultiplier > 0) {
+          res.damage = Math.max(1, Math.floor(res.damage * (1 + burnMultiplier)));
+        }
+
+        if (res.hit && parsedSkillCommands.some((command) => command.damage !== null)) {
+          const commandDamage = parsedSkillCommands.reduce(
+            (total, command) =>
+              total + ([
+                "heal", "recovery", "regeneration", "lifesteal",
+                "clean", "strengthening", "defender", "agile",
+                "atk", "atk_mgc", "def", "res", "int", "agi",
+              ].includes(command.command)
+                ? 0
+                : command.damage ?? 0),
+            0,
+          );
+          res.damage += commandDamage;
+        }
+
         if (res.hit && res.damage > 0) {
           if ("raceId" in def) {
             const applied = applyDamage(def, res.damage);
@@ -2175,6 +2583,147 @@ export const usePlatis = create<AppState>()(
                     current: { ...enemy.current, hp: Math.max(0, enemy.current.hp - res.damage) },
                   },
                 },
+              });
+            }
+          }
+        }
+
+        // NORMAL_COMBAT_EXPLOSION_TRIGGER: resolvido pelo fim da duração em nextTurn.
+
+        // LIFESTEAL_ACTIVE_NORMAL_COMBAT
+        if (res.hit && res.damage > 0) {
+          const activeLifesteal = get().combatStatusEffects.find(
+            (effect) => effect.id === "lifesteal" && effect.targetId === atk.id
+          );
+          if (activeLifesteal) {
+            const character = get().characters[atk.id];
+            if (character) {
+              const maxHp = finalStats(character).hp;
+              const percent = Math.max(1, Math.min(100, activeLifesteal.power ?? 10));
+              const healing = Math.ceil(res.damage * percent / 100);
+              get().patchCharacter(atk.id, {
+                current: {
+                  ...character.current,
+                  hp: Math.min(maxHp, character.current.hp + healing),
+                },
+              });
+            }
+          }
+        }
+
+        /* SKILL_EFFECTS_NORMAL_COMBAT */
+        /* SKILL_RECOVERY_AND_CLEAN */
+        const commandEffects: NonNullable<typeof skill>["effects"] =
+          parsedSkillCommands.map((command) => {
+            const effectId = command.operation ?? command.command;
+            return {
+              effectId,
+              stacks: command.stacks,
+              percent: command.percent ?? undefined,
+              duration: command.duration ?? undefined,
+              chance: 100,
+              target: [
+                "heal", "recovery", "regeneration", "lifesteal",
+                "clean", "strengthening", "defender", "agile",
+                "atk", "atk_mgc", "def", "res", "int", "agi",
+              ].includes(effectId) ? "attacker" : "defender",
+            };
+          });
+
+        const runtimeEffects = [...(skill?.effects ?? []), ...(commandEffects ?? [])];
+        const appliesWithoutHit =
+          skill?.type === "buff" ||
+          skill?.type === "heal" ||
+          parsedSkillCommands.some((command) =>
+            ["heal", "recovery", "regeneration", "lifesteal", "clean",
+             "strengthening", "defender", "agile", "atk", "atk_mgc",
+             "def", "res", "int", "agi"].includes(command.command)
+          );
+
+        if (runtimeEffects.length && (res.hit || appliesWithoutHit)) {
+          for (const effect of runtimeEffects) {
+            if (!effect.effectId) continue;
+            const definition = STATUS_EFFECTS[effect.effectId];
+            if (!definition) continue;
+
+            const chance = Math.max(0, Math.min(100, effect.chance ?? 100));
+            if (Math.random() * 100 >= chance) continue;
+
+            const isSelfTarget = effect.target === "attacker";
+            const canApplyOnMiss =
+              isSelfTarget ||
+              (!effect.target && (skill?.type === "buff" || skill?.type === "heal"));
+
+            if (!res.hit && !canApplyOnMiss) continue;
+
+            const targetId = isSelfTarget ? atk.id : def.id;
+
+            if (effect.effectId === "heal") {
+              const character = get().characters[targetId];
+              if (character) {
+                const maxHp = finalStats(character).hp;
+                const percent = normalizeSkillPercent(effect.percent ?? effect.stacks, 10);
+                get().patchCharacter(targetId, {
+                  current: {
+                    ...character.current,
+                    hp: Math.min(maxHp, character.current.hp + Math.ceil(maxHp * percent / 100)),
+                  },
+                });
+              }
+              continue;
+            }
+            if (effect.effectId === "clean") {
+              const removable = get().combatStatusEffects.filter((entry) =>
+                entry.targetId === targetId &&
+                entry.id !== "clean" &&
+                STATUS_EFFECTS[entry.id]?.category === "debuff"
+              );
+              for (const entry of removable) {
+                get().removeCombatStatusEffect(entry.id, targetId);
+              }
+              get().applyCombatStatusEffect("clean", targetId, {
+                sourceId: atk.id,
+                stacks: 1,
+                duration: effect.duration ?? 1,
+              });
+              continue;
+            }
+
+            if (effect.effectId === "lifesteal") {
+              get().applyCombatStatusEffect("lifesteal", targetId, {
+                sourceId: atk.id,
+                stacks: 1,
+                duration: effect.duration ?? skill?.duration ?? 1,
+              });
+              const currentEffects = get().combatStatusEffects;
+              set({
+                combatStatusEffects: currentEffects.map((entry) =>
+                  entry.id === "lifesteal" && entry.targetId === targetId
+                    ? { ...entry, power: normalizeSkillPercent(effect.percent ?? effect.stacks, 10) }
+                    : entry
+                ),
+              });
+              continue;
+            }
+
+            get().applyCombatStatusEffect(effect.effectId, targetId, {
+              sourceId: atk.id,
+              stacks: effect.stacks,
+              duration: effect.duration ?? skill?.duration,
+              power: effect.percent == null
+                ? undefined
+                : normalizeSkillPercent(effect.percent),
+            });
+
+
+            if (["recovery", "regeneration"].includes(effect.effectId)) {
+              const currentEffects = get().combatStatusEffects;
+              set({
+                combatStatusEffects: currentEffects.map((entry) =>
+                  entry.id === effect.effectId && entry.targetId === targetId
+                    ? { ...entry, power: normalizeSkillPercent(effect.percent ?? effect.stacks, 10) }
+                    : entry
+                ),
               });
             }
           }
@@ -2236,6 +2785,7 @@ export const usePlatis = create<AppState>()(
             attackerId: null,
             defenderId: null,
             pendingCounter: null,
+            combatStatusEffects: [],
             combatLog: [
               {
                 id: uid("lg"),
