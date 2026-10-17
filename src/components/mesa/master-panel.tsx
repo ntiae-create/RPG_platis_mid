@@ -667,18 +667,53 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
           <input className={field} placeholder="Título da missão" value={questTitle} onChange={(e) => setQuestTitle(e.target.value)} />
           <textarea className={field} placeholder="Descrição e contexto" value={questDescription} onChange={(e) => setQuestDescription(e.target.value)} />
           <textarea className={field} placeholder="Objetivo a cumprir" value={questObjective} onChange={(e) => setQuestObjective(e.target.value)} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Dificuldade da missão</label>
             <select className={field} value={questDifficulty} onChange={(e) => setQuestDifficulty(e.target.value)}>
-              <option>Fácil</option><option>Normal</option><option>Difícil</option><option>Extrema</option><option>Lendária</option>
+              <option>Fácil</option>
+              <option>Normal</option>
+              <option>Difícil</option>
+              <option>Extrema</option>
+              <option>Lendária</option>
             </select>
-            <input className={field} type="number" min="0" placeholder="Recompensa XP" value={questXp} onChange={(e) => setQuestXp(e.target.value)} />
+            <p className="text-xs text-muted">Escolha o nível de desafio que os jogadores enfrentarão.</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input className={field} type="number" min="0" placeholder="XP de Brasão" value={questBrasao} onChange={(e) => setQuestBrasao(e.target.value)} />
-            <input className={field} type="number" min="0" placeholder="Bronze" value={questBronze} onChange={(e) => setQuestBronze(e.target.value)} />
-            <input className={field} type="number" min="0" placeholder="Prata" value={questSilver} onChange={(e) => setQuestSilver(e.target.value)} />
-            <input className={field} type="number" min="0" placeholder="Ouro" value={questGold} onChange={(e) => setQuestGold(e.target.value)} />
-            <input className={field} type="number" min="0" placeholder="Platina" value={questPlatinum} onChange={(e) => setQuestPlatinum(e.target.value)} />
+
+          <div className="space-y-3 rounded-lg border border-line p-3">
+            <h4 className="font-semibold">Recompensas da missão</h4>
+            <p className="text-sm text-muted">Defina quanto cada personagem que aceitou a missão receberá quando o Mestre a concluir. Use 0 para não entregar uma recompensa daquele tipo.</p>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium">Experiência do personagem (XP)</label>
+              <input className={field} type="number" min="0" placeholder="Quantidade de XP" value={questXp} onChange={(e) => setQuestXp(e.target.value)} />
+              <p className="text-xs text-muted">Ajuda o personagem a progredir normalmente.</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium">Experiência do Brasão (XP de Brasão)</label>
+              <input className={field} type="number" min="0" placeholder="Quantidade de XP de Brasão" value={questBrasao} onChange={(e) => setQuestBrasao(e.target.value)} />
+              <p className="text-xs text-muted">Avança a progressão do Brasão, separadamente da experiência normal.</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium">Moedas de Bronze</label>
+              <input className={field} type="number" min="0" placeholder="Quantidade de moedas de Bronze" value={questBronze} onChange={(e) => setQuestBronze(e.target.value)} />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium">Moedas de Prata</label>
+              <input className={field} type="number" min="0" placeholder="Quantidade de moedas de Prata" value={questSilver} onChange={(e) => setQuestSilver(e.target.value)} />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium">Moedas de Ouro</label>
+              <input className={field} type="number" min="0" placeholder="Quantidade de moedas de Ouro" value={questGold} onChange={(e) => setQuestGold(e.target.value)} />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium">Moedas de Platina</label>
+              <input className={field} type="number" min="0" placeholder="Quantidade de moedas de Platina" value={questPlatinum} onChange={(e) => setQuestPlatinum(e.target.value)} />
+            </div>
           </div>
           <Button type="submit">Publicar missão</Button>
         </form>
