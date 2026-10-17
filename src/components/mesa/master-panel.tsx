@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { usePlatis } from "@/lib/store";
+import { SKILL_COMMANDS, SKILL_COMMAND_CATEGORIES } from "@/data/skill-commands";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
 import type { Character, Skill, InventoryItem } from "@/data/types"
@@ -40,7 +41,7 @@ type MasterSection =
 
 const SECTIONS = [
   { id: "eventos", label: "Eventos", icon: Dices, desc: "CTE, emboscadas, escolhas e puzzles." },
-  { id: "comunicacao", label: "Comunicação", icon: MessageCircle, desc: "Chat, mensagens e avisos." },
+  { id: "comunicacao", label: "Comandos de habilidades", icon: MessageCircle, desc: "Catálogo, sintaxe e efeitos das habilidades." },
   { id: "missoes", label: "Missões", icon: ScrollText, desc: "Crie e controle missões." },
   { id: "npcs", label: "NPCs", icon: Bot, desc: "Crie e gerencie NPCs." },
   { id: "mapa", label: "Mapa do Mestre", icon: Map, desc: "Locais, marcadores e visibilidade." },
@@ -82,6 +83,8 @@ export function MasterPanel({
   onPatchRemoteCharacter: (characterId: string, patch: Partial<Character>) => void;
   initialSection?: MasterSection;
 }) {
+  const [skillCommandSearch, setSkillCommandSearch] = useState("");
+  const [skillCommandCategory, setSkillCommandCategory] = useState("todas");
   const [section, setSection] = useState<MasterSection | null>(initialSection ?? null);
   const [questTitle, setQuestTitle] = useState("");
   const [questDescription, setQuestDescription] = useState("");
@@ -1221,6 +1224,107 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
     );
   }
 
+
+  if (section === "comunicacao") {
+    const query = skillCommandSearch.trim().toLocaleLowerCase("pt-BR");
+    const filteredCommands = SKILL_COMMANDS.filter((item) => {
+      const matchesCategory =
+        skillCommandCategory === "todas" || item.category === skillCommandCategory;
+      const searchable = [
+        item.command,
+        item.syntax,
+        item.description,
+        ...item.parameters,
+      ].join(" ").toLocaleLowerCase("pt-BR");
+      return matchesCategory && searchable.includes(query);
+    });
+
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSection(null)}>
+          ← Menu do Mestre
+        </Button>
+
+        <div className="panel space-y-4 p-4">
+          <div>
+            <h2 className="font-display text-2xl">Catálogo de comandos</h2>
+            <p className="mt-1 text-sm text-muted">
+              Referência oficial para escrever efeitos de habilidades. Copiar um comando
+              não o executa no combate.
+            </p>
+          </div>
+
+          <input
+            type="search"
+            value={skillCommandSearch}
+            onChange={(event) => setSkillCommandSearch(event.target.value)}
+            placeholder="Buscar comando, efeito ou parâmetro..."
+            aria-label="Buscar comandos de habilidades"
+            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+          />
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted">Categoria</span>
+            <select
+              value={skillCommandCategory}
+              onChange={(event) => setSkillCommandCategory(event.target.value)}
+              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
+            >
+              <option value="todas">Todas as categorias</option>
+              {SKILL_COMMAND_CATEGORIES.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <p className="text-xs text-muted">
+            {filteredCommands.length} comando(s) encontrado(s)
+          </p>
+
+          <div className="space-y-3">
+            {filteredCommands.map((item) => (
+              <article key={item.command} className="rounded-md border border-line p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-semibold">{item.command}</h3>
+                  <span className="rounded border border-line px-2 py-1 text-xs text-muted">
+                    {item.status === "planejado" ? "Planejado" : "Documentado"}
+                  </span>
+                </div>
+
+                <p className="mt-2 text-sm">{item.description}</p>
+
+                <div className="mt-3 rounded-md bg-bg p-3">
+                  <code className="break-all text-sm">{item.syntax}</code>
+                  <div className="mt-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(item.syntax);
+                      }}
+                    >
+                      Copiar sintaxe
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="mt-2 text-xs text-muted">
+                  Parâmetros: {item.parameters.join(", ")}
+                </p>
+              </article>
+            ))}
+
+           {filteredCommands.length === 0 && (
+              <p className="rounded-md border border-line p-4 text-sm text-muted">
+                Nenhum comando corresponde à busca.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (section) {
     const current = SECTIONS.find((item) => item.id === section);
