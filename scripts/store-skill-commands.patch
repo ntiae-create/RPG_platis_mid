@@ -1,0 +1,40 @@
+--- a/src/lib/store.ts
++++ b/src/lib/store.ts
+@@ -29,6 +29,7 @@
+ } from "@/data/world";
+ import { createCharacter, finalStats, makeEmptySkills, skillSlots } from "./stats";
+ import { applyDamage, resolveAttack, resolveEnemyAttack, type CombatKind } from "./combat";
++import { runSkillCommandsFromDescription, skillHasCommands } from "./skill-combat-integration";
+ import { rollDie } from "./utils";
+ import { xpToNextLevel } from "@/data/progression";
+ import { uid } from "./utils";
+@@ -2180,6 +2181,30 @@
+           }
+         }
+ 
++        // --- Comandos de habilidade (/efeito [dados] !N%) ---
++        if (
++          skill &&
++          skill.status === "approved" &&
++          skillHasCommands(skill) &&
++          "raceId" in atk
++        ) {
++          const cmdResult = runSkillCommandsFromDescription(skill.description, {
++            attacker: "raceId" in atk ? (get().characters[atk.id] ?? atk) : null,
++            defender: "raceId" in def ? (get().characters[def.id] ?? def) : null,
++            damageDealt: res.hit ? res.damage : 0,
++          });
++
++          if (cmdResult.attacker && "raceId" in atk) {
++            get().patchCharacter(atk.id, { current: cmdResult.attacker.current });
++          }
++          if (cmdResult.defender && "raceId" in def) {
++            get().patchCharacter(def.id, { current: cmdResult.defender.current });
++          }
++          for (const entry of cmdResult.logs) {
++            res.log.push(entry);
++          }
++        }
++
+         const defeatedCharacter = get().characters[def.id];
+         const defeatedEnemy = get().combatEnemies[def.id];
