@@ -24,7 +24,7 @@ export function SkillPanel() {
 
   if (!ch) return null;
   const max = skillSlots(ch.brasaoXp);
-  const current = ch.skills[slot];
+  const current = ch.skills.find((sk) => sk.slot === slot);
 
   const pending = Object.values(characters).flatMap((c) =>
     c.skills
@@ -35,6 +35,7 @@ export function SkillPanel() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <form
+        key={slot}
         className={`panel skill-affinity-card skill-affinity-${ch.affinityId} skill-level-${slot + 1} space-y-3 p-4`}
         onSubmit={(e) => {
           e.preventDefault();
@@ -58,7 +59,7 @@ export function SkillPanel() {
               cooldown: Number(fd.get("cooldown")) || 0,
             };
             submit(slot, skillData);
-            const submittedSkill = usePlatis.getState().characters[ch.id]?.skills[slot];
+            const submittedSkill = usePlatis.getState().characters[ch.id]?.skills.find((sk) => sk.slot === slot);
             if (submittedSkill) {
               window.dispatchEvent(
                 new CustomEvent("platis-skill-submitted", {

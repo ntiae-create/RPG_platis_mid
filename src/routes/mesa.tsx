@@ -97,9 +97,10 @@ function Mesa() {
               const character = state.characters[message.characterId];
               if (character) {
                 state.patchCharacter(message.characterId, {
-                  skills: character.skills.map((skill) =>
-                    skill.id === message.skill.id ? message.skill : skill,
-                  ),
+                  skills: [
+                    ...character.skills.filter((skill) => skill.slot !== message.skill.slot),
+                    message.skill,
+                  ].sort((a, b) => a.slot - b.slot),
                 });
               }
             }
@@ -194,7 +195,7 @@ function Mesa() {
       const handleSkillSubmitted = (event: Event) => {
         const customEvent = event as CustomEvent<SkillP2PMessage>;
         if (customEvent.detail.type !== "skill-submitted") return;
-        p2pRef.current?.broadcast(customEvent.detail);
+        p2pRef.current?.send(customEvent.detail);
       };
 
       window.addEventListener("platis-skill-submitted", handleSkillSubmitted);

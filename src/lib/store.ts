@@ -953,15 +953,18 @@ export const usePlatis = create<AppState>()(
         if (!ch) return;
         const max = skillSlots(ch.brasaoXp);
         if (slot >= max) return;
-        const skills = [...ch.skills];
-        const prev = skills[slot];
-        skills[slot] = {
+        const prev = ch.skills.find((item) => item.slot === slot);
+        const nextSkill = {
           ...(prev ?? makeEmptySkills(1)[0]),
           ...skill,
           id: prev?.id ?? uid("sk"),
           slot: slot as 0 | 1 | 2 | 3,
-          status: "pending",
+          status: "pending" as const,
         };
+        const skills = [
+          ...ch.skills.filter((item) => item.slot !== slot),
+          nextSkill,
+        ].sort((a, b) => a.slot - b.slot);
         get().patchCharacter(id, { skills });
       },
 
