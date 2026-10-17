@@ -20,6 +20,9 @@ export type StatusEffectInstance = {
   sourceId?: string;
   stacks: number;
   duration: number | null;
+  power?: number;
+  damageValues?: number[];
+  initialDuration?: number;
 };
 
 export const STATUS_EFFECTS: Record<string, StatusEffectDefinition> = {
@@ -130,14 +133,21 @@ export const STATUS_EFFECTS: Record<string, StatusEffectDefinition> = {
     category: "debuff",
     description: "Dano/efeito de veneno por 2 turnos; em Tsuchigumo, recebe +1 turno se houver Fios de Seda.",
   },
+  combustion: {
+    id: "combustion",
+    name: "Combustão",
+    stateName: "Em Combustão",
+    englishName: "Combustion",
+    category: "debuff",
+    description: "Após 2 golpes recebidos, explode causando 20% do dano combinado dos golpes.",
+  },
   explosion: {
     id: "explosion",
     name: "Explosão",
     stateName: "Explosão",
     englishName: "Explosion",
     category: "debuff",
-    description: "Acumula 2 cargas. Ao atingir 2 cargas, causa uma explosão que causa 20% da soma do dano dos dois ataques que geraram as cargas.",
-    maxStacks: 2,
+    description: "Duração configurável em turnos. Ao terminar a duração, causa dano igual a 2 vezes a duração original escolhida.",
   },
   wet: {
     id: "wet",
@@ -400,6 +410,15 @@ export type SkillAffinity =
   | "fisico"
   | "magico";
 
+export type SkillEffect = {
+  effectId: string;
+  target?: "attacker" | "defender";
+  stacks?: number;
+  percent?: number;
+  duration?: number | null;
+  chance?: number;
+};
+
 export type Skill = {
   id: string;
   slot: 0 | 1 | 2 | 3;
@@ -426,6 +445,8 @@ export type Skill = {
   status: SkillStatus;
 
   masterNote?: string;
+  commandText?: string;
+  effects?: SkillEffect[];
 };
 
 /* =========================================================

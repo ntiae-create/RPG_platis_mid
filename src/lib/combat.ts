@@ -1,6 +1,6 @@
 import { CLASS_BY_ID } from "@/data/classes";
 import { RACE_BY_ID } from "@/data/races";
-import type { Character, CombatEnemy, CombatLogEntry, Skill, Stats } from "@/data/types";
+import type { Character, CombatEnemy, CombatLogEntry, Skill, Stats, StatusEffectInstance } from "@/data/types";
 import { rollDie, uid } from "./utils";
 import { finalStats } from "./stats";
 
@@ -19,6 +19,33 @@ export type CombatResolution = {
   notes: string[];
   log: CombatLogEntry[];
 };
+
+function applyCombatStatusStats(
+  base: Stats,
+  targetId: string,
+  effects: StatusEffectInstance[] = [],
+): Stats {
+  const stats = { ...base };
+  const active = effects.filter(
+    (effect) => effect.targetId === targetId && effect.stacks > 0,
+  );
+
+  const stacks = (id: string) =>
+    active.filter((effect) => effect.id === id)
+      .reduce((total, effect) => total + effect.stacks, 0);
+
+  stats.atk += 2 * stacks("atk") + 2 * stacks("strengthening");
+  stats.atkMgc += 2 * stacks("atk_mgc") + 2 * stacks("strengthening");
+  stats.def += 2 * stacks("def") + 2 * stacks("defender") - 3 * stacks("weakness");
+  stats.res += 2 * stacks("res") + 2 * stacks("defender");
+  stats.int += 5 * stacks("int") + 5 * stacks("agile");
+  stats.agi += 2 * stacks("agi") + 2 * stacks("agile") - 2 * stacks("slow") - stacks("cold");
+
+  for (const key of ["atk", "atkMgc", "def", "res", "int", "agi"] as const) {
+    stats[key] = Math.max(0, stats[key]);
+  }
+  return stats;
+}
 
 function log(kind: CombatLogEntry["kind"], text: string): CombatLogEntry {
   return { id: uid("lg"), at: Date.now(), text, kind };
@@ -55,11 +82,14 @@ export function resolveEnemyAttack(opts: {
   attacker: Character | CombatEnemy;
   defender: Character | CombatEnemy;
   kind: CombatKind;
+  statusEffects?: StatusEffectInstance[];
 }): CombatResolution {
   const attackerRoll = rollDie(20);
   const defenderRoll = rollDie(20);
-  const aStats = "raceId" in opts.attacker ? finalStats(opts.attacker) : opts.attacker.stats;
-  const dStats = "raceId" in opts.defender ? finalStats(opts.defender) : opts.defender.stats;
+  const aBase = "raceId" in opts.attacker ? finalStats(opts.attacker) : opts.attacker.stats;
+  const dBase = "raceId" in opts.defender ? finalStats(opts.defender) : opts.defender.stats;
+  const aStats = applyCombatStatusStats(aBase, opts.attacker.id, opts.statusEffects);
+  const dStats = applyCombatStatusStats(dBase, opts.defender.id, opts.statusEffects);
 
   let hit = attackerRoll > defenderRoll;
   if (attackerRoll === defenderRoll) {
@@ -108,6 +138,7 @@ export function resolveEnemyAttack(opts: {
 export function resolveAttack(opts: {
   attacker: Character;
   defender: Character;
+  statusEffects?: StatusEffectInstance[];
   kind: CombatKind;
   skill?: Skill | null;
   attackerRoll?: number;
@@ -121,8 +152,8 @@ export function resolveAttack(opts: {
   const aRace = RACE_BY_ID[opts.attacker.raceId];
   const dRace = RACE_BY_ID[opts.defender.raceId];
   const aClass = CLASS_BY_ID[opts.attacker.classId];
-  const aStats = finalStats(opts.attacker);
-  const dStats = finalStats(opts.defender);
+  const aStats = applyCombatStatusStats(finalStats(opts.attacker), opts.attacker.id, opts.statusEffects);
+  const dStats = applyCombatStatusStats(finalStats(opts.defender), opts.defender.id, opts.statusEffects);
 
   if (aRace?.id === "besta" && opts.attacker.current.hp <= aStats.hp * 0.5) {
     aStats.atk += 3;

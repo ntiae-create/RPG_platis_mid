@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { usePlatis } from "@/lib/store";
 import { SKILL_COMMANDS, SKILL_COMMAND_CATEGORIES } from "@/data/skill-commands";
+import { STATUS_EFFECTS } from "@/data/types";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
 import type { Character, Skill, InventoryItem } from "@/data/types"
@@ -136,6 +137,12 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const startCombat = usePlatis((s) => s.startCombat);
   const endCombat = usePlatis((s) => s.endCombat);
   const combatActive = usePlatis((s) => s.combatActive);
+  const applyCombatStatusEffect = usePlatis((s) => s.applyCombatStatusEffect);
+  const combatMode = usePlatis((s) => s.combatMode);
+  const [effectCommandTarget, setEffectCommandTarget] = useState("");
+  const [effectCommandText, setEffectCommandText] = useState("");
+  const [effectCommandResult, setEffectCommandResult] = useState("");
+
   const allowBossEscape = usePlatis((s) => s.allowBossEscape);
   const setAllowBossEscape = usePlatis((s) => s.setAllowBossEscape);
   const masterId = usePlatis((s) => s.masterId);
@@ -1268,6 +1275,80 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               Referência oficial para escrever efeitos de habilidades. Copiar um comando
               não o executa no combate.
             </p>
+          </div>
+
+          <div className="rounded-lg border border-line p-3 space-y-3">
+            <h3 className="font-semibold">Executar efeito no combate</h3>
+            <p className="text-sm text-muted">Aplica um efeito de status ao participante selecionado durante um combate normal.</p>
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted">Alvo</span>
+              <select value={effectCommandTarget} onChange={(e) => setEffectCommandTarget(e.target.value)} className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm">
+                <option value="">Selecione um participante</option>
+                {combatParticipants.map((id) => {
+                  const fighter = characters[id] ?? combatEnemies[id];
+                  return fighter ? <option key={id} value={id}>{fighter.name}</option> : null;
+                })}
+              </select>
+            </label>
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted">Comando</span>
+              <input value={effectCommandText} onChange={(e) => setEffectCommandText(e.target.value)} placeholder="/sangramento, /veneno, /atordoamento..." className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" />
+            </label>
+            <Button onClick={() => {
+              if (!combatActive || combatMode !== "normal") {
+                setEffectCommandResult("Inicie um combate normal antes de executar comandos.");
+                return;
+              }
+              if (!effectCommandTarget || !combatParticipants.includes(effectCommandTarget)) {
+                setEffectCommandResult("Selecione um alvo participante do combate.");
+                return;
+              }
+              const raw = effectCommandText.trim().toLocaleLowerCase("pt-BR").split(/\s+/)[0].replace(/^\//, "");
+              const aliases: Record<string, string> = {
+                sangramento: "bleeding", bleeding: "bleeding",
+                atordoamento: "stun", stun: "stun",
+                congelamento: "freeze", congelar: "freeze", freeze: "freeze",
+                frio: "cold", cold: "cold",
+                lentidão: "slow", lentidao: "slow", slow: "slow",
+                infectar: "infect", infeccao: "infect", infect: "infect",
+                queimadura: "burn", queimar: "burn", burn: "burn",
+                cegueira: "blind", blind: "blind",
+                fraqueza: "weakness", weakness: "weakness",
+                cancelamento: "cancel", cancel: "cancel",
+                imobilizacao: "immobilize", immobilize: "immobilize",
+                molhado: "wet", wet: "wet",
+                fortalecimento: "strengthening", strengthening: "strengthening",
+                defensor: "defender", defender: "defender",
+                agil: "agile", agile: "agile",
+                regeneracao: "regeneration", regeneration: "regeneration",
+                limpeza: "clean", clean: "clean",
+                veneno: "poison", envenenamento: "poison", poison: "poison",
+                explosao: "explosion", explosion: "explosion",
+                fio_de_seda: "silk_thread", "fio-de-seda": "silk_thread"
+              };
+              const effectId = aliases[raw];
+              const definition = effectId ? STATUS_EFFECTS[effectId] : undefined;
+              if (!effectId || !definition) {
+                setEffectCommandResult("Comando desconhecido. Confira o nome do efeito.");
+                return;
+              }
+              const durations: Record<string, number> = {
+                bleeding: 2, stun: 1, freeze: 1, cold: 2, slow: 2,
+                infect: 1, burn: 3, blind: 1, weakness: 2, cancel: 1,
+                immobilize: 1, strengthening: 2, defender: 2, agile: 2,
+                regeneration: 2, clean: 1, poison: 2, explosion: 1,
+                silk_thread: 2, wet: 1
+              };
+              const ok = applyCombatStatusEffect(effectId, effectCommandTarget, {
+                duration: durations[effectId] ?? 1,
+                sourceId: masterId ?? undefined
+              });
+              const fighter = characters[effectCommandTarget] ?? combatEnemies[effectCommandTarget];
+              setEffectCommandResult(ok
+                ? definition.name + " aplicado em " + (fighter?.name ?? "alvo") + "."
+     : "Falha ao aplicar. Confira o alvo e o modo de combate.");
+            }}>Executar comando</Button>
+            {effectCommandResult && <p role="status" className="text-sm">{effectCommandResult}</p>}
           </div>
 
           <div className="rounded-lg border border-line p-3 space-y-3">

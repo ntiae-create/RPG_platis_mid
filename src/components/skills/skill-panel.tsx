@@ -43,6 +43,7 @@ export function SkillPanel() {
             const skillData = {
               name: String(fd.get("name")),
               description: String(fd.get("description")),
+              commandText: String(fd.get("commandText") ?? "").trim(),
               type: String(fd.get("type")) as SkillType,
               affinity: String(fd.get("affinity") || "fisico") as SkillAffinity,
               cost: {
@@ -96,6 +97,8 @@ export function SkillPanel() {
           <Input name="name" defaultValue={current?.name} required />
           <Label>Descrição</Label>
           <Textarea name="description" defaultValue={current?.description} required />
+          <Label>Comandos funcionais da habilidade</Label>
+          <Textarea name="commandText" defaultValue={current?.commandText ?? ""} placeholder={"/veneno [2d5] duração=3\n/congelamento duração=1"} />
           <Label>Tipo</Label>
           <select name="type" defaultValue={current?.type} className="h-11 rounded-md bg-raised px-3 text-sm">
             {TYPES.map((t) => (
