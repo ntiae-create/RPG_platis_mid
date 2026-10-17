@@ -7,7 +7,6 @@ import { ContinentGrid } from "@/components/map/continent-grid";
 import { WorldMap } from "@/components/map/world-map";
 import { ChatPanel } from "@/components/mesa/chat-panel";
 import { CtePanel } from "@/components/mesa/cte-panel";
-import { QuestBoard } from "@/components/mesa/quest-board";
 import { MasterPanel } from "@/components/mesa/master-panel";
 import { MesaShell } from "@/components/mesa/shell";
 import { PersistGate } from "@/components/persist-gate";
@@ -304,19 +303,6 @@ function Mesa() {
         ))}
       </div>
       <CtePanel />
-      {role === "jogador" && tab === "mesa" && (
-        <QuestBoard
-          onRespond={(questId, accept) => {
-            const master = p2pPeers.find((peer) => peer.role === "mestre");
-            p2pRef.current?.send({
-              type: "quest-response",
-              questId,
-              characterId: ch.id,
-              accept,
-            }, master?.id);
-          }}
-        />
-      )}
 
       {(tab === "mesa" || tab === "config-combate") && (
         <div className="space-y-4">
