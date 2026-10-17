@@ -822,14 +822,26 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
         </div>
         <div className="panel space-y-4 p-4">
           <h3 className="font-medium">Poções de recuperação</h3>
-          <p className="text-xs text-muted">Defina quanto cada poção recupera e selecione o personagem no campo de entrega abaixo.</p>
+          <p className="text-xs text-muted">Escolha o personagem, defina a recuperação e entregue a poção.</p>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted">Entregar poção para</span>
+            <select className="w-full min-w-0 rounded-md border border-line bg-bg px-3 py-3 text-sm" value={itemFormTarget} onChange={(e) => setItemFormTarget(e.target.value)}>
+              <option value="">Selecione um personagem</option>
+              {slots.map((id) => {
+                if (!id) return null;
+                const ch = characters[id];
+                if (!ch) return null;
+                return <option key={ch.id} value={ch.id}>{ch.name} — Nv. {ch.level}</option>;
+              })}
+            </select>
+          </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted">Pontos recuperados por uso</span>
-            <input type="number" min="1" step="1" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={potionAmount} onChange={(e) => setPotionAmount(Math.max(1, Math.floor(Number(e.target.value) || 1)))} />
+            <input type="number" min="1" step="1" className="w-full min-w-0 rounded-md border border-line bg-bg px-3 py-3 text-base" value={potionAmount} onChange={(e) => setPotionAmount(Math.max(1, Math.floor(Number(e.target.value) || 1)))} />
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
             {potionTypes.map((potion) => (
-              <Button key={potion.stat} variant="secondary" disabled={!itemFormTarget} onClick={() => createPotion(potion)}>
+              <Button className="w-full min-w-0 whitespace-normal py-3 text-center" key={potion.stat} variant="secondary" disabled={!itemFormTarget} onClick={() => createPotion(potion)}>
                 Entregar {potion.name}
               </Button>
             ))}
