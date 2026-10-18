@@ -20,6 +20,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { usePlatis } from "@/lib/store";
 import { SKILL_COMMANDS, SKILL_COMMAND_CATEGORIES } from "@/data/skill-commands";
 import { STATUS_EFFECTS } from "@/data/types";
+import { RACES } from "@/data/races";
+import { CLASSES } from "@/data/classes";
+import { AFFINITIES } from "@/data/affinities";
+import { createCharacter } from "@/lib/stats";
 import { Button } from "@/components/ui/button";
 import { PlayerSlots } from "@/components/mesa/player-slots";
 import type { Character, Skill, InventoryItem } from "@/data/types"
@@ -102,6 +106,16 @@ export function MasterPanel({
     }
   });
   const [section, setSection] = useState<MasterSection | null>(initialSection ?? null);
+  const [npcName, setNpcName] = useState("");
+  const [npcGender, setNpcGender] = useState<"masculino" | "feminino">("masculino");
+  const [npcRaceId, setNpcRaceId] = useState(RACES[0]?.id ?? "humano");
+  const [npcClassId, setNpcClassId] = useState(CLASSES[0]?.id ?? "");
+  const [npcAffinityId, setNpcAffinityId] = useState<import("@/data/types").AffinityId>("fisico");
+  const [npcImage, setNpcImage] = useState("");
+  const [npcPassiveName, setNpcPassiveName] = useState("");
+  const [npcPassiveDescription, setNpcPassiveDescription] = useState("");
+  const [editingNpcId, setEditingNpcId] = useState<string | null>(null);
+  const [npcXpAmount, setNpcXpAmount] = useState("100");
   const [questTitle, setQuestTitle] = useState("");
   const [questDescription, setQuestDescription] = useState("");
   const [questObjective, setQuestObjective] = useState("");
@@ -126,6 +140,11 @@ export function MasterPanel({
   const masterEvents = usePlatis((s) => s.masterEvents);
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
+  const npcs = usePlatis((s) => s.npcs);
+  const createNpc = usePlatis((s) => s.createNpc);
+  const updateNpc = usePlatis((s) => s.updateNpc);
+  const removeNpc = usePlatis((s) => s.removeNpc);
+  const grantNpcXp = usePlatis((s) => s.grantNpcXp);
   const grantItem = usePlatis((s) => s.grantItem);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
   const combatParticipants = usePlatis((s) => s.combatParticipants);
@@ -206,6 +225,145 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
     setEnemySkillCooldown(skill.cooldown);
     setEnemySkillDescription(skill.description);
   }, [editingEnemyId, editingEnemySkill, combatEnemies]);
+
+  if (section === "npcs") {
+    const resetNpcForm = () => {
+      setEditingNpcId(null);
+      setNpcName("");
+      setNpcGender("masculino");
+      setNpcRaceId(RACES[0]?.id ?? "humano");
+      setNpcClassId(CLASSES[0]?.id ?? "");
+      setNpcAffinityId("fisico");
+      setNpcImage("");
+      setNpcPassiveName("");
+      setNpcPassiveDescription("");
+    };
+
+    const saveNpc = () => {
+      if (!npcName.trim() || !npcRaceId || !npcClassId) {
+        window.alert("Preencha o nome, a raça e a classe do NPC.");
+        return;
+      }
+      const base = createCharacter({
+        name: npcName.trim(),
+        gender: npcGender,
+        raceId: npcRaceId,
+        classId: npcClassId,
+        affinityId: npcAffinityId,
+        ...(npcImage.trim() ? { image: npcImage.trim() } : {}),
+      });
+      const passive = {
+        name: npcPassiveName.trim(),
+        description: npcPassiveDescription.trim(),
+        stacks: 0,
+      };
+      if (editingNpcId && npcs[editingNpcId]) {
+        const old = npcs[editingNpcId];
+        updateNpc(editingNpcId, {
+          ...base,
+          id: editingNpcId,
+          level: old.level,
+          xp: old.xp,
+          brasaoXp: old.brasaoXp,
+          attrPoints: old.attrPoints,
+          poolPoints: old.poolPoints,
+          allocated: old.allocated,
+          current: old.current,
+          skills: old.skills,
+          inventory: old.inventory,
+          equipment: old.equipment,
+          currency: old.currency,
+          position: old.position,
+          personalPassive: passive,
+          isMaster: false,
+        });
+      } else {
+        const id = "npc-" + Date.now() + "-" + Math.random().toString(36).slice(2,8);
+        createNpc({ ...base, id, personalPassive: passive, isMaster: false });
+      }
+      resetNpcForm();
+    };
+
+    const editNpc = (npc: Character) => {
+      setEditingNpcId(npc.id);
+      setNpcName(npc.name);
+      setNpcGender(npc.gender);
+      setNpcRaceId(npc.raceId);
+      setNpcClassId(npc.classId);
+      setNpcAffinityId(npc.affinityId);
+      setNpcImage(npc.image ?? "");
+      setNpcPassiveName(npc.personalPassive?.name ?? "");
+      setNpcPassiveDescription(npc.personalPassive?.description ?? "");
+    };
+
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSection(null)}>← Menu do Mestre</Button>
+        <div className="panel space-y-3 p-4">
+          <h2 className="font-display text-2xl">{editingNpcId ? "Editar NPC" : "Criar NPC"}</h2>
+          <label className="block text-sm">Nome
+            <input className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcName} onChange={(e) => setNpcName(e.target.value)} placeholder="Nome do NPC" />
+          </label>
+          <label className="block text-sm">Gênero
+            <select className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcGender} onChange={(e) => setNpcGender(e.target.value as "masculino" | "feminino")}>
+              <option value="masculino">Masculino</option><option value="feminino">Feminino</option>
+            </select>
+          </label>
+          <label className="block text-sm">Raça
+            <select className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcRaceId} onChange={(e) => setNpcRaceId(e.target.value)}>
+              {RACES.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm">Classe
+            <select className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcClassId} onChange={(e) => setNpcClassId(e.target.value)}>
+              {CLASSES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm">Afinidade
+            <select className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcAffinityId} onChange={(e) => setNpcAffinityId(e.target.value as import("@/data/types").AffinityId)}>
+              {AFFINITIES.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm">Imagem (URL ou caminho do arquivo)
+            <input className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcImage} onChange={(e) => setNpcImage(e.target.value)} placeholder="/portraits/npc.png" />
+          </label>
+          <label className="block text-sm">Passiva pessoal
+            <input className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcPassiveName} onChange={(e) => setNpcPassiveName(e.target.value)} placeholder="Nome da passiva" />
+          </label>
+          <label className="block text-sm">Descrição da passiva
+            <textarea className="mt-1 w-full rounded-md border border-line bg-bg p-2" value={npcPassiveDescription} onChange={(e) => setNpcPassiveDescription(e.target.value)} placeholder="Descreva o efeito da passiva" rows={3} />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={saveNpc}>{editingNpcId ? "Salvar alterações" : "Criar NPC"}</Button>
+            {editingNpcId && <Button variant="secondary" onClick={resetNpcForm}>Cancelar edição</Button>}
+          </div>
+        </div>
+        <div className="panel space-y-3 p-4">
+          <h2 className="font-display text-2xl">NPCs cadastrados ({Object.keys(npcs).length})</h2>
+          {Object.values(npcs).length === 0 && <p className="text-sm text-muted">Nenhum NPC cadastrado ainda.</p>}
+          {Object.values(npcs).map((npc) => (
+            <div key={npc.id} className="rounded-md border border-line p-3">
+              <div className="flex items-start gap-3">
+                {npc.image && <img src={npc.image} alt={npc.name} className="h-16 w-16 rounded-md object-cover" />}
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold">{npc.name}</h3>
+                  <p className="text-sm text-muted">Nível {npc.level} · XP {npc.xp}</p>
+                  <p className="text-sm">{RACES.find((r) => r.id === npc.raceId)?.name ?? npc.raceId} · {CLASSES.find((c) => c.id === npc.classId)?.name ?? npc.classId}</p>
+                  {npc.personalPassive?.name && <p className="mt-1 text-sm">Passiva: {npc.personalPassive.name}</p>}
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={() => editNpc(npc)}>Editar</Button>
+                <input aria-label="Quantidade de XP" className="w-24 rounded-md border border-line bg-bg p-2" type="number" min="1" value={npcXpAmount} onChange={(e) => setNpcXpAmount(e.target.value)} />
+                <Button variant="secondary" onClick={() => grantNpcXp(npc.id, Number(npcXpAmount))}>Adicionar XP</Button>
+                <Button variant="danger" onClick={() => { if (window.confirm("Excluir o NPC " + npc.name + "?")) { removeNpc(npc.id); if (editingNpcId === npc.id) resetNpcForm(); } }}>Excluir</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (section === "jogadores") {
     return (

@@ -189,6 +189,7 @@ type AppState = {
   role: Role | null;
   selfId: string | null;
   characters: Record<string, Character>;
+  npcs: Record<string, Character>;
   slots: (string | null)[];
   masterId: string | null;
   movementLocked: boolean;
@@ -248,6 +249,10 @@ type AppState = {
   respondToCte: (id: string, result: "sucesso" | "falha") => void;
   clearActiveMasterEvent: () => void;
   addCharacter: (ch: Character, asSelf?: boolean) => void;
+  createNpc: (npc: Character) => void;
+  updateNpc: (id: string, patch: Partial<Character>) => void;
+  removeNpc: (id: string) => void;
+  grantNpcXp: (id: string, amount: number) => void;
   setActiveMasterCharacter: (characterId: string) => void;
   removeCharacter: (characterId: string) => void;
   updateSelf: (patch: Partial<Character>) => void;
@@ -343,6 +348,7 @@ function empty(): Pick<
   | "role"
   | "selfId"
   | "characters"
+  | "npcs"
   | "slots"
   | "masterId"
   | "movementLocked"
@@ -387,6 +393,7 @@ function empty(): Pick<
     role: null,
     selfId: null,
     characters: {},
+    npcs: {},
     slots: Array.from({ length: 8 }, () => null),
     masterId: null,
     movementLocked: false,
@@ -747,6 +754,25 @@ export const usePlatis = create<AppState>()(
   persist(
     (set, get) => ({
       ...empty(),
+
+      createNpc: (npc) => set((s) => ({
+        npcs: { ...s.npcs, [npc.id]: npc },
+      })),
+      updateNpc: (id, patch) => set((s) => {
+        const current = s.npcs[id];
+        if (!current) return s;
+        return { npcs: { ...s.npcs, [id]: { ...current, ...patch, id } } };
+      }),
+      removeNpc: (id) => set((s) => {
+        const npcs = { ...s.npcs };
+        delete npcs[id];
+        return { npcs };
+      }),
+      grantNpcXp: (id, amount) => set((s) => {
+        const npc = s.npcs[id];
+        if (!npc || !Number.isFinite(amount) || amount <= 0) return s;
+        return { npcs: { ...s.npcs, [id]: { ...npc, xp: npc.xp + Math.floor(amount) } } };
+      }),
 
       setRole: (role) => set({ role, tab: role === "mestre" ? "mesa" : "personagem" }),
       setTab: (tab) => set({ tab }),
@@ -3238,6 +3264,7 @@ export const usePlatis = create<AppState>()(
         role: s.role,
         selfId: s.selfId,
         characters: s.characters,
+        npcs: s.npcs,
         quests: s.quests,
         slots: s.slots,
         masterId: s.masterId,

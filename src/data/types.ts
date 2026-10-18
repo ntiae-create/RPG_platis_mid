@@ -630,7 +630,8 @@ export type CombatLogEntry = {
     | "counter"
     | "passive"
     | "xp"
-    | "system";
+    | "system"
+    | "heal";
 };
 
 /* =========================================================
