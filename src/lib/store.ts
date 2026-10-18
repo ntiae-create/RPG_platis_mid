@@ -1200,14 +1200,24 @@ export const usePlatis = create<AppState>()(
           }
         }
 
-        const reachedBoss = s.entities.find(
-          (entity) =>
-            entity.kind === "boss" &&
-            entity.continentId === s.continentId &&
-            entity.layer === s.layer &&
-            entity.x === x &&
-            entity.y === y
-        );
+        const reachedBoss = !s.combatActive
+          ? s.entities.find((entity) => {
+              if (
+                entity.kind !== "boss" ||
+                entity.continentId !== s.continentId ||
+                entity.layer !== s.layer
+              ) return false;
+
+              const insideNow =
+                Math.abs(entity.x - x) <= 20 &&
+                Math.abs(entity.y - y) <= 20;
+              const wasOutside =
+                Math.abs(entity.x - ch.position.x) > 20 ||
+                Math.abs(entity.y - ch.position.y) > 20;
+
+              return insideNow && wasOutside;
+            })
+          : undefined;
 
         const trapRoll = Math.random();
         let trap = s.trap;
