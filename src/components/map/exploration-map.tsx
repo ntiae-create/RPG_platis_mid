@@ -3,6 +3,13 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrthographicCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { usePlatis } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+} from "lucide-react";
 
 function hash(x: number, z: number) {
   const n = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
@@ -25,10 +32,7 @@ function City({ originX, originY }: { originX: number; originY: number }) {
         const wx = originX + dx;
         const wy = originY + dz;
 
-        // Corredores a cada cinco células formam ruas e becos.
         if (Math.abs(wx % 5) < 1 || Math.abs(wy % 5) < 1) continue;
-
-        // Variação determinística: os edifícios não piscam ao mover.
         if (hash(wx, wy) < 0.24) continue;
 
         items.push({
@@ -41,7 +45,7 @@ function City({ originX, originY }: { originX: number; originY: number }) {
         });
       }
     }
-return items;
+    return items;
   }, [originX, originY]);
 
   return (
@@ -88,10 +92,10 @@ return items;
     </group>
   );
 }
+
 function PlayerToken({
   x,
   z,
-  name,
   isSelf = false,
 }: {
   x: number;
@@ -144,7 +148,8 @@ export function ExplorationMap() {
       if (
         target?.isContentEditable ||
         ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")
-      ) return;
+      )
+        return;
 
       const key = e.key.toLowerCase();
       const directions: Record<string, [number, number]> = {
@@ -157,7 +162,7 @@ export function ExplorationMap() {
         d: [1, 0],
         arrowright: [1, 0],
       };
-const direction = directions[key];
+      const direction = directions[key];
       if (!direction) return;
       e.preventDefault();
       moveSelf(direction[0], direction[1]);
@@ -172,12 +177,22 @@ const direction = directions[key];
       Object.values(characters).filter(
         (ch) =>
           ch.id !== selfId &&
-          ch.position.continentId === (self?.position.continentId ?? continentId) &&
+          ch.position.continentId ===
+            (self?.position.continentId ?? continentId) &&
           ch.position.layer === (self?.position.layer ?? layer) &&
           Math.abs(ch.position.x - worldX) <= 18 &&
           Math.abs(ch.position.y - worldY) <= 18,
       ),
-    [characters, selfId, self?.position.continentId, self?.position.layer, continentId, layer, worldX, worldY],
+    [
+      characters,
+      selfId,
+      self?.position.continentId,
+      self?.position.layer,
+      continentId,
+      layer,
+      worldX,
+      worldY,
+    ],
   );
 
   return (
@@ -206,14 +221,63 @@ const direction = directions[key];
       </Canvas>
 
       <div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs text-white">
-        <div className="font-semibold">{self?.name ?? "Nenhum personagem selecionado"}</div>
+        <div className="font-semibold">
+          {self?.name ?? "Nenhum personagem selecionado"}
+        </div>
         <div className="mt-1 text-white/70">
-          {self ? `X ${worldX} · Y ${worldY} · Camada ${self.position.layer}` : "Selecione seu personagem para explorar"}
+          {self
+            ? `X ${worldX} · Y ${worldY} · Camada ${self.position.layer}`
+            : "Selecione seu personagem para explorar"}
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-lg bg-black/70 px-3 py-2 text-center text-xs text-white/80">
-        WASD ou setas para andar
+      <div className="absolute bottom-3 right-3 z-10 grid grid-cols-3 gap-1">
+        <span />
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="size-11 border border-white/15 bg-black/70 text-white"
+          aria-label="Norte"
+          onClick={() => moveSelf(0, -1)}
+        >
+          <ArrowUp className="size-5" />
+        </Button>
+        <span />
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="size-11 border border-white/15 bg-black/70 text-white"
+          aria-label="Oeste"
+          onClick={() => moveSelf(-1, 0)}
+        >
+          <ArrowLeft className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="size-11 border border-white/15 bg-black/70 text-white"
+          aria-label="Sul"
+          onClick={() => moveSelf(0, 1)}
+        >
+          <ArrowDown className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="size-11 border border-white/15 bg-black/70 text-white"
+          aria-label="Leste"
+          onClick={() => moveSelf(1, 0)}
+        >
+          <ArrowRight className="size-5" />
+        </Button>
+      </div>
+
+      <div className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-black/70 px-3 py-2 text-xs text-white/80">
+        WASD / setas ou D-pad · cidades de cima
       </div>
 
       {!self && (
