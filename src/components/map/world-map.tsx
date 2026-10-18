@@ -3,9 +3,8 @@ import { usePlatis } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { WorldGlobe } from "@/components/map/world-globe";
 import { ExplorationMap } from "@/components/map/exploration-map";
-import { WorldMap2D } from "@/components/map/world-map-2d";
 
-type MapView = "flat" | "exploration" | "globe";
+type MapView = "exploration" | "globe";
 
 export function WorldMap() {
   const savedView = usePlatis((s) => s.worldMapView);
@@ -13,7 +12,7 @@ export function WorldMap() {
   const [localView, setLocalView] = useState<MapView | null>(null);
 
   const view: MapView =
-    localView ?? (savedView === "globe" ? "globe" : "flat");
+    localView ?? (savedView === "globe" ? "globe" : "exploration");
 
   function changeView(next: MapView) {
     setLocalView(next);
@@ -25,19 +24,6 @@ export function WorldMap() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => changeView("flat")}
-          aria-pressed={view === "flat"}
-          className={cn(
-            "rounded-lg border px-4 py-2 text-sm",
-            view === "flat"
-              ? "border-accent bg-accent/15 text-accent"
-              : "border-line text-muted",
-          )}
-        >
-          Mapa 2D
-        </button>
-        <button
-          type="button"
           onClick={() => changeView("exploration")}
           aria-pressed={view === "exploration"}
           className={cn(
@@ -47,7 +33,7 @@ export function WorldMap() {
               : "border-line text-muted",
           )}
         >
-          Cidades 3D
+          Exploração 3D
         </button>
         <button
           type="button"
@@ -64,9 +50,7 @@ export function WorldMap() {
         </button>
       </div>
 
-      {view === "flat" ? (
-        <WorldMap2D />
-      ) : view === "globe" ? (
+      {view === "globe" ? (
         <WorldGlobe />
       ) : (
         <ExplorationMap />
