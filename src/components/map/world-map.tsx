@@ -12,7 +12,6 @@ export function WorldMap() {
   const setWorldMapView = usePlatis((s) => s.setWorldMapView);
   const [localView, setLocalView] = useState<MapView | null>(null);
 
-  // Preferência: mapa 2D (mobile) quando a store está em "map"
   const view: MapView =
     localView ?? (savedView === "globe" ? "globe" : "flat");
 
@@ -48,7 +47,7 @@ export function WorldMap() {
               : "border-line text-muted",
           )}
         >
-          Exploração 3D
+          Cidades 3D
         </button>
         <button
           type="button"
