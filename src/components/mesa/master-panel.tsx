@@ -145,6 +145,7 @@ export function MasterPanel({
   const updateNpc = usePlatis((s) => s.updateNpc);
   const removeNpc = usePlatis((s) => s.removeNpc);
   const grantNpcXp = usePlatis((s) => s.grantNpcXp);
+  const publishCharacterAsNpc = usePlatis((s) => s.publishCharacterAsNpc);
   const grantItem = usePlatis((s) => s.grantItem);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
   const combatParticipants = usePlatis((s) => s.combatParticipants);
@@ -339,6 +340,22 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
           </div>
         </div>
         <div className="panel space-y-3 p-4">
+          <h2 className="font-display text-2xl">Enviar personagem do Mestre como NPC</h2>
+          <p className="text-sm text-muted">A ficha original será preservada e continuará vinculada ao NPC.</p>
+          {Object.values(characters).filter((c) => c.isMaster && !npcs[c.id]).length === 0 ? (
+            <p className="text-sm text-muted">Nenhum personagem disponível para enviar.</p>
+          ) : Object.values(characters).filter((c) => c.isMaster && !npcs[c.id]).map((character) => (
+            <div key={character.id} className="flex items-center gap-3 rounded-md border border-line p-3">
+              {character.image && <img src={character.image} alt={character.name} className="h-12 w-12 rounded-md object-cover" />}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">{character.name}</p>
+                <p className="text-xs text-muted">Nível {character.level}</p>
+              </div>
+              <Button onClick={() => publishCharacterAsNpc(character.id)}>Enviar como NPC</Button>
+            </div>
+          ))}
+        </div>
+        <div className="panel space-y-3 p-4">
           <h2 className="font-display text-2xl">NPCs cadastrados ({Object.keys(npcs).length})</h2>
           {Object.values(npcs).length === 0 && <p className="text-sm text-muted">Nenhum NPC cadastrado ainda.</p>}
           {Object.values(npcs).map((npc) => (
@@ -353,10 +370,10 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => editNpc(npc)}>Editar</Button>
+                {npc.npcSourceCharacterId ? <span className="self-center text-xs text-muted">Edite pela ficha original</span> : <Button variant="secondary" onClick={() => editNpc(npc)}>Editar</Button>}
                 <input aria-label="Quantidade de XP" className="w-24 rounded-md border border-line bg-bg p-2" type="number" min="1" value={npcXpAmount} onChange={(e) => setNpcXpAmount(e.target.value)} />
                 <Button variant="secondary" onClick={() => grantNpcXp(npc.id, Number(npcXpAmount))}>Adicionar XP</Button>
-                <Button variant="danger" onClick={() => { if (window.confirm("Excluir o NPC " + npc.name + "?")) { removeNpc(npc.id); if (editingNpcId === npc.id) resetNpcForm(); } }}>Excluir</Button>
+                <Button variant="danger" onClick={() => { const msg = npc.npcSourceCharacterId ? "Remover " + npc.name + " dos NPCs? A ficha original será mantida." : "Excluir o NPC " + npc.name + "?"; if (window.confirm(msg)) { removeNpc(npc.id); if (editingNpcId === npc.id) resetNpcForm(); } }}>{npc.npcSourceCharacterId ? "Remover dos NPCs" : "Excluir"}</Button>
               </div>
             </div>
           ))}

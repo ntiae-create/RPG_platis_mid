@@ -559,6 +559,9 @@ export type Character = {
 
   isMaster: boolean;
 
+  /** ID da ficha original quando publicada como NPC. */
+  npcSourceCharacterId?: string;
+
   isDemo?: boolean;
 };
 

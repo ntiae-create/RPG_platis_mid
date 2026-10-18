@@ -253,6 +253,7 @@ type AppState = {
   updateNpc: (id: string, patch: Partial<Character>) => void;
   removeNpc: (id: string) => void;
   grantNpcXp: (id: string, amount: number) => void;
+  publishCharacterAsNpc: (characterId: string) => void;
   setActiveMasterCharacter: (characterId: string) => void;
   removeCharacter: (characterId: string) => void;
   updateSelf: (patch: Partial<Character>) => void;
@@ -768,10 +769,26 @@ export const usePlatis = create<AppState>()(
         delete npcs[id];
         return { npcs };
       }),
-      grantNpcXp: (id, amount) => set((s) => {
-        const npc = s.npcs[id];
-        if (!npc || !Number.isFinite(amount) || amount <= 0) return s;
-        return { npcs: { ...s.npcs, [id]: { ...npc, xp: npc.xp + Math.floor(amount) } } };
+      grantNpcXp: (id, amount) => {
+        const npc = get().npcs[id];
+        if (!npc || !Number.isFinite(amount) || amount <= 0) return;
+        if (npc.npcSourceCharacterId) {
+          get().grantXp(npc.npcSourceCharacterId, Math.floor(amount));
+          return;
+        }
+        set((s) => ({
+          npcs: { ...s.npcs, [id]: { ...npc, xp: npc.xp + Math.floor(amount) } },
+        }));
+      },
+      publishCharacterAsNpc: (characterId) => set((s) => {
+        const character = s.characters[characterId];
+        if (!character || !character.isMaster) return s;
+        return {
+          npcs: {
+            ...s.npcs,
+            [characterId]: { ...character, isMaster: false, npcSourceCharacterId: characterId },
+          },
+        };
       }),
 
       setRole: (role) => set({ role, tab: role === "mestre" ? "mesa" : "personagem" }),
@@ -946,7 +963,12 @@ export const usePlatis = create<AppState>()(
               }
             : e,
         );
-        set({ characters: { ...get().characters, [id]: next }, entities });
+        const state = get();
+        const linkedNpc = state.npcs[id];
+        const npcs = linkedNpc?.npcSourceCharacterId === id
+          ? { ...state.npcs, [id]: { ...next, isMaster: false, npcSourceCharacterId: id } }
+          : state.npcs;
+        set({ characters: { ...state.characters, [id]: next }, entities, npcs });
       },
 
       seedDemo: () => {
