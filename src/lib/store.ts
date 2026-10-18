@@ -297,7 +297,8 @@ type AppState = {
   startCombat: () => void;
   startWorldBossCombat: (bossId: string, level: number) => void;
   worldBossAttack: (characterId: string) => void;
-  nextWorldBossTurn: () => void;
+  worldBossMasterAction: (skillName: string | null, targetId: string) => void;
+  nextWorldBossTurn: (skillName?: string | null, targetId?: string) => void;
   nextTurn: () => void;
   endCombat: () => void;
   applyCombatStatusEffect: (effectId: string, targetId: string, options?: { sourceId?: string; stacks?: number; duration?: number | null; power?: number }) => boolean;
@@ -693,10 +694,15 @@ function chooseWorldBossSkill(
   bossId: string,
   level: number,
   cooldowns: WorldBossCooldown[],
+  requestedSkillName?: string,
 ): WorldBossSkill | null {
   const available = getWorldBossAvailableSkills(bossId, level).filter(
     (skill) => getWorldBossCooldown(cooldowns, skill.name) === 0,
   );
+
+  if (requestedSkillName) {
+    return available.find((skill) => skill.name === requestedSkillName) ?? null;
+  }
 
   if (available.length === 0) return null;
 
@@ -725,6 +731,7 @@ function getWorldBossSkillCooldown(
 
 function executeWorldBossSkill(
   combat: WorldBossCombatState,
+  requestedSkillName?: string,
 ): {
   skill: WorldBossSkill;
   cooldowns: WorldBossCooldown[];
@@ -733,6 +740,7 @@ function executeWorldBossSkill(
     combat.bossId,
     combat.level,
     combat.cooldowns,
+    requestedSkillName,
   );
 
   if (!skill || !canUseWorldBossSkill(skill, combat.cooldowns)) {
@@ -1367,24 +1375,34 @@ export const usePlatis = create<AppState>()(
         });
       },
 
-      nextWorldBossTurn: () => {
+      nextWorldBossTurn: (requestedSkillName, requestedTargetId) => {
         const s = get();
         const combat = s.worldBossCombat;
+        const executingMasterAction = Boolean(
+          combat &&
+          combat.turnOrder[combat.turnIndex] === "world-boss" &&
+          requestedTargetId !== undefined
+        );
         const affinityReactionBlocks = combat
-          ? tickAffinityReactionBlocks(combat.affinityReactionBlocks)
+          ? executingMasterAction
+            ? combat.affinityReactionBlocks
+            : tickAffinityReactionBlocks(combat.affinityReactionBlocks)
           : [];
         const worldBossEffects = combat
-          ? tickWorldBossEffects(combat.effects)
+          ? executingMasterAction
+            ? combat.effects
+            : tickWorldBossEffects(combat.effects)
           : [];
 
         if (!combat || !s.combatActive || s.combatMode !== "world-boss") return;
         if (combat.turnOrder.length === 0) return;
 
         let nextIndex = combat.turnIndex;
-        let nextId: string | null = null;
+        let nextId: string | null = executingMasterAction ? "world-boss" : null;
         let wrapped = false;
 
-        for (let step = 1; step <= combat.turnOrder.length; step += 1) {
+        if (!executingMasterAction) {
+          for (let step = 1; step <= combat.turnOrder.length; step += 1) {
           const candidateIndex =
             (combat.turnIndex + step) % combat.turnOrder.length;
           const candidateId = combat.turnOrder[candidateIndex];
@@ -1409,21 +1427,19 @@ export const usePlatis = create<AppState>()(
           }
         }
 
+          }
+
         if (!nextId) return;
 
         const targetId =
           nextId === "world-boss"
-            ? combat.turnOrder.find(
-                (id) =>
-                  id !== "world-boss" &&
-                  Boolean(s.characters[id]) &&
-                  s.characters[id].current.hp > 0,
-              ) ?? null
+            ? (executingMasterAction ? requestedTargetId ?? null : null)
             : "world-boss";
 
         let poisonCharacters = s.characters;
 
-        for (const effect of combat.effects) {
+        if (!executingMasterAction) {
+          for (const effect of combat.effects) {
           if (
             effect.id !== "poison" ||
             !effect.targetId ||
@@ -1452,6 +1468,7 @@ export const usePlatis = create<AppState>()(
               },
             },
           };
+          }
         }
 
         set({
@@ -1492,6 +1509,8 @@ export const usePlatis = create<AppState>()(
           });
         }
 
+        if (nextId === "world-boss" && !executingMasterAction) return;
+
         if (nextId === "world-boss" && targetId) {
           const boss = WORLD_BOSS_DETAILS.find(
             (entry) => entry.id === combat.bossId,
@@ -1502,10 +1521,18 @@ export const usePlatis = create<AppState>()(
           const target = s.characters[targetId];
 
           if (bossLevel && target) {
-            const skillExecution = executeWorldBossSkill({
-              ...combat,
-              cooldowns: get().worldBossCombat?.cooldowns ?? [],
-            });
+            const skillExecution =
+              typeof requestedSkillName === "string"
+                ? executeWorldBossSkill(
+                    {
+                      ...combat,
+                      cooldowns: get().worldBossCombat?.cooldowns ?? [],
+                    },
+                    requestedSkillName,
+                  )
+                : null;
+
+            if (typeof requestedSkillName === "string" && !skillExecution) return;
 
             if (skillExecution) {
               let reactionBlocks =
@@ -1844,12 +1871,37 @@ export const usePlatis = create<AppState>()(
               },
             });
 
-            if (nextPlayerHp > 0) {
-              get().nextWorldBossTurn();
-            }
+            get().nextWorldBossTurn();
           }
         }
       },
+
+      worldBossMasterAction: (skillName, targetId) => {
+
+        const s = get();
+
+        const combat = s.worldBossCombat;
+
+        if (!combat || !s.combatActive || s.combatMode !== "world-boss" || s.role !== "mestre") return;
+
+        if (combat.turnOrder[combat.turnIndex] !== "world-boss") return;
+
+        const target = s.characters[targetId];
+
+        if (!target || target.current.hp <= 0) return;
+
+        if (skillName !== null) {
+
+          const skill = getWorldBossAvailableSkills(combat.bossId, combat.level).find((entry) => entry.name === skillName);
+
+          if (!skill || !canUseWorldBossSkill(skill, combat.cooldowns)) return;
+
+        }
+
+        get().nextWorldBossTurn(skillName, targetId);
+
+      },
+
 
       worldBossAttack: (characterId) => {
         const s = get();

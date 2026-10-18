@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { CharacterCard } from "@/components/character/character-card";
+import { WORLD_BOSS_DETAILS } from "@/data/world";
 import { Button } from "@/components/ui/button";
 import { usePlatis } from "@/lib/store";
 import { WorldBossCard } from "./world-boss-card";
@@ -8,12 +10,27 @@ export function WorldBossCombatPanel() {
   const characters = usePlatis((s) => s.characters);
   const slots = usePlatis((s) => s.slots);
   const worldBossAttack = usePlatis((s) => s.worldBossAttack);
+  const role = usePlatis((s) => s.role);
+  const worldBossMasterAction = usePlatis((s) => s.worldBossMasterAction);
+  const [selectedSkill, setSelectedSkill] = useState("");
+  const [selectedTarget, setSelectedTarget] = useState("");
 
   if (!worldBossCombat) return null;
 
   const players = slots
     .map((id) => (id ? characters[id] : null))
     .filter(Boolean);
+  const alivePlayers = players.filter((player) => player && player.current.hp > 0);
+  const boss = WORLD_BOSS_DETAILS.find((item) => item.id === worldBossCombat.bossId);
+  const bossTurn = worldBossCombat.turnOrder[worldBossCombat.turnIndex] === "world-boss";
+  const availableSkills = (boss?.skills ?? []).filter((skill) =>
+    !skill.ultimate &&
+    (!skill.unlockLevel || skill.unlockLevel <= worldBossCombat.level) &&
+    (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)?.remaining ?? 0) <= 0
+  );
+  const targetId = alivePlayers.some((player) => player?.id === selectedTarget)
+    ? selectedTarget
+    : alivePlayers[0]?.id ?? "";
 
   return (
     <div className="space-y-4">
@@ -66,6 +83,52 @@ export function WorldBossCombatPanel() {
               bossId={worldBossCombat.bossId}
               level={worldBossCombat.level}
             />
+
+            {role === "mestre" && bossTurn && (
+              <div className="panel space-y-3 p-3">
+                <h4 className="font-display text-lg">Ação do Mestre</h4>
+
+                <label className="block space-y-1 text-sm">
+                  <span>Habilidade</span>
+                  <select
+                    className="w-full rounded-md border border-border bg-bg p-2"
+                    value={selectedSkill}
+                    onChange={(event) => setSelectedSkill(event.target.value)}
+                  >
+                    <option value="">Ataque básico</option>
+                    {availableSkills.map((skill) => (
+                      <option key={skill.name} value={skill.name}>
+                        {skill.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block space-y-1 text-sm">
+                  <span>Alvo</span>
+                  <select
+                    className="w-full rounded-md border border-border bg-bg p-2"
+                    value={targetId}
+                    onChange={(event) => setSelectedTarget(event.target.value)}
+                  >
+                    {alivePlayers.map((player) => player && (
+                      <option key={player.id} value={player.id}>
+                        {player.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={!targetId}
+                  onClick={() => worldBossMasterAction(selectedSkill || null, targetId)}
+                >
+                  Executar ação do Boss
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
