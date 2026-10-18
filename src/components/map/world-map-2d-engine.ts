@@ -1,110 +1,70 @@
 /**
- * Motor de mapa mundial 2D com Three.js (câmera ortográfica).
- * Sem React Three Fiber — apenas three.
- *
- * Coordenadas: usa GLOBE_CONTINENTS (lat/lon) → plano ortográfico.
- * Interação: pan (1 dedo), pinch-zoom, toque para selecionar.
+ * Motor de exploração local 2D (vista de cima) com Three.js ortográfico.
+ * Casas, ruas e quarteirões em torno da posição do jogador — mesmo grid do store.
+ * Sem React Three Fiber.
  */
 import * as THREE from "three";
-import { CONTINENTS, BOSSES, type Continent } from "@/data/world";
-import { GLOBE_CONTINENTS } from "@/data/globe-geography";
 
-const AFFINITY_COLORS: Record<string, number> = {
-  vento: 0x6a9e94,
-  luz: 0xc4a84a,
-  trevas: 0x8b7ab8,
-  terra: 0x7d9b63,
-  magico: 0xb18bd1,
-  agua: 0x559ec8,
-  fogo: 0xd56d4d,
-  fisico: 0xc49a72,
-};
-
-const OCEAN = 0x0a1620;
-const GRID = 0x1a2a38;
-const SELECTED = 0xf5e6c8;
-const PLAYER = 0xe8c76b;
-const BOSS = 0xb54a3c;
-
-/** Converte lat/lon em posição no plano do mapa (unidades de cena). */
-export function geoToPlane(lat: number, lon: number): { x: number; y: number } {
-  const x = lon * 0.55;
-  const y = lat * 0.55;
-  return { x, y };
+function hash(x: number, z: number) {
+  const n = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return n - Math.floor(n);
 }
 
-export type ContinentNode = {
+const COLORS = {
+  ground: 0x2a2c28,
+  road: 0x4a463c,
+  roadEdge: 0x3a3830,
+  house: [0x6b5a48, 0x5a5850, 0x7a6a52, 0x4a4e4c, 0x6e6258] as number[],
+  roof: 0x3a3530,
+  yard: 0x3a4a38,
+  player: 0xe8c76b,
+  other: 0x6b91b5,
+  fog: 0x171816,
+};
+
+export type MapToken = {
   id: string;
-  name: string;
-  biome: string;
-  affinity?: string;
   x: number;
   y: number;
-  rx: number;
-  ry: number;
-  color: number;
-  bossName?: string;
+  name: string;
+  isSelf?: boolean;
 };
 
-export function buildContinentNodes(): ContinentNode[] {
-  return GLOBE_CONTINENTS.map((g) => {
-    const continent = CONTINENTS.find((c) => c.id === g.id);
-    if (!continent) return null;
-    const { x, y } = geoToPlane(g.latitude, g.longitude);
-    const boss = BOSSES.find((b) => b.continentId === g.id);
-    return {
-      id: g.id,
-      name: continent.name,
-      biome: continent.biome,
-      affinity: continent.affinity,
-      x,
-      y,
-      rx: Math.max(4.5, g.width * 0.32),
-      ry: Math.max(3.5, g.height * 0.26),
-      color: AFFINITY_COLORS[continent.affinity ?? ""] ?? 0x8a9a7e,
-      bossName: boss?.name,
-    };
-  }).filter(Boolean) as ContinentNode[];
-}
-
-export type WorldMap2DEngineOptions = {
+export type CityMap2DEngineOptions = {
   container: HTMLElement;
-  onSelectContinent?: (id: string) => void;
-  playerContinentId?: string | null;
-  exploredContinentIds?: Set<string> | string[];
+  originX: number;
+  originY: number;
+  tokens?: MapToken[];
+  radius?: number;
 };
 
-export type WorldMap2DEngine = {
+export type CityMap2DEngine = {
   dispose: () => void;
-  setSelected: (id: string | null) => void;
-  setPlayerContinent: (id: string | null) => void;
-  setExplored: (ids: Set<string> | string[]) => void;
-  zoomIn: () => void;
-  zoomOut: () => void;
+  setOrigin: (x: number, y: number) => void;
+  setTokens: (tokens: MapToken[]) => void;
   resize: () => void;
-  getSelectedId: () => string | null;
 };
 
-const MIN_ZOOM = 0.35;
-const MAX_ZOOM = 3.2;
-const ZOOM_STEP = 1.18;
+const CELL = 1;
 
-export function createWorldMap2DEngine(
-  options: WorldMap2DEngineOptions,
-): WorldMap2DEngine {
-  const { container, onSelectContinent } = options;
-  const nodes = buildContinentNodes();
+export function createCityMap2DEngine(
+  options: CityMap2DEngineOptions,
+): CityMap2DEngine {
+  const radius = options.radius ?? 14;
+  const container = options.container;
+
+  let originX = options.originX;
+  let originY = options.originY;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(OCEAN);
+  scene.background = new THREE.Color(COLORS.fog);
 
-  const camera = new THREE.OrthographicCamera(-50, 50, 35, -35, 0.1, 500);
-  camera.position.set(0, 0, 100);
+  const camera = new THREE.OrthographicCamera(-16, 16, 12, -12, 0.1, 100);
+  camera.position.set(0, 0, 50);
   camera.lookAt(0, 0, 0);
 
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
-    alpha: false,
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -115,287 +75,146 @@ export function createWorldMap2DEngine(
   renderer.domElement.style.touchAction = "none";
   container.appendChild(renderer.domElement);
 
-  {
-    const geo = new THREE.PlaneGeometry(240, 160);
-    const mat = new THREE.MeshBasicMaterial({ color: OCEAN });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.z = -2;
-    scene.add(mesh);
-  }
-  {
-    const grid = new THREE.GridHelper(200, 40, GRID, GRID);
-    grid.rotation.x = Math.PI / 2;
-    grid.position.z = -1.5;
-    const mat = grid.material as THREE.Material | THREE.Material[];
-    if (Array.isArray(mat)) {
-      mat.forEach((m) => {
-        m.transparent = true;
-        (m as THREE.Material & { opacity: number }).opacity = 0.35;
-      });
-    } else {
-      mat.transparent = true;
-      (mat as THREE.Material & { opacity: number }).opacity = 0.35;
-    }
-    scene.add(grid);
+  const world = new THREE.Group();
+  scene.add(world);
+
+  const tokenGroup = new THREE.Group();
+  scene.add(tokenGroup);
+
+  function isRoad(wx: number, wy: number) {
+    return Math.abs(wx % 5) < 1 || Math.abs(wy % 5) < 1;
   }
 
-  {
-    const eqMat = new THREE.LineBasicMaterial({
-      color: 0x2a4a58,
-      transparent: true,
-      opacity: 0.5,
-    });
-    const eqPts = [new THREE.Vector3(-110, 0, -1), new THREE.Vector3(110, 0, -1)];
-    scene.add(
-      new THREE.Line(new THREE.BufferGeometry().setFromPoints(eqPts), eqMat),
-    );
-    const merPts = [new THREE.Vector3(0, -80, -1), new THREE.Vector3(0, 80, -1)];
-    scene.add(
-      new THREE.Line(new THREE.BufferGeometry().setFromPoints(merPts), eqMat),
-    );
-  }
-
-  const continentGroup = new THREE.Group();
-  scene.add(continentGroup);
-
-  const meshById = new Map<string, THREE.Mesh>();
-  const baseColorById = new Map<string, number>();
-  let selectedId: string | null = null;
-  let playerContinentId: string | null = options.playerContinentId ?? null;
-  let explored = new Set(
-    Array.isArray(options.exploredContinentIds)
-      ? options.exploredContinentIds
-      : options.exploredContinentIds
-        ? [...options.exploredContinentIds]
-        : [],
-  );
-
-  const playerMarker = new THREE.Mesh(
-    new THREE.CircleGeometry(1.1, 16),
-    new THREE.MeshBasicMaterial({ color: PLAYER }),
-  );
-  playerMarker.position.z = 2;
-  playerMarker.visible = false;
-  scene.add(playerMarker);
-
-  for (const n of nodes) {
-    const shape = new THREE.Shape();
-    const segs = 28;
-    for (let i = 0; i <= segs; i++) {
-      const t = (i / segs) * Math.PI * 2;
-      const wobble =
-        0.88 +
-        0.1 * Math.sin(t * 3 + n.id.length) +
-        0.05 * Math.cos(t * 5);
-      const px = Math.cos(t) * n.rx * wobble;
-      const py = Math.sin(t) * n.ry * wobble;
-      if (i === 0) shape.moveTo(px, py);
-      else shape.lineTo(px, py);
-    }
-    const geo = new THREE.ShapeGeometry(shape);
-    const mat = new THREE.MeshBasicMaterial({
-      color: n.color,
-      transparent: true,
-      opacity: 0.88,
-      side: THREE.DoubleSide,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(n.x, n.y, 0);
-    mesh.userData.continentId = n.id;
-    mesh.userData.name = n.name;
-    continentGroup.add(mesh);
-    meshById.set(n.id, mesh);
-    baseColorById.set(n.id, n.color);
-
-    const edge = new THREE.EdgesGeometry(geo);
-    const line = new THREE.LineSegments(
-      edge,
-      new THREE.LineBasicMaterial({
-        color: 0x0a1018,
-        transparent: true,
-        opacity: 0.55,
-      }),
-    );
-    line.position.copy(mesh.position);
-    line.position.z = 0.2;
-    continentGroup.add(line);
-
-    if (n.bossName) {
-      const bossMesh = new THREE.Mesh(
-        new THREE.CircleGeometry(0.9, 10),
-        new THREE.MeshBasicMaterial({ color: BOSS }),
-      );
-      bossMesh.position.set(n.x + n.rx * 0.35, n.y + n.ry * 0.35, 1);
-      bossMesh.userData.continentId = n.id;
-      continentGroup.add(bossMesh);
-    }
-  }
-
-  function applyVisualState() {
-    for (const [id, mesh] of meshById) {
-      const mat = mesh.material as THREE.MeshBasicMaterial;
-      const base = baseColorById.get(id) ?? 0x8a9a7e;
-      const isSelected = id === selectedId;
-      const isExplored = explored.has(id);
-      const isPlayer = id === playerContinentId;
-
-      if (isSelected) {
-        mat.color.setHex(SELECTED);
-        mat.opacity = 1;
-      } else if (isPlayer) {
-        mat.color.setHex(base);
-        mat.opacity = 1;
-      } else if (isExplored) {
-        mat.color.setHex(base);
-        mat.opacity = 0.9;
-      } else {
-        mat.color.setHex(base);
-        mat.opacity = 0.55;
+  function buildChunk() {
+    while (world.children.length) {
+      const c = world.children[0];
+      world.remove(c);
+      if (c instanceof THREE.Mesh) {
+        c.geometry.dispose();
+        const m = c.material;
+        if (Array.isArray(m)) m.forEach((x) => x.dispose());
+        else m.dispose();
       }
     }
 
-    if (playerContinentId && meshById.has(playerContinentId)) {
-      const m = meshById.get(playerContinentId)!;
-      playerMarker.position.set(m.position.x, m.position.y, 2);
-      playerMarker.visible = true;
-    } else {
-      playerMarker.visible = false;
+    {
+      const size = (radius * 2 + 2) * CELL;
+      const geo = new THREE.PlaneGeometry(size, size);
+      const mat = new THREE.MeshBasicMaterial({ color: COLORS.ground });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.z = -0.2;
+      world.add(mesh);
+    }
+
+    for (let dz = -radius; dz <= radius; dz++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const wx = originX + dx;
+        const wy = originY + dz;
+        const px = dx * CELL;
+        const py = -dz * CELL;
+
+        if (isRoad(wx, wy)) {
+          const geo = new THREE.PlaneGeometry(CELL * 0.98, CELL * 0.98);
+          const mat = new THREE.MeshBasicMaterial({ color: COLORS.road });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(px, py, 0);
+          world.add(mesh);
+          continue;
+        }
+
+        if (hash(wx, wy) < 0.22) {
+          const geo = new THREE.PlaneGeometry(CELL * 0.92, CELL * 0.92);
+          const mat = new THREE.MeshBasicMaterial({ color: COLORS.yard });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(px, py, 0);
+          world.add(mesh);
+          continue;
+        }
+
+        const w = 0.55 + hash(wx + 17, wy) * 0.35;
+        const d = 0.55 + hash(wx, wy + 31) * 0.35;
+        const color =
+          COLORS.house[Math.floor(hash(wx + 53, wy + 7) * COLORS.house.length)];
+
+        const body = new THREE.Mesh(
+          new THREE.PlaneGeometry(w * CELL, d * CELL),
+          new THREE.MeshBasicMaterial({ color }),
+        );
+        body.position.set(px, py, 0.05);
+        world.add(body);
+
+        const roof = new THREE.Mesh(
+          new THREE.PlaneGeometry(w * CELL * 0.85, d * CELL * 0.4),
+          new THREE.MeshBasicMaterial({ color: COLORS.roof }),
+        );
+        roof.position.set(px, py + d * CELL * 0.15, 0.1);
+        world.add(roof);
+
+        if (hash(wx + 91, wy + 13) > 0.55) {
+          const door = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.12, 0.18),
+            new THREE.MeshBasicMaterial({ color: 0x2a2418 }),
+          );
+          door.position.set(px, py - d * CELL * 0.35, 0.12);
+          world.add(door);
+        }
+      }
     }
   }
-  applyVisualState();
 
-  let camX = 0;
-  let camY = 0;
-  let zoom = 1;
+  function rebuildTokens(tokens: MapToken[]) {
+    while (tokenGroup.children.length) {
+      const c = tokenGroup.children[0];
+      tokenGroup.remove(c);
+      if (c instanceof THREE.Mesh) {
+        c.geometry.dispose();
+        (c.material as THREE.Material).dispose();
+      }
+    }
+
+    for (const t of tokens) {
+      const dx = (t.x - originX) * CELL;
+      const dy = -(t.y - originY) * CELL;
+      const r = t.isSelf ? 0.28 : 0.24;
+      const mesh = new THREE.Mesh(
+        new THREE.CircleGeometry(r, 12),
+        new THREE.MeshBasicMaterial({
+          color: t.isSelf ? COLORS.player : COLORS.other,
+        }),
+      );
+      mesh.position.set(dx, dy, 0.5);
+      tokenGroup.add(mesh);
+
+      if (t.isSelf) {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.32, 0.4, 16),
+          new THREE.MeshBasicMaterial({
+            color: 0xf8d77a,
+            side: THREE.DoubleSide,
+          }),
+        );
+        ring.position.set(dx, dy, 0.51);
+        tokenGroup.add(ring);
+      }
+    }
+  }
+
+  buildChunk();
+  rebuildTokens(options.tokens ?? []);
 
   function updateCamera() {
     const w = container.clientWidth || 320;
     const h = container.clientHeight || 240;
-    const aspect = w / h;
-    const halfH = 42 / zoom;
+    const aspect = w / Math.max(h, 1);
+    const halfH = 11;
     const halfW = halfH * aspect;
-    camera.left = camX - halfW;
-    camera.right = camX + halfW;
-    camera.top = camY + halfH;
-    camera.bottom = camY - halfH;
+    camera.left = -halfW;
+    camera.right = halfW;
+    camera.top = halfH;
+    camera.bottom = -halfH;
     camera.updateProjectionMatrix();
   }
   updateCamera();
-
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
-
-  function pickContinent(clientX: number, clientY: number): string | null {
-    const rect = renderer.domElement.getBoundingClientRect();
-    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObjects([...meshById.values()], false);
-    if (hits.length === 0) return null;
-    return (hits[0].object.userData.continentId as string) ?? null;
-  }
-
-  let dragging = false;
-  let moved = false;
-  let lastX = 0;
-  let lastY = 0;
-  let activePointers = new Map<number, { x: number; y: number }>();
-  let pinchStartDist = 0;
-  let pinchStartZoom = 1;
-
-  function onPointerDown(ev: PointerEvent) {
-    activePointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-    renderer.domElement.setPointerCapture(ev.pointerId);
-
-    if (activePointers.size === 1) {
-      dragging = true;
-      moved = false;
-      lastX = ev.clientX;
-      lastY = ev.clientY;
-    } else if (activePointers.size === 2) {
-      dragging = false;
-      const pts = [...activePointers.values()];
-      pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      pinchStartZoom = zoom;
-    }
-  }
-
-  function onPointerMove(ev: PointerEvent) {
-    if (!activePointers.has(ev.pointerId)) return;
-    activePointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-
-    if (activePointers.size === 2) {
-      const pts = [...activePointers.values()];
-      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      if (pinchStartDist > 0) {
-        zoom = THREE.MathUtils.clamp(
-          pinchStartZoom * (dist / pinchStartDist),
-          MIN_ZOOM,
-          MAX_ZOOM,
-        );
-        updateCamera();
-      }
-      return;
-    }
-
-    if (!dragging) return;
-    const dx = ev.clientX - lastX;
-    const dy = ev.clientY - lastY;
-    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
-
-    const rect = renderer.domElement.getBoundingClientRect();
-    const halfH = 42 / zoom;
-    const halfW = halfH * (rect.width / Math.max(rect.height, 1));
-    camX -= (dx / rect.width) * halfW * 2;
-    camY += (dy / rect.height) * halfH * 2;
-    camX = THREE.MathUtils.clamp(camX, -100, 100);
-    camY = THREE.MathUtils.clamp(camY, -70, 70);
-    lastX = ev.clientX;
-    lastY = ev.clientY;
-    updateCamera();
-  }
-
-  function onPointerUp(ev: PointerEvent) {
-    const wasMoved = moved;
-    activePointers.delete(ev.pointerId);
-    try {
-      renderer.domElement.releasePointerCapture(ev.pointerId);
-    } catch {
-      /* ignore */
-    }
-
-    if (activePointers.size === 0) {
-      if (dragging && !wasMoved) {
-        const id = pickContinent(ev.clientX, ev.clientY);
-        if (id) {
-          selectedId = id;
-          applyVisualState();
-          onSelectContinent?.(id);
-        }
-      }
-      dragging = false;
-      moved = false;
-    } else if (activePointers.size === 1) {
-      const remaining = [...activePointers.values()][0];
-      lastX = remaining.x;
-      lastY = remaining.y;
-      dragging = true;
-      moved = false;
-    }
-  }
-
-  function onWheel(ev: WheelEvent) {
-    ev.preventDefault();
-    const factor = ev.deltaY > 0 ? 1 / ZOOM_STEP : ZOOM_STEP;
-    zoom = THREE.MathUtils.clamp(zoom * factor, MIN_ZOOM, MAX_ZOOM);
-    updateCamera();
-  }
-
-  renderer.domElement.addEventListener("pointerdown", onPointerDown);
-  renderer.domElement.addEventListener("pointermove", onPointerMove);
-  renderer.domElement.addEventListener("pointerup", onPointerUp);
-  renderer.domElement.addEventListener("pointercancel", onPointerUp);
-  renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
   let raf = 0;
   let disposed = false;
@@ -419,22 +238,20 @@ export function createWorldMap2DEngine(
       : null;
   ro?.observe(container);
 
+  let lastOx = originX;
+  let lastOy = originY;
+
   return {
     dispose() {
       disposed = true;
       cancelAnimationFrame(raf);
       ro?.disconnect();
-      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-      renderer.domElement.removeEventListener("pointermove", onPointerMove);
-      renderer.domElement.removeEventListener("pointerup", onPointerUp);
-      renderer.domElement.removeEventListener("pointercancel", onPointerUp);
-      renderer.domElement.removeEventListener("wheel", onWheel);
       renderer.dispose();
       if (renderer.domElement.parentElement === container) {
         container.removeChild(renderer.domElement);
       }
       scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments) {
+        if (obj instanceof THREE.Mesh) {
           obj.geometry?.dispose();
           const m = obj.material;
           if (Array.isArray(m)) m.forEach((x) => x.dispose());
@@ -442,45 +259,21 @@ export function createWorldMap2DEngine(
         }
       });
     },
-    setSelected(id) {
-      selectedId = id;
-      applyVisualState();
+    setOrigin(x, y) {
+      if (x === lastOx && y === lastOy) return;
+      lastOx = x;
+      lastOy = y;
+      originX = x;
+      originY = y;
+      buildChunk();
     },
-    setPlayerContinent(id) {
-      playerContinentId = id;
-      applyVisualState();
-    },
-    setExplored(ids) {
-      explored = new Set(Array.isArray(ids) ? ids : [...ids]);
-      applyVisualState();
-    },
-    zoomIn() {
-      zoom = THREE.MathUtils.clamp(zoom * ZOOM_STEP, MIN_ZOOM, MAX_ZOOM);
-      updateCamera();
-    },
-    zoomOut() {
-      zoom = THREE.MathUtils.clamp(zoom / ZOOM_STEP, MIN_ZOOM, MAX_ZOOM);
-      updateCamera();
+    setTokens(tokens) {
+      rebuildTokens(tokens);
     },
     resize,
-    getSelectedId: () => selectedId,
   };
 }
 
-export function listContinentSummaries(): Array<{
-  id: string;
-  name: string;
-  biome: string;
-  affinity?: string;
-  bossName?: string;
-}> {
-  return buildContinentNodes().map((n) => ({
-    id: n.id,
-    name: n.name,
-    biome: n.biome,
-    affinity: n.affinity,
-    bossName: n.bossName,
-  }));
-}
-
-void (null as unknown as Continent | null);
+/** @deprecated use createCityMap2DEngine */
+export const createWorldMap2DEngine = createCityMap2DEngine;
+export type WorldMap2DEngine = CityMap2DEngine;
