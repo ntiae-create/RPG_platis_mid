@@ -168,7 +168,7 @@ export function CharacterCard({
           })}
         </div>
 
-        {!compact && (
+        {(!compact || isFlipped) && (
           <>
             <div className="space-y-1.5">
               <p className="text-[10px] tracking-wide text-muted uppercase">
@@ -195,7 +195,7 @@ export function CharacterCard({
               ))}
             </div>
 
-            
+
             {isFlipped && (
               <div className="character-card-back space-y-3">
                 <div className="flex items-center justify-between">
@@ -213,7 +213,53 @@ export function CharacterCard({
                 </div>
 
 <div className="space-y-1.5">
+
               <p className="text-[10px] tracking-wide text-muted uppercase">
+                Habilidades · Descrições
+              </p>
+
+              {character.skills.slice(0, slots).map((sk) => (
+                <div
+                  key={sk.id}
+                  className={cn(
+                    "skill-affinity-card",
+                    "skill-affinity-" + sk.affinity,
+                    "rounded-md bg-bg/35 p-2"
+                  )}
+                >
+                  <div className="text-sm font-medium">
+                    {sk.name || "Slot vazio"}
+                  </div>
+                  <p className="mt-1 text-xs text-muted">
+                    {sk.type} · Afinidade: {sk.affinity}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm">
+                    {sk.description || "Sem descrição cadastrada."}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    HP {sk.cost.hp} · MP {sk.cost.mp} · EST {sk.cost.est}
+                  </p>
+                  <p className="text-xs text-muted">
+                    Alvo: {sk.target} · Alcance: {sk.range} · Duração: {sk.duration} turno(s) · Recarga: {sk.cooldown} turno(s)
+                  </p>
+                  {sk.effects && sk.effects.length > 0 && (
+                    <p className="mt-1 text-xs">
+                      <span className="font-medium">Efeitos: </span>
+                      {sk.effects.map((effect, index) => (
+                        <span key={index}>
+                          {index > 0 ? " · " : ""}
+                          {effect.effectId}
+                          {effect.stacks != null ? ` (acúmulos: ${effect.stacks})` : ""}
+                          {effect.duration != null ? ` (${effect.duration} turno(s))` : ""}
+                          {effect.chance != null ? ` — chance: ${effect.chance}%` : ""}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              ))}
+
+<p className="text-[10px] tracking-wide text-muted uppercase">
                 Passivas
               </p>
 
