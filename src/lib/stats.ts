@@ -298,7 +298,7 @@ const RACE_GENDER_IMAGES: Record<
   },
 
   dragonoide: {
-    masculino: "/portraits/dragonoide_masculina.jpg",
+    masculino: "/portraits/dragonoide.jpg",
     feminino: "/portraits/dragonoide_feminina.jpg",
   },
 
