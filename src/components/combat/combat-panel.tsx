@@ -42,6 +42,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
   const characters = usePlatis((s) => s.characters);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
   const combatNpcIds = usePlatis((s) => s.combatNpcIds);
+  const combatParticipants = usePlatis((s) => s.combatParticipants);
   const combatPositions = usePlatis((s) => s.combatPositions);
   const moveCombatParticipant = usePlatis((s) => s.moveCombatParticipant);
   const slots = usePlatis((s) => s.slots);
@@ -217,7 +218,11 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                     backgroundSize: "6.25% 8.333333%",
                   }}
                 />
-                {Object.entries(combatPositions).map(([id, position]) => {
+                {[...new Set([...Object.keys(combatPositions), ...combatParticipants])].map((id) => {
+                  const position = combatPositions[id] ?? {
+                    x: combatEnemies[id] ? 14 : 1,
+                    y: Math.min(11, 2 + combatParticipants.indexOf(id) * 2),
+                  };
                   const fighter = characters[id] ?? combatEnemies[id] ?? null;
                   if (!fighter) return null;
                   const isEnemy = Boolean(combatEnemies[id]);
@@ -235,7 +240,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                       {fighter.image ? (
                         <img src={fighter.image} alt={fighter.name} className="h-full w-full object-cover" draggable={false} />
                       ) : (
-                        <span className="text-[10px] font-bold text-white">{isEnemy ? "E" : "P"}</span>
+                        <span className="text-[10px] font-bold text-white">{isEnemy ? "E" : combatNpcIds.includes(id) ? "N" : "P"}</span>
                       )}
                     </div>
                   );
