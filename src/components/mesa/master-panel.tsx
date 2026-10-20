@@ -142,6 +142,7 @@ export function MasterPanel({
   const characters = usePlatis((s) => s.characters);
   const npcs = usePlatis((s) => s.npcs);
   const createNpc = usePlatis((s) => s.createNpc);
+  const addNpcToCombat = usePlatis((s) => s.addNpcToCombat);
   const updateNpc = usePlatis((s) => s.updateNpc);
   const removeNpc = usePlatis((s) => s.removeNpc);
   const grantNpcXp = usePlatis((s) => s.grantNpcXp);
@@ -370,6 +371,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={() => addNpcToCombat(npc.id)}>{combatParticipants.includes(npc.id) ? "Adicionar novamente" : "Adicionar como aliado"}</Button>
                 {npc.npcSourceCharacterId ? <span className="self-center text-xs text-muted">Edite pela ficha original</span> : <Button variant="secondary" onClick={() => editNpc(npc)}>Editar</Button>}
                 <input aria-label="Quantidade de XP" className="w-24 rounded-md border border-line bg-bg p-2" type="number" min="1" value={npcXpAmount} onChange={(e) => setNpcXpAmount(e.target.value)} />
                 <Button variant="secondary" onClick={() => grantNpcXp(npc.id, Number(npcXpAmount))}>Adicionar XP</Button>

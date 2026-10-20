@@ -190,6 +190,7 @@ type AppState = {
   selfId: string | null;
   characters: Record<string, Character>;
   npcs: Record<string, Character>;
+  combatNpcIds: string[];
   slots: (string | null)[];
   masterId: string | null;
   movementLocked: boolean;
@@ -250,6 +251,7 @@ type AppState = {
   clearActiveMasterEvent: () => void;
   addCharacter: (ch: Character, asSelf?: boolean) => void;
   createNpc: (npc: Character) => void;
+  addNpcToCombat: (npcId: string) => void;
   updateNpc: (id: string, patch: Partial<Character>) => void;
   removeNpc: (id: string) => void;
   grantNpcXp: (id: string, amount: number) => void;
@@ -351,6 +353,7 @@ function empty(): Pick<
   | "selfId"
   | "characters"
   | "npcs"
+  | "combatNpcIds"
   | "slots"
   | "masterId"
   | "movementLocked"
@@ -396,6 +399,7 @@ function empty(): Pick<
     selfId: null,
     characters: {},
     npcs: {},
+    combatNpcIds: [],
     slots: Array.from({ length: 8 }, () => null),
     masterId: null,
     movementLocked: false,
@@ -767,6 +771,44 @@ export const usePlatis = create<AppState>()(
       createNpc: (npc) => set((s) => ({
         npcs: { ...s.npcs, [npc.id]: npc },
       })),
+
+      addNpcToCombat: (npcId) => set((s) => {
+        if (s.combatMode === "world-boss") return s;
+        const npc = s.npcs[npcId];
+        if (!npc || npc.current.hp <= 0) return s;
+        const alreadyIncluded = s.combatParticipants.includes(npcId);
+        const existingCharacter = s.characters[npcId];
+        const characters = existingCharacter
+          ? s.characters
+          : { ...s.characters, [npcId]: { ...npc, isMaster: false } };
+        const combatNpcIds = existingCharacter
+          ? s.combatNpcIds
+          : [...new Set([...s.combatNpcIds, npcId])];
+        const combatParticipants = alreadyIncluded
+          ? s.combatParticipants
+          : [...s.combatParticipants, npcId];
+        const combatPositions = {
+          ...s.combatPositions,
+          ...(s.combatActive && !s.combatPositions[npcId]
+            ? { [npcId]: { x: 1, y: Math.min(11, 2 + combatParticipants.length * 2) } }
+            : {}),
+        };
+        const combatOrder = s.combatActive && !s.combatOrder.includes(npcId)
+          ? [...s.combatOrder, npcId]
+          : s.combatOrder;
+        const combatLog = alreadyIncluded ? s.combatLog : [
+          ...s.combatLog,
+          { id: uid("lg"), at: Date.now(), kind: "system" as const,
+            text: npc.name + " foi adicionado como aliado ao combate." },
+        ].slice(-80);
+        return {
+          characters, combatNpcIds, combatParticipants, combatPositions,
+          combatOrder,
+          combatXpParticipants: s.combatActive && !s.combatXpParticipants.includes(npcId)
+            ? [...s.combatXpParticipants, npcId] : s.combatXpParticipants,
+          combatLog,
+        };
+      }),
       updateNpc: (id, patch) => set((s) => {
         const current = s.npcs[id];
         if (!current) return s;
@@ -2413,7 +2455,21 @@ export const usePlatis = create<AppState>()(
         const s = get();
         if (s.combatMode === "world-boss") return;
 
+        const characters = { ...s.characters };
+        const npcs = { ...s.npcs };
+        for (const id of s.combatNpcIds) {
+          const fighter = characters[id];
+          const originalNpc = npcs[id];
+          if (fighter && originalNpc && !originalNpc.npcSourceCharacterId) {
+            npcs[id] = { ...originalNpc, current: fighter.current };
+            delete characters[id];
+          }
+        }
+
         set({
+          characters,
+          npcs,
+          combatNpcIds: [],
           combatActive: false,
           combatParticipants: [],
           combatXpParticipants: [],

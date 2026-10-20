@@ -41,6 +41,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
   const clearCombatLog = usePlatis((s) => s.clearCombatLog);
   const characters = usePlatis((s) => s.characters);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
+  const combatNpcIds = usePlatis((s) => s.combatNpcIds);
   const combatPositions = usePlatis((s) => s.combatPositions);
   const moveCombatParticipant = usePlatis((s) => s.moveCombatParticipant);
   const slots = usePlatis((s) => s.slots);
@@ -180,7 +181,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                     className="h-7 px-2 text-[10px]"
                     onClick={() => setMovingParticipantId(selected ? null : id)}
                   >
-                    {combatEnemies[id] ? "E" : "P"} · {fighter.name}
+                    {combatEnemies[id] ? "E" : combatNpcIds.includes(id) ? "N" : "P"} · {fighter.name}
                   </Button>
                 );
               })}
@@ -277,6 +278,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
 
             <div className="mt-2 flex justify-center gap-3 text-[9px] text-muted">
               <span>P = Jogador</span>
+              <span>N = NPC aliado</span>
               <span>E = Inimigo</span>
             </div>
           </div>
