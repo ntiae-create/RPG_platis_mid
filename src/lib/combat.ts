@@ -34,6 +34,12 @@ function applyCombatStatusStats(
     active.filter((effect) => effect.id === id)
       .reduce((total, effect) => total + effect.stacks, 0);
 
+  if (stacks("dragon-fury") > 0) {
+    for (const key of ["hp", "mp", "est", "san", "atk", "atkMgc", "def", "res", "agi", "int"] as const) {
+      stats[key] += 2;
+    }
+  }
+
   stats.atk += 2 * stacks("atk") + 2 * stacks("strengthening");
   stats.atkMgc += 2 * stacks("atk_mgc") + 2 * stacks("strengthening");
   stats.def += 2 * stacks("def") + 2 * stacks("defender") - 3 * stacks("weakness");

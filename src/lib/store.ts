@@ -1539,21 +1539,41 @@ export const usePlatis = create<AppState>()(
                 get().worldBossCombat?.affinityReactionBlocks ?? [];
 
               const skillAffinity = skillExecution.skill.affinityId;
-              const targetAffinity = target.affinityId;
+              const hasDragonFury = get().combatStatusEffects.some(
+                (effect) =>
+                  effect.id === "dragon-fury" &&
+                  effect.targetId === targetId &&
+                  effect.stacks > 0,
+              );
+              const targetAffinities = [
+                ...new Set([
+                  target.affinityId,
+                  ...(hasDragonFury ? ["fogo"] : []),
+                ]),
+              ];
 
-              if (skillAffinity && targetAffinity) {
-                const reaction = resolveAffinityReaction(
-                  skillAffinity,
-                  targetAffinity,
-                );
+              if (skillAffinity) {
+                let reaction: ReturnType<typeof resolveAffinityReaction> = null;
 
-                if (
-                  reaction &&
-                  !isAffinityReactionBlocked(
-                    reactionBlocks,
-                    reaction.reactionId,
-                  )
-                ) {
+                for (const targetAffinity of targetAffinities) {
+                  if (!targetAffinity) continue;
+                  const candidate = resolveAffinityReaction(
+                    skillAffinity,
+                    targetAffinity,
+                  );
+                  if (
+                    candidate &&
+                    !isAffinityReactionBlocked(
+                      reactionBlocks,
+                      candidate.reactionId,
+                    )
+                  ) {
+                    reaction = candidate;
+                    break;
+                  }
+                }
+
+                if (reaction) {
                   if (!reaction.activated) {
                     reactionBlocks = blockAffinityReaction(
                       reactionBlocks,
@@ -2067,6 +2087,7 @@ export const usePlatis = create<AppState>()(
           combatPositions,
           combatTurnIndex: 0,
           combatRound: 1,
+          combatStatusEffects: [],
           attackerId: firstId,
           defenderId: order.length > 1 ? order[1] : null,
           pendingCounter: null,
@@ -2670,6 +2691,104 @@ export const usePlatis = create<AppState>()(
           res.damage += commandDamage;
         }
 
+        const lazuliBaseDamage = res.damage;
+        let lazuliDeathDamage = 0;
+
+        if (
+          res.hit &&
+          lazuliBaseDamage > 0 &&
+          "raceId" in atk &&
+          RACE_BY_ID[atk.raceId]?.id === "dragonoide"
+        ) {
+          const effects = get().combatStatusEffects;
+          const mark = effects.find(
+            (effect) =>
+              effect.id === "draconic-mark" &&
+              effect.targetId === def.id &&
+              effect.sourceId === atk.id
+          );
+          const damageValues = [
+            ...(mark?.damageValues ?? []),
+            lazuliBaseDamage,
+          ].slice(-5);
+          const stacks = (mark?.stacks ?? 0) + 1;
+
+          if (stacks >= 5) {
+            lazuliDeathDamage = damageValues.reduce((sum, value) => sum + value, 0);
+
+            const furyAlreadyActive = effects.some(
+              (effect) => effect.id === "dragon-fury" && effect.targetId === atk.id
+            );
+
+            set({
+              combatStatusEffects: [
+                ...effects.filter(
+                  (effect) =>
+                    !(
+                      effect.id === "draconic-mark" &&
+                      effect.targetId === def.id &&
+                      effect.sourceId === atk.id
+                    )
+                ),
+                ...(furyAlreadyActive ? [] : [{
+                  id: "dragon-fury",
+                  targetId: atk.id,
+                  sourceId: atk.id,
+                  stacks: 1,
+                  duration: null,
+                }]),
+              ],
+            });
+
+            res.log.push({
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "passive",
+              text: `Lazuli — Efeito da Morte: ${lazuliDeathDamage} de dano adicional acumulado contra ${def.name}.`,
+            });
+
+            if (!furyAlreadyActive) {
+              res.log.push({
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "passive",
+                text: `Lazuli — Fúria do Dragão: ${atk.name} recebe +2 em todos os atributos e afinidade Fogo temporária até o fim da batalha.`,
+              });
+            }
+          } else {
+            set({
+              combatStatusEffects: [
+                ...effects.filter(
+                  (effect) =>
+                    !(
+                      effect.id === "draconic-mark" &&
+                      effect.targetId === def.id &&
+                      effect.sourceId === atk.id
+                    )
+                ),
+                {
+                  id: "draconic-mark",
+                  targetId: def.id,
+                  sourceId: atk.id,
+                  stacks,
+                  duration: null,
+                  damageValues,
+                },
+              ],
+            });
+
+            res.log.push({
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "passive",
+              text: `Lazuli: ${def.name} recebe a Marca Dracônica (${stacks}/5).`,
+            });
+          }
+        }
+
+        // O Efeito da Morte soma dano extra sem contar esse extra como uma nova marca.
+        res.damage = lazuliBaseDamage + lazuliDeathDamage;
+
         if (res.hit && res.damage > 0) {
           if ("raceId" in def) {
             const applied = applyDamage(def, res.damage);
@@ -2710,7 +2829,7 @@ export const usePlatis = create<AppState>()(
             if (character) {
               const maxHp = finalStats(character).hp;
               const percent = Math.max(1, Math.min(100, activeLifesteal.power ?? 10));
-              const healing = Math.ceil(res.damage * percent / 100);
+              const healing = Math.ceil(lazuliBaseDamage * percent / 100);
               get().patchCharacter(atk.id, {
                 current: {
                   ...character.current,

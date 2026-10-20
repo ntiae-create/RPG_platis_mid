@@ -489,9 +489,9 @@ export const RACES: RaceDef[] = [
     },
     unlock: "mission",
     passive: {
-      name: "Dragon's Finger",
+      name: "Lazuli",
       description:
-        "Ataques possuem 40% de chance de aplicar 1 Marca Dracônica. Ao alcançar 3 Marcas Dracônicas no alvo, as marcas são consumidas e causam dano adicional equivalente a 25% do ATK do Dragonoide. Depois disso, as marcas podem ser acumuladas novamente.",
+        "Sempre que acertar um inimigo, aplica 1 Marca Dracônica nesse alvo, até o máximo de 5 marcas. Ao atingir 5 marcas no mesmo alvo, todas são consumidas e o Dragonoide ativa o Efeito da Morte, causando dano adicional igual à soma do dano final de todos os ataques que geraram essas marcas, incluindo críticos e modificadores. Em seguida, ativa a Fúria do Dragão: recebe +2 em todos os atributos até o fim da batalha e ganha afinidade Fogo temporariamente. Se já possuir outra afinidade, mantém ambas ao mesmo tempo.",
     },
     base: s(46, 24, 42, 90, 12, 8, 10, 8, 6, 12),
   },
