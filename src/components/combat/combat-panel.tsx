@@ -36,6 +36,9 @@ export function CombatPanel() {
   const combatMode = usePlatis((s) => s.combatMode);
   const worldBossId = usePlatis((s) => s.worldBossId);
   const startCombat = usePlatis((s) => s.startCombat);
+  const setCombatArena = usePlatis((s) => s.setCombatArena);
+  const setWarriorStance = usePlatis((s) => s.setWarriorStance);
+  const assimilateTarget = usePlatis((s) => s.assimilateTarget);
   const endCombat = usePlatis((s) => s.endCombat);
 const nextTurn = usePlatis((s) => s.nextTurn);
   const clearCombatLog = usePlatis((s) => s.clearCombatLog);
@@ -161,7 +164,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                 <select
                   className="h-10 w-full rounded-md border border-line bg-raised px-3 text-sm"
                   value={selectedArena}
-                  onChange={(event) => setSelectedArena(event.target.value)}
+                  onChange={(event) => { setSelectedArena(event.target.value); setCombatArena(event.target.value); }}
                 >
                   {arenas.map(([file, label]) => (
                     <option key={file} value={file}>{label}</option>
@@ -329,6 +332,20 @@ const nextTurn = usePlatis((s) => s.nextTurn);
             >
               Próximo Turno
             </Button>
+            {attacker && "classId" in attacker && attacker.classId === "guerreiro" && (
+              <div className="flex flex-wrap gap-1">
+                {(["ofensiva", "defensiva", "mobilidade"] as const).map((st) => (
+                  <Button key={st} size="sm" variant="secondary" type="button" onClick={() => setWarriorStance(attacker.id, st)}>
+                    Postura {st}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {attacker && "raceId" in attacker && attacker.raceId === "doppelganger" && defender && "raceId" in defender && (
+              <Button size="sm" variant="secondary" type="button" onClick={() => assimilateTarget(attacker.id, defender.id)}>
+                Assimilar alvo
+              </Button>
+            )}
             <Button disabled={!attacker || !defender} onClick={() => rollCombat("physical")}>
               Ataque físico
             </Button>
