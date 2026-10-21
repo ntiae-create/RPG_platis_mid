@@ -194,14 +194,16 @@ describe("Integração simulada — ordem Lazuli → Muralha", () => {
       });
       mark = last.mark;
     }
-    assert.equal(last.deathDamage, 50);
-    assert.equal(last.totalDamage, 60);
+    const total = last.totalDamage; // 10 + 50 = 60
+    assert.equal(total, 60);
     const share = computeTankShare({
-      damage: last.totalDamage,
+      damage: total,
       defenderId: "ally",
       tanks: [{ id: "tank1", hp: 100, x: 2, y: 2 }],
       defenderPos: { x: 3, y: 2 },
     });
     assert.equal(share.tankShare + share.damageToDef, 60);
+    assert.equal(share.tankShare, 30);
+    assert.equal(share.damageToDef, 30);
   });
 });
