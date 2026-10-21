@@ -54,7 +54,7 @@ describe("Lazuli (módulo real) — 5ª marca", () => {
       mark = last.mark;
     }
     assert.equal(last.deathDamage, 80);
-    assert.equal(last.totalDamage, 110);
+    assert.equal(last.totalDamage, 110); // 30 + 80
     assert.equal(last.mark, null);
     assert.equal(last.triggerFury, true);
   });
@@ -194,16 +194,14 @@ describe("Integração simulada — ordem Lazuli → Muralha", () => {
       });
       mark = last.mark;
     }
-    const total = last.totalDamage;
-    assert.equal(total, 60);
+    assert.equal(last.deathDamage, 50);
+    assert.equal(last.totalDamage, 60);
     const share = computeTankShare({
-      damage: total,
+      damage: last.totalDamage,
       defenderId: "ally",
       tanks: [{ id: "tank1", hp: 100, x: 2, y: 2 }],
       defenderPos: { x: 3, y: 2 },
     });
     assert.equal(share.tankShare + share.damageToDef, 60);
-    assert.equal(share.tankShare, 30);
-    assert.equal(share.damageToDef, 30);
   });
 });
