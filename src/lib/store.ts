@@ -31,6 +31,35 @@ import {
 } from "@/data/world";
 import { createCharacter, finalStats, makeEmptySkills, skillSlots } from "./stats";
 import { applyDamage, resolveAttack, resolveEnemyAttack, type CombatKind } from "./combat";
+import {
+  emptyPassiveState,
+  raceCombatStart,
+  classBufaoCombatStart,
+  classFeiticeiroOnSkill,
+  classMagoOnSkill,
+  classBufaoOnTurn,
+  raceAfterDamageTaken,
+  raceHealReceivedMult,
+  raceTurnStartHeal,
+  tickPassiveDurations,
+  isAllyNearby,
+  raceOrcCombatStart,
+  raceDoppelOnTurn,
+  raceVampireOnSkill,
+  raceAdaptStatusDuration,
+  raceOnNegativeStatus,
+  raceKitsuneOnAttackTurn,
+  raceDoppelAssimilate,
+  raceDoppelTryRestore,
+  raceDoppelCanAssimilate,
+  isNaturalTerrain,
+  raceVampireLifestealMult,
+  classTankAllyDefBonus,
+  classGuerreiroSetStance,
+  registerLazuliHit,
+  computeTankShare,
+  type PassiveCombatState,
+} from "./passives";
 import { rollDie } from "./utils";
 import { xpToNextLevel } from "@/data/progression";
 import { uid } from "./utils";
@@ -214,6 +243,8 @@ type AppState = {
   defenderId: string | null;
   combatEnemies: Record<string, CombatEnemy>;
   combatStatusEffects: StatusEffectInstance[];
+  combatPassiveState: PassiveCombatState;
+  combatArena: string | null;
   worldBossCombat: WorldBossCombatState | null;
   worldBossId: string | null;
   combatOrder: string[];
@@ -297,6 +328,9 @@ type AppState = {
   moveCombatParticipant: (id: string, x: number, y: number) => void;
   setAllowBossEscape: (value: boolean) => void;
   startCombat: () => void;
+  setCombatArena: (arenaId: string) => void;
+  setWarriorStance: (characterId: string, stance: "ofensiva" | "defensiva" | "mobilidade") => void;
+  assimilateTarget: (doppelId: string, targetId: string) => void;
   startWorldBossCombat: (bossId: string, level: number) => void;
   worldBossAttack: (characterId: string) => void;
   worldBossMasterAction: (skillName: string | null, targetId: string) => void;
@@ -379,6 +413,8 @@ function empty(): Pick<
   | "attackerId"
   | "combatEnemies"
   | "combatStatusEffects"
+  | "combatPassiveState"
+  | "combatArena"
   | "worldBossId"
   | "worldBossCombat"
   | "defenderId"
@@ -422,6 +458,8 @@ function empty(): Pick<
     attackerId: null,
     combatEnemies: {},
     combatStatusEffects: [],
+    combatPassiveState: emptyPassiveState(),
+    combatArena: null,
     worldBossId: null,
     worldBossCombat: null,
     defenderId: null,
@@ -2121,6 +2159,23 @@ export const usePlatis = create<AppState>()(
           }
         }
 
+        const passiveState = emptyPassiveState();
+        const startNotes: string[] = [];
+        const partyChars = order.map((id) => s.characters[id]).filter(Boolean) as import("@/data/types").Character[];
+        for (const id of order) {
+          const ch = s.characters[id];
+          if (!ch) continue;
+          const raceNote = raceCombatStart(passiveState, ch);
+          if (raceNote) startNotes.push(`${ch.name}: ${raceNote}`);
+          const bufaoNote = classBufaoCombatStart(passiveState, ch);
+          if (bufaoNote) startNotes.push(`${ch.name}: ${bufaoNote}`);
+          if (ch.raceId === "orc") {
+            for (const n of raceOrcCombatStart(passiveState, ch, partyChars)) {
+              startNotes.push(n);
+            }
+          }
+        }
+
         set({
           combatActive: true,
           combatParticipants: [...order],
@@ -2130,6 +2185,7 @@ export const usePlatis = create<AppState>()(
           combatTurnIndex: 0,
           combatRound: 1,
           combatStatusEffects: [],
+          combatPassiveState: passiveState,
           attackerId: firstId,
           defenderId: order.length > 1 ? order[1] : null,
           pendingCounter: null,
@@ -2140,7 +2196,92 @@ export const usePlatis = create<AppState>()(
               kind: "system" as const,
               text: `Combate iniciado. ${(s.characters[firstId] ?? s.combatEnemies[firstId]).name} começa pela iniciativa.`,
             },
+            ...startNotes.map((text) => ({
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "system" as const,
+              text,
+            })),
           ],
+        });
+      },
+
+      setCombatArena: (arenaId) => set({ combatArena: arenaId }),
+
+      setWarriorStance: (characterId, stance) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "guerreiro") return;
+        const st = {
+          ...s.combatPassiveState,
+          entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })),
+        };
+        classGuerreiroSetStance(st, ch, stance);
+        set({
+          combatPassiveState: st,
+          combatLog: [{
+            id: uid("lg"),
+            at: Date.now(),
+            kind: "system" as const,
+            text: `${ch.name}: Postura ${stance}`,
+          }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
+      assimilateTarget: (doppelId, targetId) => {
+        const s = get();
+        const doppel = s.characters[doppelId];
+        const target = s.characters[targetId] ?? null;
+        const enemy = s.combatEnemies[targetId];
+        if (!doppel || !s.combatActive) return;
+        // monstro: sintetiza Character mínimo
+        let targetCh = target;
+        if (!targetCh && enemy) {
+          targetCh = {
+            ...doppel,
+            id: enemy.id,
+            name: enemy.name,
+            raceId: "humano",
+            classId: "guerreiro",
+            level: enemy.level,
+            allocated: {},
+            current: { ...enemy.current },
+            skills: [],
+          } as typeof doppel;
+        }
+        if (!targetCh) return;
+        const st = {
+          ...s.combatPassiveState,
+          entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })),
+        };
+        const result = raceDoppelAssimilate(st, doppel, targetCh);
+        if ("error" in result) {
+          set({
+            combatLog: [{
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "system" as const,
+              text: `Assimilação falhou: ${result.error}`,
+            }, ...s.combatLog].slice(0, 80),
+          });
+          return;
+        }
+        get().patchCharacter(doppelId, {
+          raceId: result.next.raceId,
+          classId: result.next.classId,
+          affinityId: result.next.affinityId,
+          allocated: result.next.allocated,
+          current: result.next.current,
+          skills: result.next.skills,
+        });
+        set({
+          combatPassiveState: st,
+          combatLog: [{
+            id: uid("lg"),
+            at: Date.now(),
+            kind: "passive" as const,
+            text: result.note,
+          }, ...get().combatLog].slice(0, 80),
         });
       },
 
@@ -2192,6 +2333,37 @@ export const usePlatis = create<AppState>()(
 
           let nextCharacters = currentState.characters;
           let nextEnemies = currentState.combatEnemies;
+
+          // Passivas de turno (duração, Bufão stacks, Dríade)
+          {
+            const passives = {
+              ...currentState.combatPassiveState,
+              entries: currentState.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })),
+            };
+            tickPassiveDurations(passives, nextId);
+            const actorCh = nextCharacters[nextId];
+            if (actorCh) {
+              classBufaoOnTurn(passives, actorCh);
+              const dop = raceDoppelOnTurn(passives, actorCh);
+              if (dop) { /* log via combat state */ }
+              const maxHp = finalStats(actorCh).hp;
+              const terrain = isNaturalTerrain(currentState.combatArena);
+              const heal = raceTurnStartHeal(actorCh, maxHp, terrain);
+              if (heal.amount > 0) {
+                nextCharacters = {
+                  ...nextCharacters,
+                  [nextId]: {
+                    ...actorCh,
+                    current: {
+                      ...actorCh.current,
+                      hp: Math.min(maxHp, actorCh.current.hp + heal.amount),
+                    },
+                  },
+                };
+              }
+            }
+            currentState = { ...currentState, combatPassiveState: passives };
+          }
 
           for (const bleedingEffect of effectsAtTurnStart.filter((effect) => effect.id === "bleeding")) {
             const character = nextCharacters[nextId];
@@ -2479,6 +2651,8 @@ export const usePlatis = create<AppState>()(
           attackerId: null,
           combatEnemies: {},
           combatStatusEffects: [],
+          combatPassiveState: emptyPassiveState(),
+          combatArena: get().combatArena,
           defenderId: null,
           pendingCounter: null,
         });
@@ -2511,6 +2685,29 @@ export const usePlatis = create<AppState>()(
           return false;
         }
 
+        const targetChar = s.characters[targetId];
+        if (targetChar && definition.category === "debuff") {
+          const reaction = raceOnNegativeStatus(targetChar);
+          if (reaction === "ignore") {
+            set({
+              combatLog: [{
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "passive" as const,
+                text: `${targetChar.name}: Injustiça Benigna — efeito ignorado`,
+              }, ...s.combatLog].slice(0, 80),
+            });
+            return false;
+          }
+          if (reaction === "reflect" && options.sourceId) {
+            // aplica no source em vez do alvo
+            return get().applyCombatStatusEffect(effectId, options.sourceId, {
+              ...options,
+              sourceId: targetId,
+            });
+          }
+        }
+
         const existing = s.combatStatusEffects.find(
           (effect) => effect.id === effectId && effect.targetId === targetId
         );
@@ -2519,9 +2716,29 @@ export const usePlatis = create<AppState>()(
           definition.maxStacks ?? Number.MAX_SAFE_INTEGER,
           (existing?.stacks ?? 0) + requestedStacks
         );
-        const duration = options.duration === undefined
+        let duration = options.duration === undefined
           ? (existing?.duration ?? 1)
           : options.duration;
+        if (targetChar && definition.category === "debuff") {
+          const adapted = raceAdaptStatusDuration(
+            s.combatPassiveState,
+            targetChar,
+            effectId,
+            duration,
+          );
+          duration = adapted.duration;
+          if (adapted.note) {
+            set({
+              combatPassiveState: s.combatPassiveState,
+              combatLog: [{
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "passive" as const,
+                text: `${targetChar.name}: ${adapted.note}`,
+              }, ...get().combatLog].slice(0, 80),
+            });
+          }
+        }
 
         const nextEffects = existing
           ? s.combatStatusEffects.map((effect) =>
@@ -2574,6 +2791,7 @@ export const usePlatis = create<AppState>()(
       },
 
       clearCombatStatusEffects: () => set({ combatStatusEffects: [] }),
+      combatPassiveState: emptyPassiveState(),
 
       setWorldBoss: (id) => set({ worldBossId: id }),
 
@@ -2706,6 +2924,11 @@ export const usePlatis = create<AppState>()(
           if (cur.hp < 0 || cur.mp < 0 || cur.est < 0) return;
           get().patchCharacter(atk.id, { current: cur });
         }
+        const allyIds = s.combatParticipants.filter((id) => Boolean(s.characters[id]));
+        const allyNearby =
+          "raceId" in atk
+            ? isAllyNearby(atk.id, s.combatPositions, allyIds)
+            : false;
         const res = "raceId" in atk && "raceId" in def
           ? resolveAttack({
               attacker: atk,
@@ -2713,7 +2936,8 @@ export const usePlatis = create<AppState>()(
               kind,
               statusEffects: s.combatStatusEffects,
               skill: skill && skill.status === "approved" ? skill : null,
-              allyNearby: s.slots.filter(Boolean).length > 1,
+              allyNearby,
+              passiveState: s.combatPassiveState,
             })
           : resolveEnemyAttack({
               attacker: atk,
@@ -2721,6 +2945,48 @@ export const usePlatis = create<AppState>()(
               kind,
               statusEffects: s.combatStatusEffects,
             });
+        if (res.passiveState) {
+          set({ combatPassiveState: res.passiveState });
+        }
+
+        // Skill used: stacks de classe (Feiticeiro / Mago)
+        if (skill && "raceId" in atk) {
+          const st = get().combatPassiveState;
+          if (atk.classId === "feiticeiro") {
+            const r = classFeiticeiroOnSkill(st, atk);
+            if (r.note) {
+              set({
+                combatPassiveState: st,
+                combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: r.note }, ...get().combatLog].slice(0, 80),
+              });
+            }
+            if (r.detonate) {
+              const mpLeft = Math.max(0, atk.current.mp);
+              // Descontrole: dano em área = MP restante (aplicado ao defensor como simplificação)
+              res.damage = Math.max(res.damage, mpLeft);
+              get().patchCharacter(atk.id, { current: { ...atk.current, mp: 0 } });
+            }
+          }
+          if (atk.classId === "mago") {
+            const r = classMagoOnSkill(st, atk, atk.affinityId);
+            if (r.note) {
+              set({
+                combatPassiveState: st,
+                combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: r.note }, ...get().combatLog].slice(0, 80),
+              });
+            }
+          }
+          if (atk.raceId === "vampiro") {
+            const r = raceVampireOnSkill(st, atk);
+            if (r.note) {
+              set({
+                combatPassiveState: st,
+                combatLog: [{ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: r.note }, ...get().combatLog].slice(0, 80),
+              });
+            }
+          }
+        }
+
         const burnEffects = get().combatStatusEffects
           .filter((effect) => effect.targetId === def.id && effect.id === "burn");
         const burnMultiplier = burnEffects.reduce(
@@ -2754,90 +3020,87 @@ export const usePlatis = create<AppState>()(
           res.hit &&
           lazuliBaseDamage > 0 &&
           "raceId" in atk &&
-          RACE_BY_ID[atk.raceId]?.id === "dragonoide"
+          atk.raceId === "dragonoide"
         ) {
           const effects = get().combatStatusEffects;
           const mark = effects.find(
             (effect) =>
               effect.id === "draconic-mark" &&
               effect.targetId === def.id &&
-              effect.sourceId === atk.id
+              effect.sourceId === atk.id,
           );
-          const damageValues = [
-            ...(mark?.damageValues ?? []),
-            lazuliBaseDamage,
-          ].slice(-5);
-          const stacks = (mark?.stacks ?? 0) + 1;
+          const furyAlreadyActive = effects.some(
+            (effect) => effect.id === "dragon-fury" && effect.targetId === atk.id,
+          );
+          const existing = mark
+            ? {
+                sourceId: atk.id,
+                targetId: def.id,
+                stacks: mark.stacks,
+                damageValues: [...(mark.damageValues ?? [])],
+              }
+            : null;
+          const lazuli = registerLazuliHit({
+            existing,
+            sourceId: atk.id,
+            targetId: def.id,
+            finalDamage: lazuliBaseDamage,
+            furyAlreadyActive,
+          });
+          lazuliDeathDamage = lazuli.deathDamage;
 
-          if (stacks >= 5) {
-            lazuliDeathDamage = damageValues.reduce((sum, value) => sum + value, 0);
-
-            const furyAlreadyActive = effects.some(
-              (effect) => effect.id === "dragon-fury" && effect.targetId === atk.id
-            );
-
-            set({
-              combatStatusEffects: [
-                ...effects.filter(
-                  (effect) =>
-                    !(
-                      effect.id === "draconic-mark" &&
-                      effect.targetId === def.id &&
-                      effect.sourceId === atk.id
-                    )
-                ),
-                ...(furyAlreadyActive ? [] : [{
-                  id: "dragon-fury",
-                  targetId: atk.id,
-                  sourceId: atk.id,
-                  stacks: 1,
-                  duration: null,
-                }]),
-              ],
-            });
-
+          let nextEffects = effects.filter(
+            (effect) =>
+              !(
+                effect.id === "draconic-mark" &&
+                effect.targetId === def.id &&
+                effect.sourceId === atk.id
+              ),
+          );
+          if (lazuli.mark) {
+            nextEffects = [
+              ...nextEffects,
+              {
+                id: "draconic-mark",
+                targetId: def.id,
+                sourceId: atk.id,
+                stacks: lazuli.mark.stacks,
+                duration: null,
+                damageValues: lazuli.mark.damageValues,
+              },
+            ];
+          }
+          if (lazuli.triggerFury) {
+            nextEffects = [
+              ...nextEffects,
+              {
+                id: "dragon-fury",
+                targetId: atk.id,
+                sourceId: atk.id,
+                stacks: 1,
+                duration: null,
+                // afinidade Fogo temporária (preserva original do personagem)
+                power: 1,
+              },
+            ];
+          }
+          set({ combatStatusEffects: nextEffects });
+          if (lazuli.note) {
             res.log.push({
               id: uid("lg"),
               at: Date.now(),
               kind: "passive",
-              text: `Lazuli — Efeito da Morte: ${lazuliDeathDamage} de dano adicional acumulado contra ${def.name}.`,
+              text: lazuli.note.includes("Efeito da Morte")
+                ? `${lazuli.note} contra ${def.name}.`
+                : `Lazuli: ${def.name} recebe a Marca Dracônica (${lazuli.mark?.stacks ?? 0}/5).`,
             });
-
-            if (!furyAlreadyActive) {
-              res.log.push({
-                id: uid("lg"),
-                at: Date.now(),
-                kind: "passive",
-                text: `Lazuli — Fúria do Dragão: ${atk.name} recebe +2 em todos os atributos e afinidade Fogo temporária até o fim da batalha.`,
-              });
-            }
-          } else {
-            set({
-              combatStatusEffects: [
-                ...effects.filter(
-                  (effect) =>
-                    !(
-                      effect.id === "draconic-mark" &&
-                      effect.targetId === def.id &&
-                      effect.sourceId === atk.id
-                    )
-                ),
-                {
-                  id: "draconic-mark",
-                  targetId: def.id,
-                  sourceId: atk.id,
-                  stacks,
-                  duration: null,
-                  damageValues,
-                },
-              ],
-            });
-
+          }
+          if (lazuli.triggerFury) {
             res.log.push({
               id: uid("lg"),
               at: Date.now(),
               kind: "passive",
-              text: `Lazuli: ${def.name} recebe a Marca Dracônica (${stacks}/5).`,
+              text: `Lazuli — Fúria do Dragão: ${atk.name} recebe +2 em todos os atributos e afinidade Fogo temporária até o fim da batalha.`,
             });
           }
         }
@@ -2847,16 +3110,132 @@ export const usePlatis = create<AppState>()(
 
         if (res.hit && res.damage > 0) {
           if ("raceId" in def) {
-            const applied = applyDamage(def, res.damage);
-            if (applied.survivedAt1) {
+            // Tank Muralha: 50% antes de applyDamage (qualquer fonte de dano no aliado)
+            const positions = get().combatPositions;
+            const defPos = positions[def.id] ?? null;
+            const tankCandidates = Object.values(get().characters)
+              .filter((c) => c.classId === "tank")
+              .map((c) => {
+                const p = positions[c.id];
+                return {
+                  id: c.id,
+                  hp: c.current.hp,
+                  x: p?.x ?? 99,
+                  y: p?.y ?? 99,
+                };
+              });
+            const share = computeTankShare({
+              damage: res.damage,
+              defenderId: def.id,
+              tanks: tankCandidates,
+              defenderPos: defPos,
+            });
+            let damageToDef = share.damageToDef;
+            let tankShare = share.tankShare;
+            let tankIdShare: string | null = share.tankId;
+
+            const hpBefore = def.current.hp;
+            const applied = applyDamage(def, damageToDef);
+            if (applied.survivedAt1 || applied.note) {
               res.log.push({
                 id: uid("lg"),
                 at: Date.now(),
                 kind: "passive",
-                text: `${def.name} permanece com 1 HP (Criação Indesejada).`,
+                text: applied.note ?? `${def.name} permanece com 1 HP (Criação Indesejada).`,
               });
             }
+            if ((applied as { stunnedNotDead?: boolean }).stunnedNotDead) {
+              get().applyCombatStatusEffect("stun", def.id, { duration: 2, sourceId: atk.id });
+            }
+            {
+              const maxHp = finalStats(def).hp;
+              const note = raceAfterDamageTaken(
+                get().combatPassiveState,
+                def,
+                maxHp,
+                hpBefore,
+                applied.ch.current.hp,
+              );
+              if (note) {
+                res.log.push({
+                  id: uid("lg"),
+                  at: Date.now(),
+                  kind: "passive",
+                  text: `${def.name}: ${note}`,
+                });
+                set({ combatPassiveState: get().combatPassiveState });
+              }
+            }
             get().patchCharacter(def.id, { current: applied.ch.current });
+
+            if (tankIdShare && tankShare > 0) {
+              const tank = get().characters[tankIdShare];
+              if (tank) {
+                const tankApplied = applyDamage(tank, tankShare);
+                get().patchCharacter(tankIdShare, { current: tankApplied.ch.current });
+                res.log.push({
+                  id: uid("lg"),
+                  at: Date.now(),
+                  kind: "passive",
+                  text: `${tank.name} (Muralha) assume ${tankShare} de dano de ${def.name}`,
+                });
+              }
+            }
+
+            // Vampiro: lifesteal 50% só com Blood máx + alvo sangrando (sobre dano total)
+            if ("raceId" in atk && atk.raceId === "vampiro") {
+              const bleeding = get().combatStatusEffects.some(
+                (e) => e.targetId === def.id && e.id === "bleeding" && e.stacks > 0,
+              );
+              const mult = raceVampireLifestealMult(get().combatPassiveState, atk.id, bleeding);
+              if (mult > 0) {
+                const heal = Math.ceil(res.damage * mult);
+                const maxHp = finalStats(atk).hp;
+                const cur = get().characters[atk.id];
+                if (cur) {
+                  get().patchCharacter(atk.id, {
+                    current: {
+                      ...cur.current,
+                      hp: Math.min(maxHp, cur.current.hp + heal),
+                    },
+                  });
+                  res.log.push({
+                    id: uid("lg"),
+                    at: Date.now(),
+                    kind: "passive",
+                    text: `${atk.name}: Blood Hugh rouba ${heal} HP (requer sangramento)`,
+                  });
+                }
+              }
+            }
+
+            if (res.applyBlind) {
+              get().applyCombatStatusEffect("blind", def.id, { duration: 1, sourceId: atk.id });
+            }
+
+            {
+              const st = get().combatPassiveState;
+              const maybe = raceDoppelTryRestore(st, get().characters[def.id] ?? applied.ch);
+              if (maybe) {
+                get().patchCharacter(def.id, {
+                  raceId: maybe.restored.raceId,
+                  classId: maybe.restored.classId,
+                  affinityId: maybe.restored.affinityId,
+                  allocated: maybe.restored.allocated,
+                  current: maybe.restored.current,
+                  skills: maybe.restored.skills,
+                });
+                set({
+                  combatPassiveState: st,
+                  combatLog: [{
+                    id: uid("lg"),
+                    at: Date.now(),
+                    kind: "passive" as const,
+                    text: maybe.note,
+                  }, ...get().combatLog].slice(0, 80),
+                });
+              }
+            }
           } else {
             const enemy = get().combatEnemies[s.defenderId!];
             if (enemy) {
@@ -2948,12 +3327,25 @@ export const usePlatis = create<AppState>()(
               if (character) {
                 const maxHp = finalStats(character).hp;
                 const percent = normalizeSkillPercent(effect.percent ?? effect.stacks, 10);
+                const seal = raceHealReceivedMult(get().combatPassiveState, targetId);
+                const rawHeal = Math.ceil(maxHp * percent / 100);
+                const healAmt = Math.max(0, Math.floor(rawHeal * seal.mult));
                 get().patchCharacter(targetId, {
                   current: {
                     ...character.current,
-                    hp: Math.min(maxHp, character.current.hp + Math.ceil(maxHp * percent / 100)),
+                    hp: Math.min(maxHp, character.current.hp + healAmt),
                   },
                 });
+                if (seal.note && healAmt < rawHeal) {
+                  set({
+                    combatLog: [{
+                      id: uid("lg"),
+                      at: Date.now(),
+                      kind: "passive" as const,
+                      text: `${character.name}: ${seal.note}`,
+                    }, ...get().combatLog].slice(0, 80),
+                  });
+                }
               }
               continue;
             }
@@ -3071,6 +3463,7 @@ export const usePlatis = create<AppState>()(
             defenderId: null,
             pendingCounter: null,
             combatStatusEffects: [],
+            combatPassiveState: emptyPassiveState(),
             combatLog: [
               {
                 id: uid("lg"),
