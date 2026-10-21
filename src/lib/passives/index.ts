@@ -42,6 +42,9 @@ export {
   raceDoppelCanAssimilate,
   isNaturalTerrain,
   NATURAL_ARENA_IDS,
+  raceFaeOnNegativeStatus,
+  raceUmbralCheckForm,
+  raceIsUntargetable,
 } from "./race-rules";
 
 export {
@@ -185,11 +188,6 @@ export function listPassiveVisuals(
         name: "Octagrama Arcano",
         origin: "class",
         active: Boolean(e?.active),
-        detail: e?.meta.primed
-          ? "PRIMED · próximo ataque mágico +50%"
-          : `Stacks ${e?.stacks ?? 0}/8`,
-        stacks: e?.stacks ?? 0,
-        maxStacks: 8,
       });
     } else if (cls.id === "bufao") {
       const e = state.entries.find(
