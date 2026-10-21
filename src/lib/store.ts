@@ -49,6 +49,16 @@ import {
   raceAdaptStatusDuration,
   raceOnNegativeStatus,
   raceKitsuneOnAttackTurn,
+  raceHomunculusTryReactivate,
+  raceKitsuneJokerExtraStack,
+  raceDoppelMirrorTurnReset,
+  raceDoppelMirrorAbsorb,
+  raceDoppelRoninDamageMult,
+  raceDesperationStatMult,
+  raceDoppelCheckDesperation,
+  raceKitsuneCheckDesperation,
+  raceKitsuneOnDamageTaken,
+  raceUmbralOnArenaEnter,
   raceFaeOnNegativeStatus,
   raceUmbralCheckForm,
   raceIsUntargetable,
@@ -2357,6 +2367,14 @@ export const usePlatis = create<AppState>()(
             }
           }
 
+          {
+            const passivesPre = {
+              ...currentState.combatPassiveState,
+              entries: currentState.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })),
+            };
+            if (currentState.attackerId) raceDoppelMirrorTurnReset(passivesPre, currentState.attackerId);
+            currentState = { ...currentState, combatPassiveState: passivesPre };
+          }
           // Passivas de turno (duração, Bufão stacks, Dríade)
           {
             const passives = {
@@ -3219,6 +3237,20 @@ export const usePlatis = create<AppState>()(
                 }
               }
             }
+            
+            if ("raceId" in def && def.raceId === "kitsune") {
+              const kt = raceKitsuneOnDamageTaken(get().combatPassiveState, applied.ch, Math.max(0, hpBefore - applied.ch.current.hp));
+              for (const n of kt.notes) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+n });
+              if (kt.releaseDamage > 0) {
+                res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Caudas liberam "+kt.releaseDamage+" (distribuir nos inimigos)" });
+              }
+              set({ combatPassiveState: get().combatPassiveState });
+            }
+            if ("raceId" in def && def.raceId === "doppelganger") {
+              const dnote = raceDoppelCheckDesperation(get().combatPassiveState, applied.ch, maxHp);
+              if (dnote) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+dnote });
+            }
+
             get().patchCharacter(def.id, { current: applied.ch.current });
 
             if (tankIdShare && tankShare > 0) {

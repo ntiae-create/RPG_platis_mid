@@ -20,6 +20,7 @@ import {
   raceKitsuneOnAttack,
   raceKitsuneTryAvoidHit,
   raceIsUntargetable,
+  raceDoppelRoninDamageMult,
   raceOrcPenaltyMods,
   classArqueiroOnHit,
   classCacadorOnHit,
@@ -135,6 +136,19 @@ export function resolveEnemyAttack(opts: {
       `${opts.attacker.name} D20 = ${attackerRoll}  ·  ${opts.defender.name} D20 = ${defenderRoll}`,
     ),
   );
+
+
+  {
+    const mir = raceDoppelMirrorAbsorb(passiveState, opts.defender);
+    if (mir.absorb) {
+      if (mir.note) notes.push(mir.note);
+      logs.push(log("miss", opts.defender.name+": "+(mir.note||"Espelho")));
+      return {
+        attackerRoll, defenderRoll, hit:false, critMult:1, damage:0, damageDie:0, damageSides:0,
+        counterAvailable: defenderRoll>=17 && defenderRoll>attackerRoll, stun:false, notes, log:logs, passiveState,
+      };
+    }
+  }
 
   let hit = attackerRoll > defenderRoll;
   if (attackerRoll === defenderRoll) {
@@ -349,6 +363,12 @@ export function resolveAttack(opts: {
       notes.push(`Dado de dano D${sides} = ${damageDie}`);
     }
     damage *= mult;
+    {
+      const ron = raceDoppelRoninDamageMult(opts.attacker);
+      if (ron.mult !== 1) { damage = Math.round(damage * ron.mult); if (ron.note) notes.push(ron.note); }
+      const dMult = raceDesperationStatMult(passiveState, opts.attacker.id);
+      if (dMult !== 1) { damage = Math.round(damage * dMult); notes.push("Desespero x"+dMult); }
+    }
 
     {
       const as = classAssassinDamageMult(opts.attacker, Boolean(opts.fromStealth));

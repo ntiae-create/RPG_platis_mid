@@ -685,6 +685,88 @@ export function raceIsUntargetable(state,characterId){
   return Boolean(il);
 }
 
+
+/** Arenas escuras — Umbral Corpo Umbral */
+export const DARK_ARENA_IDS = new Set([
+  "dark_arena.jpg","night_arena.jpg","void_arena.jpg","cave_arena.jpg","shadow_arena.jpg","umbral_arena.jpg",
+]);
+export function isDarkTerrain(arenaId){
+  if(!arenaId) return false;
+  const id=String(arenaId).toLowerCase();
+  return DARK_ARENA_IDS.has(arenaId)||id.includes("dark")||id.includes("night")||id.includes("void")||id.includes("cave")||id.includes("shadow");
+}
+export function raceUmbralOnArenaEnter(state,ch,arenaId){
+  if(ch.raceId!=="umbral"||!isDarkTerrain(arenaId)) return null;
+  let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:umbral:corpo");
+  if(!e){e={id:"race:umbral:corpo",characterId:ch.id,origin:"race",name:"Corpo Umbral",stacks:1,maxStacks:1,turnsRemaining:1,active:true,meta:{}};state.entries.push(e);}
+  e.active=true;e.turnsRemaining=1;
+  return "Corpo Umbral: invisível/intocável 1 turno";
+}
+export function raceKitsuneOnDamageTaken(state,ch,damage){
+  const notes=[];
+  if(ch.raceId!=="kitsune"||damage<=0) return {releaseDamage:0,notes};
+  let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:kitsune:caudas");
+  if(!e){e={id:"race:kitsune:caudas",characterId:ch.id,origin:"race",name:"Caudas Vingativas",stacks:0,maxStacks:9,turnsRemaining:null,active:true,meta:{damageSum:0}};state.entries.push(e);}
+  e.stacks=Math.min(9,e.stacks+1);
+  e.meta={...e.meta,damageSum:Number(e.meta.damageSum||0)+damage};
+  e.active=true; notes.push("Cauda "+e.stacks+"/9");
+  if(e.stacks>=9){
+    const total=Number(e.meta.damageSum||0);
+    e.stacks=0;e.meta={...e.meta,damageSum:0};e.active=false;
+    notes.push("Caudas Vingativas: libera "+total+" dano");
+    return {releaseDamage:total,notes};
+  }
+  return {releaseDamage:0,notes};
+}
+export function raceKitsuneCheckDesperation(state,kitsune,allies){
+  if(kitsune.raceId!=="kitsune") return null;
+  const critical=allies.some(a=>a.id!==kitsune.id&&a.maxHp>0&&a.hp>0&&a.hp/a.maxHp<=0.25);
+  if(!critical) return null;
+  let e=state.entries.find(x=>x.characterId===kitsune.id&&x.id==="race:kitsune:desespero");
+  if(e&&e.active) return null;
+  if(!e){e={id:"race:kitsune:desespero",characterId:kitsune.id,origin:"race",name:"Liberação de Desespero",stacks:1,maxStacks:1,turnsRemaining:null,active:true,meta:{mult:2.7}};state.entries.push(e);}
+  e.active=true;e.meta={mult:2.7};
+  return "Liberação de Desespero: status x2.7";
+}
+export function raceDoppelCheckDesperation(state,ch,maxHp){
+  if(ch.raceId!=="doppelganger"||maxHp<=0) return null;
+  if(ch.current.hp/maxHp>0.2) return null;
+  let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:doppel:desespero");
+  if(e&&e.active&&e.meta&&e.meta.locked) return null;
+  if(!e){e={id:"race:doppel:desespero",characterId:ch.id,origin:"race",name:"Liberação de Desespero",stacks:1,maxStacks:1,turnsRemaining:null,active:true,meta:{mult:2.7,locked:true}};state.entries.push(e);}
+  e.active=true;e.meta={mult:2.7,locked:true};
+  return "Liberação de Desespero: status x2.7";
+}
+export function raceDesperationStatMult(state,characterId){
+  for(const id of ["race:kitsune:desespero","race:doppel:desespero"]){
+    const e=state.entries.find(x=>x.characterId===characterId&&x.id===id&&x.active);
+    if(e) return Number(e.meta&&e.meta.mult||2.7);
+  }
+  return 1;
+}
+export function raceDoppelRoninDamageMult(ch){
+  if(ch.raceId!=="doppelganger"||ch.classId!=="ronin") return {mult:1};
+  return {mult:2,note:"Alma Ronin: espirito x2 dano"};
+}
+export function raceDoppelMirrorAbsorb(state,ch){
+  const e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:doppel:assimilacao");
+  if(!e||!e.meta||!e.meta.assimilating) return {absorb:false};
+  if(e.meta.mirrorUsedThisTurn) return {absorb:false};
+  e.meta={...e.meta,mirrorUsedThisTurn:true};
+  return {absorb:true,note:"Maldito Espelho: golpe anulado"};
+}
+export function raceDoppelMirrorTurnReset(state,characterId){
+  const e=state.entries.find(x=>x.characterId===characterId&&x.id==="race:doppel:assimilacao");
+  if(e&&e.meta&&e.meta.assimilating) e.meta={...e.meta,mirrorUsedThisTurn:false};
+}
+export function raceKitsuneJokerExtraStack(ch){
+  return ch.raceId==="kitsune"&&ch.classId==="bufao";
+}
+export function raceHomunculusTryReactivate(ch,isStunnedNotDead){
+  if(ch.raceId!=="homunculo"||!isStunnedNotDead) return {ok:false};
+  return {ok:true,note:"Corpo Artificial: reativado ao ser tocado"};
+}
+
 /** Terreno natural para Dríade (arenas conhecidas) */
 export const NATURAL_ARENA_IDS = new Set([
   "forest_arena.jpg",

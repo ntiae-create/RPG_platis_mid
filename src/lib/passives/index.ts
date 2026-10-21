@@ -45,6 +45,21 @@ export {
   raceFaeOnNegativeStatus,
   raceUmbralCheckForm,
   raceIsUntargetable,
+  raceFaeOnNegativeStatus,
+  raceUmbralCheckForm,
+  raceIsUntargetable,
+  raceUmbralOnArenaEnter,
+  isDarkTerrain,
+  DARK_ARENA_IDS,
+  raceKitsuneOnDamageTaken,
+  raceKitsuneCheckDesperation,
+  raceDoppelCheckDesperation,
+  raceDesperationStatMult,
+  raceDoppelRoninDamageMult,
+  raceDoppelMirrorAbsorb,
+  raceDoppelMirrorTurnReset,
+  raceKitsuneJokerExtraStack,
+  raceHomunculusTryReactivate,
 } from "./race-rules";
 
 export {
