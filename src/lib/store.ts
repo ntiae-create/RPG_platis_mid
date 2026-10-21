@@ -49,6 +49,9 @@ import {
   raceAdaptStatusDuration,
   raceOnNegativeStatus,
   raceKitsuneOnAttackTurn,
+  raceFaeOnNegativeStatus,
+  raceUmbralCheckForm,
+  raceIsUntargetable,
   raceDoppelAssimilate,
   raceDoppelTryRestore,
   raceDoppelCanAssimilate,
@@ -2334,6 +2337,26 @@ export const usePlatis = create<AppState>()(
           let nextCharacters = currentState.characters;
           let nextEnemies = currentState.combatEnemies;
 
+          // Kitsune: 1 stack por turno em que atacou
+          {
+            const prevId = currentState.attackerId;
+            if (prevId && currentState.characters[prevId]) {
+              const passives = {
+                ...currentState.combatPassiveState,
+                entries: currentState.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })),
+              };
+              const flag = passives.entries.find(
+                (e) => e.characterId === prevId && e.id === "race:kitsune:turn-flag" && e.meta?.attacked,
+              );
+              if (flag) {
+                raceKitsuneOnAttackTurn(passives, currentState.characters[prevId]);
+                flag.meta = { ...flag.meta, attacked: false };
+                flag.active = false;
+                currentState = { ...currentState, combatPassiveState: passives };
+              }
+            }
+          }
+
           // Passivas de turno (duração, Bufão stacks, Dríade)
           {
             const passives = {
@@ -2687,6 +2710,18 @@ export const usePlatis = create<AppState>()(
 
         const targetChar = s.characters[targetId];
         if (targetChar && definition.category === "debuff") {
+          const faeRoll = raceFaeOnNegativeStatus(targetChar);
+          if (faeRoll === "convert_to_buff") {
+            set({
+              combatLog: [{
+                id: uid("lg"),
+                at: Date.now(),
+                kind: "passive",
+                text: `${targetChar.name}: Sorte Feérica — debuff anulado/convertido`,
+              }, ...s.combatLog].slice(0, 80),
+            });
+            return false;
+          }
           const reaction = raceOnNegativeStatus(targetChar);
           if (reaction === "ignore") {
             set({
@@ -3164,6 +3199,24 @@ export const usePlatis = create<AppState>()(
                   text: `${def.name}: ${note}`,
                 });
                 set({ combatPassiveState: get().combatPassiveState });
+              }
+              if ("raceId" in def && def.raceId === "umbral") {
+                const umbralNote = raceUmbralCheckForm(
+                  get().combatPassiveState,
+                  applied.ch,
+                  maxHp,
+                  hpBefore,
+                  applied.ch.current.hp,
+                );
+                if (umbralNote) {
+                  res.log.push({
+                    id: uid("lg"),
+                    at: Date.now(),
+                    kind: "passive",
+                    text: `${def.name}: ${umbralNote}`,
+                  });
+                  set({ combatPassiveState: get().combatPassiveState });
+                }
               }
             }
             get().patchCharacter(def.id, { current: applied.ch.current });

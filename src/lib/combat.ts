@@ -19,6 +19,7 @@ import {
   raceUmbralOnHit,
   raceKitsuneOnAttack,
   raceKitsuneTryAvoidHit,
+  raceIsUntargetable,
   raceOrcPenaltyMods,
   classArqueiroOnHit,
   classCacadorOnHit,
@@ -252,6 +253,25 @@ export function resolveAttack(opts: {
   if (raceAvoidAttack(opts.defender.raceId)) {
     notes.push("Travessura: ataque evitado");
     logs.push(log("miss", `${opts.defender.name} evita completamente o ataque (Travessura).`));
+    return {
+      attackerRoll,
+      defenderRoll,
+      hit: false,
+      critMult: 1,
+      damage: 0,
+      damageDie: 0,
+      damageSides: 0,
+      counterAvailable: defenderRoll >= 17 && defenderRoll > attackerRoll,
+      stun: false,
+      notes,
+      log: logs,
+      passiveState,
+    };
+  }
+
+  if (raceIsUntargetable(passiveState, opts.defender.id)) {
+    notes.push("Alvo intocável (Forma Umbral / Ilusão)");
+    logs.push(log("miss", `${opts.defender.name} não pode ser atacado neste momento.`));
     return {
       attackerRoll,
       defenderRoll,

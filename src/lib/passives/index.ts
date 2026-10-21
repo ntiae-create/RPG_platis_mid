@@ -42,6 +42,9 @@ export {
   raceDoppelCanAssimilate,
   isNaturalTerrain,
   NATURAL_ARENA_IDS,
+  raceFaeOnNegativeStatus,
+  raceUmbralCheckForm,
+  raceIsUntargetable,
 } from "./race-rules";
 
 export {

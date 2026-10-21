@@ -661,6 +661,30 @@ export function raceDoppelTryRestore(
   }
 }
 
+
+/** Fae — Sorte Feérica: 20% transformar debuff em buff equivalente */
+export function raceFaeOnNegativeStatus(ch, roll=Math.random){
+  if(ch.raceId!=="fae") return "apply";
+  return roll()<0.2 ? "convert_to_buff" : "apply";
+}
+/** Umbral — Forma da Marca do Vazio ao cruzar ≤50% HP (2 turnos intocável) */
+export function raceUmbralCheckForm(state,ch,maxHp,hpBefore,hpAfter){
+  if(ch.raceId!=="umbral"||maxHp<=0) return null;
+  const th=maxHp*0.5;
+  if(!(hpBefore>th && hpAfter<=th)) return null;
+  let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:umbral:forma");
+  if(!e){ e={id:"race:umbral:forma",characterId:ch.id,origin:"race",name:"Forma da Marca do Vazio",stacks:1,maxStacks:1,turnsRemaining:2,active:true,meta:{}}; state.entries.push(e); }
+  e.active=true; e.turnsRemaining=2;
+  return "Forma da Marca do Vazio: intocável por 2 turnos";
+}
+/** True se não pode ser atacado (Umbral forma / Kitsune ilusão) */
+export function raceIsUntargetable(state,characterId){
+  const u=state.entries.find(e=>e.characterId===characterId&&e.id==="race:umbral:forma"&&e.active);
+  if(u&&(u.turnsRemaining==null||u.turnsRemaining>0)) return true;
+  const il=state.entries.find(e=>e.characterId===characterId&&e.id==="race:kitsune:ilusao-ativa"&&e.active);
+  return Boolean(il);
+}
+
 /** Terreno natural para Dríade (arenas conhecidas) */
 export const NATURAL_ARENA_IDS = new Set([
   "forest_arena.jpg",
