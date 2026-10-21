@@ -1402,6 +1402,29 @@ export const usePlatis = create<AppState>()(
             },
           },
         });
+
+        // Homunculo: tocado = adjacente (manhattan 1) enquanto stun de Corpo Artificial
+        const s = get();
+        const logs = [];
+        for (const hid of s.combatParticipants) {
+          const h = s.characters[hid];
+          if (!h || h.raceId !== "homunculo") continue;
+          const stunned = s.combatStatusEffects.some(
+            (e) => e.targetId === hid && e.id === "stun" && e.stacks > 0
+          );
+          if (!stunned) continue;
+          const hp = s.combatPositions[hid];
+          const mp = s.combatPositions[id];
+          if (!hp || !mp) continue;
+          const dist = Math.abs(hp.x - mp.x) + Math.abs(hp.y - mp.y);
+          if (dist !== 1) continue;
+          const r = raceHomunculusTryReactivate(h, true);
+          if (r.ok) {
+            get().removeCombatStatusEffect("stun", hid);
+            logs.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: h.name+": "+(r.note||"reativado") });
+          }
+        }
+        if (logs.length) set({ combatLog: [...logs, ...get().combatLog].slice(0, 80) });
       },
 
       setAllowBossEscape: (value) => {
@@ -2386,6 +2409,17 @@ export const usePlatis = create<AppState>()(
             if (actorCh) {
               classBufaoOnTurn(passives, actorCh);
               const dop = raceDoppelOnTurn(passives, actorCh);
+              if (actorCh.raceId === "kitsune") {
+                const allies = currentState.combatParticipants
+                  .map((pid) => currentState.characters[pid])
+                  .filter(Boolean)
+                  .map((c) => ({ id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp }));
+                const kn = raceKitsuneCheckDesperation(passives, actorCh, allies);
+                if (kn) {
+                  // log deferred via state
+                }
+              }
+
               if (dop) { /* log via combat state */ }
               const maxHp = finalStats(actorCh).hp;
               const terrain = isNaturalTerrain(currentState.combatArena);
@@ -3242,7 +3276,38 @@ export const usePlatis = create<AppState>()(
               const kt = raceKitsuneOnDamageTaken(get().combatPassiveState, applied.ch, Math.max(0, hpBefore - applied.ch.current.hp));
               for (const n of kt.notes) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+n });
               if (kt.releaseDamage > 0) {
-                res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Caudas liberam "+kt.releaseDamage+" (distribuir nos inimigos)" });
+                const enemies = get().combatParticipants.filter((pid) => {
+                  if (pid === def.id) return false;
+                  const en = get().combatEnemies[pid];
+                  const ch = get().characters[pid];
+                  // inimigos de combate OU personagens do "outro lado" simplificado: todos com hp>0 que não sejam a kitsune
+                  if (en && en.current.hp > 0) return true;
+                  if (ch && ch.current.hp > 0 && ch.id !== def.id) {
+                    // se for combate PvE, combatEnemies cobre; em PvP hit nos outros participantes exceto aliados próximos é difícil — usa enemies map
+                    return false;
+                  }
+                  return false;
+                });
+                const list = enemies.length ? enemies : Object.keys(get().combatEnemies).filter((pid) => (get().combatEnemies[pid]?.current.hp ?? 0) > 0);
+                if (list.length) {
+                  const each = Math.max(1, Math.floor(kt.releaseDamage / list.length));
+                  for (const pid of list) {
+                    const en = get().combatEnemies[pid];
+                    if (en) {
+                      const nh = Math.max(0, en.current.hp - each);
+                      get().removeCombatEnemy && null;
+                      set({
+                        combatEnemies: {
+                          ...get().combatEnemies,
+                          [pid]: { ...en, current: { ...en.current, hp: nh } },
+                        },
+                      });
+                      res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Cauda → "+en.name+" -"+each });
+                    }
+                  }
+                } else {
+                  res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Caudas liberam "+kt.releaseDamage+" (sem alvos)" });
+                }
               }
               set({ combatPassiveState: get().combatPassiveState });
             }
