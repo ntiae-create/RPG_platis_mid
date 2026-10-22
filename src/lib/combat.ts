@@ -21,6 +21,8 @@ import {
   raceKitsuneTryAvoidHit,
   raceIsUntargetable,
   raceDoppelRoninDamageMult,
+  raceDoppelMirrorAbsorb,
+  raceDesperationStatMult,
   raceOrcPenaltyMods,
   classArqueiroOnHit,
   classCacadorOnHit,
