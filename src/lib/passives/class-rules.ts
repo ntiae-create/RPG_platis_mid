@@ -390,3 +390,98 @@ export function classTankAllyDefBonus(
 export function classBufaoExtremistBonusDamage(baseAgi: number): number {
   return Math.max(0, baseAgi);
 }
+
+
+/** Monge — Disciplina: a cada 3 ataques consecutivos +1 stack (máx 3); cada stack +1 AGI +1 DEF */
+export function classMongeOnHit(state, ch){
+  if(ch.classId!=="monge") return {};
+  const e=ensure(state,ch.id,"class:monge:disc","Disciplina Corporal",{stacks:0,maxStacks:3,active:true,meta:{hits:0}});
+  e.meta={...e.meta,hits:Number(e.meta.hits||0)+1};
+  if(Number(e.meta.hits)%3===0){ e.stacks=Math.min(3,e.stacks+1); e.active=true; }
+  return {agi:e.stacks,def:e.stacks,note:e.stacks?("Disciplina "+e.stacks+"/3"):undefined};
+}
+/** Duelista — 3 acertos → Domínio (+25% dano no alvo marcado) */
+export function classDuelistaOnHit(state,ch,targetId){
+  if(ch.classId!=="duelista") return {mult:1};
+  const e=ensure(state,ch.id,"class:duelista:duelo","Domínio do Duelo",{stacks:0,maxStacks:3,active:true,meta:{}});
+  e.stacks=Math.min(3,e.stacks+1); e.active=true;
+  if(e.stacks>=3){ e.meta={...e.meta,domainTarget:targetId}; e.stacks=0; return {mult:1.25,note:"Domínio do Duelo +25%"}; }
+  if(e.meta.domainTarget===targetId) return {mult:1.25,note:"Domínio ativo +25%"};
+  return {mult:1,note:"Duelo "+e.stacks+"/3"};
+}
+/** Gladiador — adversário marcado: +2 ATK +2 DEF e +20% dano */
+export function classGladiadorSetAdversary(state,ch,targetId){
+  if(ch.classId!=="gladiador") return;
+  const e=ensure(state,ch.id,"class:gladiador:adv","Arena Sangrenta",{active:true,meta:{targetId}});
+  e.active=true; e.meta={targetId};
+}
+export function classGladiadorOnHit(state,ch,targetId){
+  if(ch.classId!=="gladiador") return {mult:1};
+  const e=entry(state,ch.id,"class:gladiador:adv");
+  if(e?.meta?.targetId===targetId) return {mult:1.2,note:"Arena Sangrenta +20%"};
+  return {mult:1};
+}
+export function classGladiadorStatMods(state,ch){
+  if(ch.classId!=="gladiador") return {};
+  const e=entry(state,ch.id,"class:gladiador:adv");
+  if(e?.active) return {atk:2,def:2};
+  return {};
+}
+/** Lanceiro — +2 ATK (alcance simplificado: sempre em combate ativo) */
+export function classLanceiroStatMods(ch){
+  if(ch.classId!=="lanceiro") return {};
+  return {atk:2};
+}
+/** Druida — terreno natural +2 DEF +2 RES */
+export function classDruidaStatMods(ch,naturalTerrain){
+  if(ch.classId!=="druida"||!naturalTerrain) return {};
+  return {def:2,res:2};
+}
+/** Cryomante — 3 hits gelo → congelado (flag applyFreeze) */
+export function classCryomanteOnHit(state,ch,targetId){
+  if(ch.classId!=="cryomante") return {applyFreeze:false,notes:[]};
+  const e=ensure(state,targetId,"class:cryomante:cong:"+ch.id,"Congelamento",{stacks:0,maxStacks:3,active:true});
+  e.stacks=Math.min(3,e.stacks+1); e.active=true;
+  const notes=["Congelamento "+e.stacks+"/3"];
+  if(e.stacks>=3){ e.stacks=0; e.active=false; return {applyFreeze:true,notes:[...notes,"Congelado 1 turno"]}; }
+  return {applyFreeze:false,notes};
+}
+/** Anatomista — 3 hits no mesmo alvo → Ponto Vital 2 turnos (+30% dano) */
+export function classAnatomistaOnHit(state,ch,targetId){
+  if(ch.classId!=="anatomista") return {mult:1};
+  const e=ensure(state,ch.id,"class:anatomista:seq","Anatomia Perfeita",{stacks:0,meta:{targetId:""}});
+  if(e.meta.targetId!==targetId){ e.meta={targetId}; e.stacks=1; }
+  else e.stacks+=1;
+  if(e.stacks>=3){
+    const v=ensure(state,targetId,"class:anatomista:vital","Ponto Vital",{active:true,turnsRemaining:2});
+    v.active=true; v.turnsRemaining=2; e.stacks=0;
+    return {mult:1.3,note:"Ponto Vital +30%"};
+  }
+  const v=entry(state,targetId,"class:anatomista:vital");
+  if(v?.active) return {mult:1.3,note:"Ponto Vital ativo +30%"};
+  return {mult:1,note:"Anatomia "+e.stacks+"/3"};
+}
+/** Ceifador — golpe final: cura aliados com parte do dano */
+export function classCeifadorOnKill(damage){
+  return {healPool:Math.max(1,Math.floor(damage*0.5)),note:"Colheita Sombria: cura em aliados"};
+}
+/** Clérigo — skill suporte: +1 stack (máx 3) → +1 DEF/RES por stack; aos 3 cura */
+export function classClerigoOnSupport(state,ch){
+  if(ch.classId!=="clerigo") return {heal:0};
+  const e=ensure(state,ch.id,"class:clerigo:bencao","Bênção Sagrada",{stacks:0,maxStacks:3,active:true,turnsRemaining:2});
+  e.stacks=Math.min(3,e.stacks+1); e.active=true; e.turnsRemaining=2;
+  if(e.stacks>=3){ e.stacks=0; return {heal:0.15,note:"Bênção: cura 15% HP máx",def:0,res:0}; }
+  return {heal:0,def:e.stacks,res:e.stacks,note:"Bênção "+e.stacks+"/3"};
+}
+/** Cavaleiro — Investida: próximo ataque +50% */
+export function classCavaleiroArmInvestida(state,ch){
+  if(ch.classId!=="cavaleiro") return;
+  const e=ensure(state,ch.id,"class:cavaleiro:investida","Investida Montada",{active:true});
+  e.active=true; e.meta={armed:true};
+}
+export function classCavaleiroConsumeInvestida(state,ch){
+  if(ch.classId!=="cavaleiro") return {mult:1};
+  const e=entry(state,ch.id,"class:cavaleiro:investida");
+  if(e?.meta?.armed){ e.meta={armed:false}; e.active=false; return {mult:1.5,note:"Investida +50%"}; }
+  return {mult:1};
+}

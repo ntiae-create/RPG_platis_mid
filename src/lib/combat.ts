@@ -25,6 +25,15 @@ import {
   classArqueiroOnHit,
   classCacadorOnHit,
   classPugilistaOnBasicHit,
+  classCavaleiroConsumeInvestida,
+  classAnatomistaOnHit,
+  classCryomanteOnHit,
+  classDruidaStatMods,
+  classLanceiroStatMods,
+  classGladiadorStatMods,
+  classGladiadorOnHit,
+  classDuelistaOnHit,
+  classMongeOnHit,
   classGuerreiroStanceMods,
   classBufaoExtremistBonusDamage,
   classBufaoAgiBonus,
@@ -245,6 +254,9 @@ export function resolveAttack(opts: {
   dStats = applyStatMods(dStats, defMods);
   const classMods = classAttackerStatMods(passiveState, opts.attacker, aStats.hp, aStats);
   aStats = applyStatMods(aStats, classMods);
+  aStats = applyStatMods(aStats, classLanceiroStatMods(opts.attacker));
+  aStats = applyStatMods(aStats, classDruidaStatMods(opts.attacker, Boolean(opts.naturalTerrain)));
+  aStats = applyStatMods(aStats, classGladiadorStatMods(passiveState, opts.attacker));
   if (classMods.atk) notes.push(`Classe: ATK +${classMods.atk}`);
   if (classMods.atkMgc) notes.push(`Classe: ATK MGC +${classMods.atkMgc}`);
   if (classMods.agi) notes.push(`Classe: AGI +${classMods.agi}`);
@@ -447,6 +459,38 @@ export function resolveAttack(opts: {
         const arq = classArqueiroOnHit(passiveState, opts.attacker);
         if (arq.damageMult !== 1) damage = Math.round(damage * arq.damageMult);
         if (arq.note) notes.push(arq.note);
+
+        {
+          const mon = classMongeOnHit(passiveState, opts.attacker);
+          if (mon.agi) aStats.agi += mon.agi;
+          if (mon.def) aStats.def = (aStats.def||0) + mon.def;
+          if (mon.note) notes.push(mon.note);
+        }
+        {
+          const du = classDuelistaOnHit(passiveState, opts.attacker, opts.defender.id);
+          if (du.mult && du.mult !== 1) damage = Math.round(damage * du.mult);
+          if (du.note) notes.push(du.note);
+        }
+        {
+          const gl = classGladiadorOnHit(passiveState, opts.attacker, opts.defender.id);
+          if (gl.mult && gl.mult !== 1) damage = Math.round(damage * gl.mult);
+          if (gl.note) notes.push(gl.note);
+        }
+        {
+          const an = classAnatomistaOnHit(passiveState, opts.attacker, opts.defender.id);
+          if (an.mult && an.mult !== 1) damage = Math.round(damage * an.mult);
+          if (an.note) notes.push(an.note);
+        }
+        {
+          const cr = classCryomanteOnHit(passiveState, opts.attacker, opts.defender.id);
+          notes.push(...(cr.notes||[]));
+          if (cr.applyFreeze) notes.push("Cryomante: aplicar Freeze 1 turno");
+        }
+        {
+          const inv = classCavaleiroConsumeInvestida(passiveState, opts.attacker);
+          if (inv.mult !== 1) { damage = Math.round(damage * inv.mult); if (inv.note) notes.push(inv.note); }
+        }
+
         const cac = classCacadorOnHit(passiveState, opts.attacker, opts.defender.id);
         if (cac.damageMult !== 1) damage = Math.round(damage * cac.damageMult);
         if (cac.note) notes.push(cac.note);
