@@ -3272,7 +3272,17 @@ export const usePlatis = create<AppState>()(
               }
             }
             
-            if ("raceId" in def && def.raceId === "kitsune") {
+            
+            {
+              const mirNote = (res.notes || []).find((n) => String(n).startsWith("MIRROR_REFLECT:"));
+              if (mirNote && atk && "raceId" in atk) {
+                const amt = Math.max(1, parseInt(String(mirNote).split(":")[1], 10) || 1);
+                const appliedM = applyDamage(atk, amt);
+                get().patchCharacter(atk.id, { current: appliedM.ch.current });
+                res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Espelho devolve "+amt+" em "+atk.name });
+              }
+            }
+            if ("raceId" in def && def.raceId === "kitsune") { {
               const kt = raceKitsuneOnDamageTaken(get().combatPassiveState, applied.ch, Math.max(0, hpBefore - applied.ch.current.hp));
               for (const n of kt.notes) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+n });
               if (kt.releaseDamage > 0) {

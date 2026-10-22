@@ -479,9 +479,18 @@ export function raceKitsuneOnAttackTurn(
     active: true,
   });
   e.stacks = Math.min(3, e.stacks + 1);
+  // Encontre o Joker (Kitsune+Bufão): +1 stack extra
+  if (raceKitsuneJokerExtraStack(ch)) {
+    e.stacks = Math.min(3, e.stacks + 1);
+    const jk = ensure(state, ch.id, "race:kitsune:joker", "Encontre o Joker", { stacks: 0, maxStacks: 3, active: true, meta: { jokerExtraApplied: true } });
+    jk.stacks = Math.min(3, (jk.stacks || 0) + 1);
+    jk.active = true;
+  }
   if (e.stacks >= 3) {
     e.stacks = 0;
     ensure(state, ch.id, "race:kitsune:ilusao-ativa", "Ilusão", { active: true }).active = true;
+    const jk = entry(state, ch.id, "race:kitsune:joker");
+    if (jk) { jk.stacks = Math.min(3, (jk.stacks || 0) + 1); }
     return "Ilusão criada (Kitsune não pode ser atacada)";
   }
   return `Stack de Ilusão ${e.stacks}/3`;
@@ -753,7 +762,7 @@ export function raceDoppelMirrorAbsorb(state,ch){
   if(!e||!e.meta||!e.meta.assimilating) return {absorb:false};
   if(e.meta.mirrorUsedThisTurn) return {absorb:false};
   e.meta={...e.meta,mirrorUsedThisTurn:true};
-  return {absorb:true,note:"Maldito Espelho: golpe anulado"};
+  return {absorb:true,mirrorReflect:true,note:"Maldito Espelho: golpe anulado e devolvido"};
 }
 export function raceDoppelMirrorTurnReset(state,characterId){
   const e=state.entries.find(x=>x.characterId===characterId&&x.id==="race:doppel:assimilacao");

@@ -142,7 +142,9 @@ export function resolveEnemyAttack(opts: {
     const mir = raceDoppelMirrorAbsorb(passiveState, opts.defender);
     if (mir.absorb) {
       if (mir.note) notes.push(mir.note);
-      logs.push(log("miss", opts.defender.name+": "+(mir.note||"Espelho")));
+      const reflect = Math.max(1, Math.round((opts.kind === "magical" ? aStats.atkMgc : aStats.atk) * 0.5));
+      notes.push("MIRROR_REFLECT:"+reflect);
+      logs.push(log("miss", opts.defender.name+": "+(mir.note||"Espelho")+" (devolve "+reflect+")"));
       return {
         attackerRoll, defenderRoll, hit:false, critMult:1, damage:0, damageDie:0, damageSides:0,
         counterAvailable: defenderRoll>=17 && defenderRoll>attackerRoll, stun:false, notes, log:logs, passiveState,
