@@ -3282,7 +3282,7 @@ export const usePlatis = create<AppState>()(
                 res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Espelho devolve "+amt+" em "+atk.name });
               }
             }
-            if ("raceId" in def && def.raceId === "kitsune") { {
+            if ("raceId" in def && def.raceId === "kitsune") {
               const kt = raceKitsuneOnDamageTaken(get().combatPassiveState, applied.ch, Math.max(0, hpBefore - applied.ch.current.hp));
               for (const n of kt.notes) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+n });
               if (kt.releaseDamage > 0) {
