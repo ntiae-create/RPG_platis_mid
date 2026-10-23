@@ -404,6 +404,10 @@ type AppState = {
   sendChat: (text: string) => void;
   buyMysteryBox: () => void;
   equipItem: (itemId: string) => void;
+  equipItemFor: (characterId: string, itemId: string) => void;
+  unequipItemFor: (characterId: string, slot: "arma" | "armadura" | "botas" | "reliquia" | "colar") => void;
+  useItemFor: (characterId: string, itemId: string) => void;
+  restoreVitals: (characterId: string) => void;
   unequipItem: (slot: "arma" | "armadura" | "botas" | "reliquia" | "colar") => void;
   discardItem: (itemId: string) => void;
   useItem: (itemId: string) => void;
@@ -4420,7 +4424,9 @@ export const usePlatis = create<AppState>()(
       },
 
       grantItem: (characterId, item) => {
-        const ch = get().characters[characterId];
+        // grantItem supports npc
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
         if (!ch) return;
 
         const inventory = [...ch.inventory];
@@ -4438,8 +4444,81 @@ export const usePlatis = create<AppState>()(
           });
         }
 
-        get().patchCharacter(characterId, { inventory });
+                if (get().characters[characterId]) get().patchCharacter(characterId, { inventory });
+        if (get().npcs[characterId]) get().updateNpc(characterId, { inventory });
+        // sync combat copy
+        if (get().characters[characterId] && get().npcs[characterId]) {
+          const s3 = get();
+          set({ npcs: { ...s3.npcs, [characterId]: { ...s3.npcs[characterId], inventory } } });
+        }
+
       },
+      equipItemFor: (characterId, itemId) => {
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
+        if (!ch) return;
+        const item = ch.inventory.find((i) => i.id === itemId);
+        if (!item || !item.slot) return;
+        const equipment = { ...ch.equipment };
+        const previous = equipment[item.slot];
+        const inventory = ch.inventory.filter((i) => i.id !== itemId).concat(previous ? [previous] : []);
+        equipment[item.slot] = item;
+        if (s.characters[characterId]) get().patchCharacter(characterId, { equipment, inventory });
+        if (s.npcs[characterId]) get().updateNpc(characterId, { equipment, inventory });
+      },
+
+      unequipItemFor: (characterId, slot) => {
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
+        if (!ch) return;
+        const item = ch.equipment[slot];
+        if (!item) return;
+        const equipment = { ...ch.equipment };
+        delete equipment[slot];
+        const inventory = [...ch.inventory, item];
+        if (s.characters[characterId]) get().patchCharacter(characterId, { equipment, inventory });
+        if (s.npcs[characterId]) get().updateNpc(characterId, { equipment, inventory });
+      },
+
+      useItemFor: (characterId, itemId) => {
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
+        if (!ch) return;
+        const item = ch.inventory.find((entry) => entry.id === itemId);
+        if (!item || item.qty < 1) return;
+        const match = item.effect && item.effect.match(/^potion:(hp|mp|est|san):(\d+)$/i);
+        if (!match) return;
+        const stat = match[1].toLowerCase();
+        const amount = Math.max(0, Number(match[2]) || 0);
+        if (amount <= 0) return;
+        const maximum = finalStats(ch)[stat];
+        const currentValue = ch.current[stat];
+        const recovered = Math.min(amount, Math.max(0, maximum - currentValue));
+        if (recovered <= 0) return;
+        const inventory = ch.inventory.map((entry) => entry.id === itemId ? { ...entry, qty: entry.qty - 1 } : entry).filter((entry) => entry.qty > 0);
+        const current = { ...ch.current, [stat]: currentValue + recovered };
+        if (s.characters[characterId]) get().patchCharacter(characterId, { current, inventory });
+        if (s.npcs[characterId]) get().updateNpc(characterId, { current, inventory });
+      },
+
+      restoreVitals: (characterId) => {
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
+        if (!ch) return;
+        const st = finalStats(ch);
+        const current = { hp: st.hp, mp: st.mp, est: st.est, san: st.san };
+        if (s.characters[characterId]) get().patchCharacter(characterId, { current });
+        if (s.npcs[characterId]) get().updateNpc(characterId, { current });
+        set({
+          combatLog: [{
+            id: uid("lg"),
+            at: Date.now(),
+            kind: "heal",
+            text: ch.name + " recuperou HP/MP/EST/SAN completos.",
+          }, ...get().combatLog].slice(0, 80),
+        });
+      },
+
       disarmTrap: () => set({ trap: null }),
     }),
     {

@@ -148,6 +148,9 @@ export function MasterPanel({
   const grantNpcXp = usePlatis((s) => s.grantNpcXp);
   const publishCharacterAsNpc = usePlatis((s) => s.publishCharacterAsNpc);
   const grantItem = usePlatis((s) => s.grantItem);
+  const restoreVitals = usePlatis((s) => s.restoreVitals);
+  const equipItemFor = usePlatis((s) => s.equipItemFor);
+  const useItemFor = usePlatis((s) => s.useItemFor);
   const combatEnemies = usePlatis((s) => s.combatEnemies);
   const combatParticipants = usePlatis((s) => s.combatParticipants);
   const toggleCombatParticipant = usePlatis((s) => s.toggleCombatParticipant);
@@ -375,6 +378,14 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
                 {npc.npcSourceCharacterId ? <span className="self-center text-xs text-muted">Edite pela ficha original</span> : <Button variant="secondary" onClick={() => editNpc(npc)}>Editar</Button>}
                 <input aria-label="Quantidade de XP" className="w-24 rounded-md border border-line bg-bg p-2" type="number" min="1" value={npcXpAmount} onChange={(e) => setNpcXpAmount(e.target.value)} />
                 <Button variant="secondary" onClick={() => grantNpcXp(npc.id, Number(npcXpAmount))}>Adicionar XP</Button>
+                <Button variant="secondary" onClick={() => restoreVitals(npc.id)}>Recuperar HP/MP/EST/SAN</Button>
+                <div className="w-full text-xs text-muted mt-1">Inventario: {(npc.inventory||[]).length} itens · HP {npc.current.hp} MP {npc.current.mp} EST {npc.current.est} SAN {npc.current.san}</div>
+                {(npc.inventory||[]).filter((it) => it.effect && /^potion:/i.test(it.effect)).slice(0,4).map((it) => (
+                  <Button key={it.id} size="sm" variant="outline" onClick={() => useItemFor(npc.id, it.id)}>Usar {it.name}</Button>
+                ))}
+                {(npc.inventory||[]).filter((it) => it.slot).slice(0,3).map((it) => (
+                  <Button key={"eq-"+it.id} size="sm" variant="outline" onClick={() => equipItemFor(npc.id, it.id)}>Equipar {it.name}</Button>
+                ))}
                 <Button variant="danger" onClick={() => { const msg = npc.npcSourceCharacterId ? "Remover " + npc.name + " dos NPCs? A ficha original será mantida." : "Excluir o NPC " + npc.name + "?"; if (window.confirm(msg)) { removeNpc(npc.id); if (editingNpcId === npc.id) resetNpcForm(); } }}>{npc.npcSourceCharacterId ? "Remover dos NPCs" : "Excluir"}</Button>
               </div>
             </div>
@@ -1223,6 +1234,9 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
                 if (!ch) return null;
                 return <option key={ch.id} value={ch.id}>{ch.name} — Nv. {ch.level}</option>;
               })}
+              {Object.values(npcs).map((npc) => (
+                <option key={npc.id} value={npc.id}>{npc.name} (NPC) — Nv. {npc.level}</option>
+              ))}
             </select>
           </label>
           <label className="block space-y-1">
@@ -1284,6 +1298,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
             <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={itemFormTarget} onChange={(e) => setItemFormTarget(e.target.value)}>
               <option value="">Selecione um personagem</option>
               {slots.map((id) => { if (!id) return null; const ch = characters[id]; if (!ch) return null; return <option key={ch.id} value={ch.id}>{ch.name} — Nv. {ch.level}</option>; })}
+              {Object.values(npcs).map((npc) => (<option key={npc.id} value={npc.id}>{npc.name} (NPC) — Nv. {npc.level}</option>))}
             </select>
           </label>
           <Button onClick={createItem} disabled={!itemFormName.trim() || !itemFormTarget}>Criar e entregar item</Button>
