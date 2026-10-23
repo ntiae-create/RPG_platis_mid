@@ -412,6 +412,7 @@ type AppState = {
   discardItem: (itemId: string) => void;
   useItem: (itemId: string) => void;
   grantItem: (characterId: string, item: InventoryItem) => void;
+  grantCurrency: (characterId: string, amount: { bronze?: number; silver?: number; gold?: number; platinum?: number }) => void;
   disarmTrap: () => void;
 };
 
@@ -4517,6 +4518,20 @@ export const usePlatis = create<AppState>()(
             text: ch.name + " recuperou HP/MP/EST/SAN completos.",
           }, ...get().combatLog].slice(0, 80),
         });
+      },
+
+      grantCurrency: (characterId, amount) => {
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
+        if (!ch) return;
+        const currency = {
+          bronze: Math.max(0, (ch.currency?.bronze ?? 0) + Math.floor(amount.bronze ?? 0)),
+          silver: Math.max(0, (ch.currency?.silver ?? 0) + Math.floor(amount.silver ?? 0)),
+          gold: Math.max(0, (ch.currency?.gold ?? 0) + Math.floor(amount.gold ?? 0)),
+          platinum: Math.max(0, (ch.currency?.platinum ?? 0) + Math.floor(amount.platinum ?? 0)),
+        };
+        if (s.characters[characterId]) get().patchCharacter(characterId, { currency });
+        if (s.npcs[characterId]) get().updateNpc(characterId, { currency });
       },
 
       disarmTrap: () => set({ trap: null }),

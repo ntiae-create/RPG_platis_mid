@@ -148,6 +148,7 @@ export function MasterPanel({
   const grantNpcXp = usePlatis((s) => s.grantNpcXp);
   const publishCharacterAsNpc = usePlatis((s) => s.publishCharacterAsNpc);
   const grantItem = usePlatis((s) => s.grantItem);
+  const grantCurrency = usePlatis((s) => s.grantCurrency);
   const restoreVitals = usePlatis((s) => s.restoreVitals);
   const equipItemFor = usePlatis((s) => s.equipItemFor);
   const useItemFor = usePlatis((s) => s.useItemFor);
@@ -186,6 +187,11 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const [potionAmount, setPotionAmount] = useState(25);
   const [itemFormBonus, setItemFormBonus] = useState({hp:0,mp:0,est:0,san:0,atk:0,atkMgc:0,def:0,res:0,agi:0,int:0});
   const [xpTargetId, setXpTargetId] = useState<string>("");
+  const [coinTargetId, setCoinTargetId] = useState("");
+  const [coinBronze, setCoinBronze] = useState(0);
+  const [coinSilver, setCoinSilver] = useState(0);
+  const [coinGold, setCoinGold] = useState(0);
+  const [coinPlatinum, setCoinPlatinum] = useState(0);
   const [xpAmount, setXpAmount] = useState(100);
   const [masterXpAmount, setMasterXpAmount] = useState(100);
   const [masterBrasaoAmount, setMasterBrasaoAmount] = useState(3000);
@@ -1308,78 +1314,88 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   }
 
   if (section === "economia") {
+    const coinTarget =
+      (coinTargetId && (characters[coinTargetId] || npcs[coinTargetId])) || null;
     return (
       <div className="space-y-4">
-        <Button
-          variant="ghost"
-          onClick={() => setSection(null)}
-        >
-          ← Menu do Mestre
-        </Button>
-
+        <Button variant="ghost" onClick={() => setSection(null)}>← Menu do Mestre</Button>
         <div>
           <h2 className="font-display text-3xl">Economia</h2>
-          <p className="mt-1 text-sm text-muted">
-            Recompensas, XP e progressão dos personagens.
-          </p>
+          <p className="mt-1 text-sm text-muted">Distribua moedas e XP para players e NPCs.</p>
         </div>
 
         <div className="panel space-y-4 p-4">
-          <div>
-            <p className="font-medium">Conceder XP</p>
-            <p className="mt-1 text-xs text-muted">
-              Escolha um personagem e conceda XP diretamente.
-            </p>
-          </div>
-
+          <p className="font-medium">Distribuir moedas</p>
+          <p className="text-xs text-muted">Bronze · Silver · Gold · Platinum (valores somam ao saldo atual).</p>
           <label className="block space-y-1">
-            <span className="text-xs font-medium text-muted">Personagem</span>
-            <select
-              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
-              value={xpTargetId}
-              onChange={(e) => setXpTargetId(e.target.value)}
-            >
-              <option value="">Selecione um personagem</option>
-
+            <span className="text-xs font-medium text-muted">Destinatário</span>
+            <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={coinTargetId} onChange={(e) => setCoinTargetId(e.target.value)}>
+              <option value="">Selecione player ou NPC</option>
               {slots.map((slotId) => {
                 if (!slotId) return null;
                 const character = characters[slotId];
                 if (!character) return null;
-
-                return (
-                  <option key={character.id} value={character.id}>
-                    {character.name} — Nv. {character.level}
-                  </option>
-                );
+                return <option key={character.id} value={character.id}>{character.name} (Player) — Nv. {character.level}</option>;
               })}
+              {Object.values(npcs).map((npc) => (
+                <option key={npc.id} value={npc.id}>{npc.name} (NPC) — Nv. {npc.level}</option>
+              ))}
             </select>
           </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block space-y-1"><span className="text-xs text-muted">Bronze</span><input type="number" min="0" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={coinBronze} onChange={(e) => setCoinBronze(Math.max(0, Math.floor(Number(e.target.value) || 0)))} /></label>
+            <label className="block space-y-1"><span className="text-xs text-muted">Silver</span><input type="number" min="0" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={coinSilver} onChange={(e) => setCoinSilver(Math.max(0, Math.floor(Number(e.target.value) || 0)))} /></label>
+            <label className="block space-y-1"><span className="text-xs text-muted">Gold</span><input type="number" min="0" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={coinGold} onChange={(e) => setCoinGold(Math.max(0, Math.floor(Number(e.target.value) || 0)))} /></label>
+            <label className="block space-y-1"><span className="text-xs text-muted">Platinum</span><input type="number" min="0" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={coinPlatinum} onChange={(e) => setCoinPlatinum(Math.max(0, Math.floor(Number(e.target.value) || 0)))} /></label>
+          </div>
+          {coinTarget && (
+            <p className="text-xs text-muted">Saldo atual: B {coinTarget.currency?.bronze ?? 0} · S {coinTarget.currency?.silver ?? 0} · G {coinTarget.currency?.gold ?? 0} · P {coinTarget.currency?.platinum ?? 0}</p>
+          )}
+          <Button
+            disabled={!coinTargetId || (coinBronze + coinSilver + coinGold + coinPlatinum) <= 0}
+            onClick={() => {
+              if (!coinTargetId) return;
+              grantCurrency(coinTargetId, { bronze: coinBronze, silver: coinSilver, gold: coinGold, platinum: coinPlatinum });
+              setCoinBronze(0); setCoinSilver(0); setCoinGold(0); setCoinPlatinum(0);
+            }}
+          >
+            Entregar moedas
+          </Button>
+        </div>
 
+        <div className="panel space-y-4 p-4">
+          <p className="font-medium">Conceder XP</p>
+          <p className="text-xs text-muted">Players (slots) e NPCs do mestre.</p>
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted">personagem</span>
+            <select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={xpTargetId} onChange={(e) => setXpTargetId(e.target.value)}>
+              <option value="">Selecione</option>
+              {slots.map((slotId) => {
+                if (!slotId) return null;
+                const character = characters[slotId];
+                if (!character) return null;
+                return <option key={character.id} value={character.id}>{character.name} (Player)</option>;
+              })}
+              {Object.values(npcs).map((npc) => (
+                <option key={npc.id} value={npc.id}>{npc.name} (NPC)</option>
+              ))}
+            </select>
+          </label>
           <label className="block space-y-1">
             <span className="text-xs font-medium text-muted">Quantidade de XP</span>
-            <input
-              type="number"
-              min="1"
-              value={xpAmount}
-              onChange={(e) =>
-                setXpAmount(Math.max(1, Number(e.target.value) || 1))
-              }
-              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm"
-            />
+            <input type="number" min="1" value={xpAmount} onChange={(e) => setXpAmount(Math.max(1, Number(e.target.value) || 1))} className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" />
           </label>
-
           <Button
             disabled={!xpTargetId}
             onClick={() => {
               if (!xpTargetId) return;
-
-              grantXp(xpTargetId, xpAmount);
+              if (npcs[xpTargetId]) grantNpcXp(xpTargetId, xpAmount);
+              else grantXp(xpTargetId, xpAmount);
             }}
           >
-            Conceder XP ao jogador
+            Conceder XP
           </Button>
         </div>
-
       </div>
     );
   }
