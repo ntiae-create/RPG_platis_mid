@@ -2,6 +2,7 @@ import type { Character } from "@/data/types";
 import type { CharacterKit } from "./types";
 import { normalizeCharName } from "./types";
 import { hilakKit } from "./hilak";
+import { brasaoLevelFromXp } from "@/data/progression";
 
 /** Todos os kits registrados */
 export const CHARACTER_KITS: CharacterKit[] = [hilakKit];
@@ -11,12 +12,23 @@ export function getCharacterKit(ch: Pick<Character, "name" | "id">): CharacterKi
   return CHARACTER_KITS.find((k) => k.matchName === n) ?? null;
 }
 
-export function getKitSkill(ch: Pick<Character, "name" | "id" | "level">, skillId: string) {
+/** Nível de brasão efetivo do personagem (0–8) */
+export function characterBrasaoLevel(ch: Pick<Character, "brasaoXp" | "level">): number {
+  return brasaoLevelFromXp(ch.brasaoXp ?? 0).level;
+}
+
+export function getKitSkill(
+  ch: Pick<Character, "name" | "id" | "level" | "brasaoXp">,
+  skillId: string,
+) {
   const kit = getCharacterKit(ch);
   if (!kit) return null;
   const skill = kit.skills.find((s) => s.id === skillId || s.name === skillId);
   if (!skill) return null;
-  if (skill.brasaoLevel && (ch.level ?? 1) < skill.brasaoLevel) return null;
+  // brasaoLevel = nível do BRASÃO (brasaoXp), não o level de personagem
+  if (skill.brasaoLevel != null && characterBrasaoLevel(ch) < skill.brasaoLevel) {
+    return null;
+  }
   return { kit, skill };
 }
 

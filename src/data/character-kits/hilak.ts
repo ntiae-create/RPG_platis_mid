@@ -3,11 +3,16 @@
  * Kit exclusivo: só aplica se o nome do personagem casar com "Hilak".
  */
 import type { CharacterKit, KitResolveContext } from "./types";
+import { brasaoLevelFromXp } from "@/data/progression";
 
 function rollNdS(rollDie: (n: number) => number, n: number, sides: number): number {
   let t = 0;
   for (let i = 0; i < n; i++) t += rollDie(sides);
   return t;
+}
+
+function brasaoLevel(ch: { brasaoXp?: number; level?: number }): number {
+  return brasaoLevelFromXp(ch.brasaoXp ?? 0).level;
 }
 
 export const hilakKit: CharacterKit = {
@@ -176,8 +181,11 @@ export const hilakKit: CharacterKit = {
     }
 
     if (skillId === "hilak-armagedon") {
-      if ((attacker.level ?? 1) < 6) {
-        log(`${attacker.name}: Chamas do Armagedon requer brasão Nv.6`);
+      const bLv = brasaoLevel(attacker);
+      if (bLv < 6) {
+        log(
+          `${attacker.name}: Chamas do Armagedon requer Brasão Nv.6 (atual: ${bLv}). Suba o Brasão (brasaoXp ≥ 18000).`,
+        );
         return;
       }
       const dmg = rollNdS(rollDie, 4, 8);
