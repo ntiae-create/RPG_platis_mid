@@ -38,6 +38,13 @@ export function CombatPanel() {
   const startCombat = usePlatis((s) => s.startCombat);
   const setCombatArena = usePlatis((s) => s.setCombatArena);
   const setWarriorStance = usePlatis((s) => s.setWarriorStance);
+  const armCavaleiroInvestida = usePlatis((s) => s.armCavaleiroInvestida);
+  const setGladiadorAdversary = usePlatis((s) => s.setGladiadorAdversary);
+  const setArtificeProject = usePlatis((s) => s.setArtificeProject);
+  const tryCronomanteRewind = usePlatis((s) => s.tryCronomanteRewind);
+  const setPaladinoOath = usePlatis((s) => s.setPaladinoOath);
+  const setDomadorBond = usePlatis((s) => s.setDomadorBond);
+  const setMarioneteLink = usePlatis((s) => s.setMarioneteLink);
   const assimilateTarget = usePlatis((s) => s.assimilateTarget);
   const endCombat = usePlatis((s) => s.endCombat);
 const nextTurn = usePlatis((s) => s.nextTurn);
@@ -341,9 +348,48 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                 ))}
               </div>
             )}
-            {attacker && "raceId" in attacker && attacker.raceId === "doppelganger" && defender && "raceId" in defender && (
+            {attacker && "raceId" in attacker && attacker.raceId === "doppelganger" && defender && (
               <Button size="sm" variant="secondary" type="button" onClick={() => assimilateTarget(attacker.id, defender.id)}>
                 Assimilar alvo
+              </Button>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "cavaleiro" && (
+              <Button size="sm" variant="secondary" type="button" disabled={!combatActive} onClick={() => armCavaleiroInvestida(attacker.id)}>
+                Armar Investida
+              </Button>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "gladiador" && defender && (
+              <Button size="sm" variant="secondary" type="button" disabled={!combatActive} onClick={() => setGladiadorAdversary(attacker.id, defender.id)}>
+                Marcar Adversário
+              </Button>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "artifice" && (
+              <div className="flex flex-wrap gap-1">
+                {([1, 2, 3] as const).map((tier) => (
+                  <Button key={tier} size="sm" variant="secondary" type="button" onClick={() => setArtificeProject(attacker.id, tier)}>
+                    Projeto {tier}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "cronomante" && defender && (
+              <Button size="sm" variant="secondary" type="button" disabled={!combatActive} onClick={() => tryCronomanteRewind(attacker.id, defender.id)}>
+                Retrocesso Temporal
+              </Button>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "paladino" && defender && (
+              <Button size="sm" variant="secondary" type="button" disabled={!combatActive} onClick={() => setPaladinoOath(attacker.id, defender.id)}>
+                Juramento (alvo)
+              </Button>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "domador" && defender && (
+              <Button size="sm" variant="secondary" type="button" onClick={() => setDomadorBond(attacker.id, defender.id)}>
+                Laço Bestial
+              </Button>
+            )}
+            {attacker && "classId" in attacker && attacker.classId === "mestre-de-marionetes" && defender && (
+              <Button size="sm" variant="secondary" type="button" onClick={() => setMarioneteLink(attacker.id, defender.id)}>
+                Vincular Fio
               </Button>
             )}
             <Button disabled={!attacker || !defender} onClick={() => rollCombat("physical")}>

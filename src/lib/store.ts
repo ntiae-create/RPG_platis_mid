@@ -88,6 +88,9 @@ import {
   raceVampireLifestealMult,
   classTankAllyDefBonus,
   classGuerreiroSetStance,
+  classMarioneteSetLink,
+  classDomadorSetBond,
+  classPaladinoCombatStart,
   registerLazuliHit,
   computeTankShare,
   type PassiveCombatState,
@@ -362,6 +365,13 @@ type AppState = {
   startCombat: () => void;
   setCombatArena: (arenaId: string) => void;
   setWarriorStance: (characterId: string, stance: "ofensiva" | "defensiva" | "mobilidade") => void;
+  armCavaleiroInvestida: (characterId: string) => void;
+  setGladiadorAdversary: (characterId: string, targetId: string) => void;
+  setArtificeProject: (characterId: string, tier: 1 | 2 | 3) => void;
+  tryCronomanteRewind: (characterId: string, targetId: string) => void;
+  setPaladinoOath: (characterId: string, allyId: string) => void;
+  setDomadorBond: (characterId: string, creatureId: string) => void;
+  setMarioneteLink: (characterId: string, linkedId: string) => void;
   assimilateTarget: (doppelId: string, targetId: string) => void;
   startWorldBossCombat: (bossId: string, level: number) => void;
   worldBossAttack: (characterId: string) => void;
@@ -2289,6 +2299,96 @@ export const usePlatis = create<AppState>()(
             text: `${ch.name}: Postura ${stance}`,
           }, ...s.combatLog].slice(0, 80),
         });
+      },
+
+
+      armCavaleiroInvestida: (characterId) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "cavaleiro" || !s.combatActive) return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        classCavaleiroArmInvestida(st, ch);
+        set({
+          combatPassiveState: st,
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Investida armada (+50% próximo ataque)" }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
+      setGladiadorAdversary: (characterId, targetId) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "gladiador" || !s.combatActive) return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        classGladiadorSetAdversary(st, ch, targetId);
+        const tname = (s.characters[targetId]||s.combatEnemies[targetId])?.name || targetId;
+        set({
+          combatPassiveState: st,
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Adversário = "+tname }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
+      setArtificeProject: (characterId, tier) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "artifice") return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        classArtificeSetProject(st, ch, tier);
+        set({
+          combatPassiveState: st,
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Projeto "+tier }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
+      tryCronomanteRewind: (characterId, targetId) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        const target = s.characters[targetId];
+        if (!ch || ch.classId !== "cronomante" || !target || !s.combatActive) return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        const maxHp = finalStats(target).hp;
+        const ratio = maxHp > 0 ? target.current.hp / maxHp : 1;
+        const r = classCronomanteTryRewind(st, ch, ratio);
+        if (!r.ok) {
+          set({ combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Retrocesso indisponível" }, ...s.combatLog].slice(0, 80) });
+          return;
+        }
+        // simplificação: cura 40% do HP máximo (proxy do snapshot do turno anterior)
+        const heal = Math.floor(maxHp * 0.4);
+        get().patchCharacter(targetId, { current: { ...target.current, hp: Math.min(maxHp, target.current.hp + heal) } });
+        set({
+          combatPassiveState: st,
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "passive", text: ch.name+": "+(r.note||"Retrocesso")+" em "+target.name+" (+"+heal+" HP)" }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
+      setPaladinoOath: (characterId, allyId) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "paladino" || !s.combatActive) return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        const note = classPaladinoCombatStart(st, ch, allyId);
+        set({
+          combatPassiveState: st,
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": "+(note||"Juramento") }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
+      setDomadorBond: (characterId, creatureId) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "domador") return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        classDomadorSetBond(st, ch, creatureId);
+        set({ combatPassiveState: st, combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Laço Bestial" }, ...s.combatLog].slice(0, 80) });
+      },
+
+      setMarioneteLink: (characterId, linkedId) => {
+        const s = get();
+        const ch = s.characters[characterId];
+        if (!ch || ch.classId !== "mestre-de-marionetes") return;
+        const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
+        classMarioneteSetLink(st, ch, linkedId);
+        set({ combatPassiveState: st, combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Fio vinculado" }, ...s.combatLog].slice(0, 80) });
       },
 
       assimilateTarget: (doppelId, targetId) => {
