@@ -36,6 +36,18 @@ import {
   raceCombatStart,
   classBufaoCombatStart,
   classFeiticeiroOnSkill,
+  classRoninOnTurnStart,
+  classEspadachimOnTurn,
+  classCavaleiroCelesteCombatStart,
+  classOraculoCombatStart,
+  classElementalistaOnSkill,
+  classAlquimistaSombrioOnSkill,
+  classBruxoOnSkill,
+  classCeifadorOnKill,
+  classClerigoOnSupport,
+  classBufferHealerOnSupport,
+  classBardoOnSupport,
+  classNecromanteOnKill,
   classMagoOnSkill,
   classBufaoOnTurn,
   raceAfterDamageTaken,
@@ -3063,6 +3075,38 @@ export const usePlatis = create<AppState>()(
               });
             }
           }
+
+          if (atk.classId === "bruxo") {
+            const r = classBruxoOnSkill(st, atk, skill.type==="ataque"||skill.type==="ataque-magico");
+            if (r.hpCost) get().patchCharacter(atk.id,{current:{...get().characters[atk.id].current,hp:Math.max(1,get().characters[atk.id].current.hp-r.hpCost)}});
+            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            if (r.mult!==1) res.damage=Math.round(res.damage*r.mult);
+          }
+          if (atk.classId === "alquimista-sombrio") {
+            const r = classAlquimistaSombrioOnSkill(st, atk, true);
+            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            if (r.mult!==1) res.damage=Math.round(res.damage*r.mult);
+          }
+          if (atk.classId === "elementalista") {
+            const r = classElementalistaOnSkill(st, atk, atk.affinityId);
+            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            if (r.mult!==1) res.damage=Math.round(res.damage*r.mult);
+          }
+          if (skill.type==="suporte"||skill.type==="cura"||skill.type==="buff") {
+            if (atk.classId==="clerigo") {
+              const r=classClerigoOnSupport(st,atk);
+              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            }
+            if (atk.classId==="bardo") {
+              const r=classBardoOnSupport(st,atk);
+              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            }
+            if (atk.classId==="buffer-healer") {
+              const r=classBufferHealerOnSupport(st,atk);
+              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            }
+          }
+
           if (atk.raceId === "vampiro") {
             const r = raceVampireOnSkill(st, atk);
             if (r.note) {
@@ -3577,6 +3621,27 @@ export const usePlatis = create<AppState>()(
               : null;
 
         if (defeatedId) {
+          {
+            const killer = get().characters[atk.id];
+            const st = get().combatPassiveState;
+            if (killer?.classId === "ceifador") {
+              const r = classCeifadorOnKill(res.damage||0);
+              if (r.healPool) {
+                for (const pid of get().combatParticipants) {
+                       const ally = get().characters[pid];
+                  if (!ally || ally.current.hp<=0) continue;
+                  const maxHp = finalStats(ally).hp;
+                  const heal = Math.max(1, Math.floor(r.healPool / Math.max(1,get().combatParticipants.filter(id=>get().characters[id]?.current.hp>0).length)));
+                  get().patchCharacter(pid,{current:{...ally.current,hp:Math.min(maxHp,ally.current.hp+heal)}});
+                }
+                set({combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:killer.name+": "+r.note},...get().combatLog].slice(0,80)});
+              }
+            }
+            if (killer?.classId === "necromante") {
+              const r = classNecromanteOnKill(st, killer);
+              if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:killer.name+": "+r.note},...get().combatLog].slice(0,80)});
+            }
+          }
           const nextParticipants = get().combatParticipants.filter(
             (id) => id !== defeatedId,
           );

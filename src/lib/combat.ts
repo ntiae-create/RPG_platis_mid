@@ -36,6 +36,14 @@ import {
   classGladiadorOnHit,
   classDuelistaOnHit,
   classMongeOnHit,
+  classAlquimistaSombrioOnSkill,
+  classElementalistaOnSkill,
+  classBruxoOnSkill,
+  classIlusionistaOnHit,
+  classDancarinoOnHit,
+  classXamaOnHit,
+  classEspadachimDamageMult,
+  classRoninConsume,
   classGuerreiroStanceMods,
   classBufaoExtremistBonusDamage,
   classBufaoAgiBonus,
@@ -493,7 +501,31 @@ export function resolveAttack(opts: {
           if (inv.mult !== 1) { damage = Math.round(damage * inv.mult); if (inv.note) notes.push(inv.note); }
         }
 
-        const cac = classCacadorOnHit(passiveState, opts.attacker, opts.defender.id);
+
+        {
+          const rn = classRoninConsume(passiveState, opts.attacker, dStats.hp>0?opts.defender.current.hp/dStats.hp:1);
+          if (rn.mult!==1) { damage=Math.round(damage*rn.mult); if(rn.note) notes.push(rn.note); }
+        }
+        {
+          const es = classEspadachimDamageMult(passiveState, opts.attacker);
+          if (es.mult!==1) { damage=Math.round(damage*es.mult); if(es.note) notes.push(es.note); }
+        }
+        {
+          const xa = classXamaOnHit(passiveState, opts.attacker);
+          if (xa.atkMgc) aStats.atkMgc=(aStats.atkMgc||0)+xa.atkMgc;
+          if (xa.note) notes.push(xa.note);
+        }
+        {
+          const da = classDancarinoOnHit(passiveState, opts.attacker, opts.defender.id);
+          if (da.mult!==1) damage=Math.round(damage*da.mult);
+          if (da.note) notes.push(da.note);
+        }
+        {
+          const il = classIlusionistaOnHit(passiveState, opts.attacker, opts.defender.id);
+          if (il.note) notes.push(il.note);
+        }
+
+                const cac = classCacadorOnHit(passiveState, opts.attacker, opts.defender.id);
         if (cac.damageMult !== 1) damage = Math.round(damage * cac.damageMult);
         if (cac.note) notes.push(cac.note);
         if (classBufaoConsumeExtremist(passiveState, opts.attacker)) {

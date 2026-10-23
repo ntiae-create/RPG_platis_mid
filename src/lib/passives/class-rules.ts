@@ -221,6 +221,12 @@ export function classAttackerStatMods(
   if (booster) mods.atkMgc = (mods.atkMgc ?? 0) + booster;
   const bufao = classBufaoAgiBonus(state, ch, base.agi);
   if (bufao.bonus) mods.agi = (mods.agi ?? 0) + bufao.bonus;
+  const esp = classEspadachimOnTurn(state, ch);
+  if (esp.atk) mods.atk = (mods.atk ?? 0) + esp.atk;
+  const cel = classCavaleiroCelesteStatMods(state, ch);
+  if (cel.agi) mods.agi = (mods.agi ?? 0) + cel.agi;
+  const art = classArtificeProjectMods(state, ch);
+  for (const k of Object.keys(art)) mods[k] = (mods[k] ?? 0) + art[k];
   return mods;
 }
 
@@ -484,4 +490,226 @@ export function classCavaleiroConsumeInvestida(state,ch){
   const e=entry(state,ch.id,"class:cavaleiro:investida");
   if(e?.meta?.armed){ e.meta={armed:false}; e.active=false; return {mult:1.5,note:"Investida +50%"}; }
   return {mult:1};
+}
+
+/** ===== Lote 2 — classes restantes (motor puro) ===== */
+export function classNecromanteOnKill(state,ch){
+  if(ch.classId!=="necromante") return {note:null};
+  const e=ensure(state,ch.id,"class:necromante:almas","Servos da Morte",{stacks:0,maxStacks:15,active:true});
+  e.stacks=Math.min(15,e.stacks+1); e.active=true;
+  let note="Alma "+e.stacks+"/15";
+  if(e.stacks>=3 && e.stacks%3===0) note+=" · pode invocar Servo (50% attrs)";
+  return {note};
+}
+export function classBardoOnSupport(state,ch){
+  if(ch.classId!=="bardo") return {note:null};
+  const e=ensure(state,ch.id,"class:bardo:sinfonia","Sinfonia de Almanaque",{stacks:0,maxStacks:3,active:true,turnsRemaining:2});
+  e.stacks=Math.min(3,e.stacks+1); e.active=true; e.turnsRemaining=2;
+  if(e.stacks>=3){ e.meta={...e.meta,harmonia:true}; e.stacks=0; return {note:"Harmonia 2 turnos: +20% dano/+cura aliados",harmonia:true}; }
+  return {note:"Sinfonia "+e.stacks+"/3 (+1 attrs aliados)"};
+}
+export function classInvocadorOnSummon(state,ch,summonId){
+  if(ch.classId!=="invocador") return {note:null};
+  const e=ensure(state,ch.id,"class:invocador:vinculo","Vínculo de Invocação",{stacks:0,maxStacks:5,active:true,meta:{last:""}});
+  if(summonId && summonId!==e.meta.last){ e.stacks=Math.min(5,e.stacks+1); e.meta={...e.meta,last:summonId}; }
+  e.active=true;
+  if(e.stacks>=5 && ch.level>=20) return {note:"ALEISTER desbloqueado (attrs x2)",aleister:true};
+  return {note:"Vínculo "+e.stacks+"/5"};
+}
+export function classOraculoCombatStart(state,ch){
+  if(ch.classId!=="oraculo") return null;
+  const e=ensure(state,ch.id,"class:oraculo:prep","Presságio",{active:true,meta:{preparacao:true,stacks:0}});
+  e.active=true; e.meta={...e.meta,preparacao:true};
+  return "Presságio: Preparação (não é surpreendido)";
+}
+export function classOraculoOnPredict(state,ch){
+  if(ch.classId!=="oraculo") return {note:null};
+  const e=ensure(state,ch.id,"class:oraculo:prep","Presságio",{stacks:0,active:true,meta:{}});
+  e.stacks=Math.min(5,Number(e.stacks||0)+1);
+  return {note:"Presságio stack "+e.stacks};
+}
+export function classArtificeProjectMods(state,ch){
+  if(ch.classId!=="artifice") return {};
+  const e=entry(state,ch.id,"class:artifice:proj");
+  const tier=Number(e?.meta?.tier||0);
+  if(tier===1) return {atk:1,def:1};
+  if(tier===2) return {atk:2,def:2,agi:1};
+  if(tier===3) return {atk:3,def:3,agi:2,atkMgc:2};
+  return {};
+}
+export function classArtificeSetProject(state,ch,tier){
+  if(ch.classId!=="artifice") return;
+  const e=ensure(state,ch.id,"class:artifice:proj","Mestre das Criações",{active:true,meta:{tier}});
+  e.active=true; e.meta={tier:Math.max(1,Math.min(3,tier))};
+}
+export function classBufferHealerOnSupport(state,ch){
+  if(ch.classId!=="buffer-healer") return {mult:1,note:null};
+  const e=ensure(state,ch.id,"class:buffer:ress","Ressonância Vital",{stacks:0,maxStacks:3,active:true});
+  e.stacks=Math.min(3,e.stacks+1); e.active=true;
+  const mult=1+e.stacks*0.1;
+  if(e.stacks>=3){ e.meta={...e.meta,maxima:true,turns:2}; e.stacks=0; return {mult:1.3,note:"Ressonância Máxima 2 turnos",maxima:true}; }
+  return {mult,note:"Ressonância "+e.stacks+"/3 (+"+(e.stacks*10)+"% cura/buff)"};
+}
+export function classPaladinoCombatStart(state,ch,allyId){
+  if(ch.classId!=="paladino"||!allyId) return null;
+  const e=ensure(state,ch.id,"class:paladino:juramento","Juramento Sagrado",{active:true,meta:{allyId,fe:0}});
+  e.active=true; e.meta={allyId,fe:0};
+  return "Juramento Sagrado com aliado";
+}
+export function classPaladinoShareDamage(state,paladinoId,targetId,damage){
+  const e=entry(state,paladinoId,"class:paladino:juramento");
+  if(!e?.active||e.meta.allyId!==targetId||damage<=0) return {share:0};
+  const share=Math.floor(damage*0.2);
+  e.meta={...e.meta,fe:Math.min(3,Number(e.meta.fe||0)+1)};
+  let note=null;
+  if(Number(e.meta.fe)>=3){ e.meta={...e.meta,fe:0,sagrado:true,turns:4}; note="Estado Sagrado 4 turnos"; }
+  return {share,note};
+}
+export function classBruxoOnSkill(state,ch,offensive){
+  if(ch.classId!=="bruxo") return {mult:1,hpCost:0};
+  const cost=Math.max(1,Math.floor(ch.current.hp*0.1));
+  const e=ensure(state,ch.id,"class:bruxo:pacto","Pacto Profano",{stacks:0,maxStacks:5,active:true});
+  e.stacks=Math.min(5,e.stacks+1); e.active=true;
+  return {mult:offensive?1.25:1.25,hpCost:cost,note:"Pacto "+e.stacks+"/5 · -"+cost+" HP · +25%"};
+}
+export function classRoninOnTurnStart(state,ch,attackedLastTurn){
+  if(ch.classId!=="ronin") return null;
+  if(attackedLastTurn){ const e=entry(state,ch.id,"class:ronin:espera"); if(e) e.active=false; return null; }
+  const e=ensure(state,ch.id,"class:ronin:espera","Postura de Espera",{active:true});
+  e.active=true; e.meta={armed:true};
+  return "Postura de Espera: próximo ataque +50%";
+}
+export function classRoninConsume(state,ch,defenderHpRatio){
+  if(ch.classId!=="ronin") return {mult:1,forceCrit:false};
+  const e=entry(state,ch.id,"class:ronin:espera");
+  if(!e?.meta?.armed) return {mult:1,forceCrit:false};
+  e.meta={armed:false}; e.active=false;
+  return {mult:1.5,forceCrit:defenderHpRatio<=0.3,note:"Ronin +50%"+(defenderHpRatio<=0.3?" · crítico":"")};
+}
+export function classEspadachimOnTurn(state,ch){
+  if(ch.classId!=="espadachim") return {atk:0};
+  const e=ensure(state,ch.id,"class:espadachim:turno","Espadachim Silencioso",{stacks:0,maxStacks:5,active:true});
+  if(!e.meta.awakened){ e.stacks=Math.min(5,e.stacks+1); }
+  if(e.stacks>=5){ e.meta={...e.meta,awakened:true}; }
+  e.active=true;
+  return {atk:e.meta.awakened?0:e.stacks,awakened:Boolean(e.meta.awakened),note:e.meta.awakened?"Espada desperta +25% físico":("Silêncio "+e.stacks+"/5")};
+}
+export function classEspadachimDamageMult(state,ch){
+  if(ch.classId!=="espadachim") return {mult:1};
+  const e=entry(state,ch.id,"class:espadachim:turno");
+  if(e?.meta?.awakened) return {mult:1.25,note:"Espada desperta +25%"};
+  return {mult:1};
+}
+export function classXamaOnHit(state,ch){
+  if(ch.classId!=="xama") return {note:null};
+  const e=ensure(state,ch.id,"class:xama:espirito","Pacto dos Espíritos",{stacks:0,maxStacks:3,active:true});
+  e.stacks=Math.min(3,e.stacks+1); e.active=true;
+  return {note:"Espírito "+e.stacks+"/3",atkMgc:e.stacks};
+}
+export function classRunomanteOnSkill(state,ch,runeId){
+  if(ch.classId!=="runomante") return {note:null};
+  const e=ensure(state,ch.id,"class:runomante:runa","Runa Primordial",{stacks:0,active:true,meta:{last:""}});
+  if(runeId && runeId!==e.meta.last){ e.stacks=Math.min(4,e.stacks+1); e.meta={...e.meta,last:runeId}; }
+  return {note:"Runa "+e.stacks+"/4",mult:1+e.stacks*0.05};
+}
+export function classDancarinoOnHit(state,ch,targetId){
+  if(ch.classId!=="dancarino-de-laminas") return {mult:1};
+  const e=ensure(state,ch.id,"class:danca:hit","Dança da Morte",{stacks:0,meta:{targets:""}});
+  const set=new Set(String(e.meta.targets||"").split(",").filter(Boolean));
+  set.add(targetId);
+  e.meta={...e.meta,targets:[...set].join(",")};
+  if(set.size>=3){ e.meta={...e.meta,targets:"",danca:true,turns:2}; return {mult:1.3,note:"Dança da Morte 2 turnos +30%"}; }
+  if(e.meta.danca) return {mult:1.3,note:"Dança ativa +30%"};
+  return {mult:1,note:"Dança alvos "+set.size+"/3"};
+}
+export function classBatedorDamageMult(state,ch,targetRevealed){
+  if(ch.classId!=="batedor") return {mult:1};
+  if(targetRevealed) return {mult:1.2,note:"Olhos do Predador +20% em revelado"};
+  return {mult:1};
+}
+export function classCavaleiroCelesteCombatStart(state,ch){
+  if(ch.classId!=="cavaleiro-celeste") return null;
+  const e=ensure(state,ch.id,"class:celeste:ar","Ascensão Celestial",{active:true,meta:{aereo:true}});
+  e.active=true; e.meta={aereo:true};
+  return "Ascensão: +2 AGI · -30% dano corpo a corpo recebido";
+}
+export function classCavaleiroCelesteStatMods(state,ch){
+  if(ch.classId!=="cavaleiro-celeste") return {};
+  const e=entry(state,ch.id,"class:celeste:ar");
+  if(e?.meta?.aereo) return {agi:2};
+  return {};
+}
+export function classCavaleiroCelesteDamageTakenMult(state,ch,kind){
+  if(ch.classId!=="cavaleiro-celeste") return 1;
+  const e=entry(state,ch.id,"class:celeste:ar");
+  if(e?.meta?.aereo && kind==="physical") return 0.7;
+  return 1;
+}
+export function classElementalistaOnSkill(state,ch,affinityId){
+  if(ch.classId!=="elementalista") return {mult:1};
+  const e=ensure(state,ch.id,"class:elem:conv","Convergência Elemental",{stacks:0,meta:{last:"",chain:0}});
+  if(affinityId && affinityId!==e.meta.last){ e.meta={...e.meta,last:affinityId,chain:Number(e.meta.chain||0)+1}; e.stacks=Math.min(4,e.stacks+1); }
+  else e.meta={...e.meta,chain:0};
+  if(Number(e.meta.chain)>=4){ e.meta={...e.meta,conv:true,turns:2,chain:0}; return {mult:1.25,note:"Convergência 2 turnos +25%"}; }
+  return {mult:1.1,note:"Afinidade diferente +10%"};
+}
+export function classDomadorShareDamage(state,domadorId,damage){
+  const e=entry(state,domadorId,"class:domador:laco");
+  if(!e?.active||!e.meta.creatureId) return {share:0};
+  return {share:Math.floor(damage*0.2),creatureId:e.meta.creatureId};
+}
+export function classDomadorSetBond(state,ch,creatureId){
+  if(ch.classId!=="domador") return;
+  const e=ensure(state,ch.id,"class:domador:laco","Laço Bestial",{active:true,meta:{creatureId}});
+  e.active=true; e.meta={creatureId};
+}
+export function classDomadorStatMods(state,ch,nearCreature){
+  if(ch.classId!=="domador") return {};
+  if(nearCreature) return {agi:2};
+  const e=entry(state,ch.id,"class:domador:laco");
+  if(e?.meta?.fury) return {atk:3,agi:2};
+  return {};
+}
+export function classCronomanteTryRewind(state,ch,allyHpRatio){
+  if(ch.classId!=="cronomante") return {ok:false};
+  const e=ensure(state,ch.id,"class:crono:dist","Distorção Temporal",{active:true,meta:{used:false}});
+  if(e.meta.used) return {ok:false};
+  if(allyHpRatio>0.3) return {ok:false};
+  e.meta={...e.meta,used:true};
+  return {ok:true,note:"Retrocesso Temporal (1x/combate)"};
+}
+export function classAlquimistaSombrioOnSkill(state,ch,offensive){
+  if(ch.classId!=="alquimista-sombrio") return {mult:1,hpCost:0};
+  const cost=Math.max(1,Math.floor((ch.current.hp||1)*0.05)); // approx max via current
+  return {mult:1.25,hpCost:cost,note:"Transmutação -5% HP · +25%"};
+}
+export function classMarioneteShareToLinked(state,mestreId,damage){
+  const e=entry(state,mestreId,"class:marionete:fio");
+  if(!e?.active||!e.meta.linkedId) return {share:0};
+  return {share:Math.floor(damage*0.2),linkedId:e.meta.linkedId};
+}
+export function classMarioneteSetLink(state,ch,linkedId){
+  if(ch.classId!=="mestre-de-marionetes") return;
+  const e=ensure(state,ch.id,"class:marionete:fio","Fios do Destino",{active:true,meta:{linkedId}});
+  e.active=true; e.meta={linkedId};
+}
+export function classArmadilheiroTrigger(state,ch,type){
+  if(ch.classId!=="armadilheiro") return {note:null};
+  const e=ensure(state,ch.id,"class:armadilha:prep","Armadilha Mortal",{stacks:0,maxStacks:3,active:true});
+  if(e.stacks>=3) return {note:"Máx 3 armadilhas"};
+  e.stacks+=1;
+  return {note:"Armadilha "+type+" ("+e.stacks+"/3)",type};
+}
+export function classIlusionistaOnHit(state,ch,targetId){
+  if(ch.classId!=="ilusionista") return {note:null};
+  // only one target
+  for(const x of state.entries){ if(x.id==="class:ilusionista:inv"&&x.characterId!==targetId) x.active=false; }
+  const e=ensure(state,targetId,"class:ilusionista:inv","Inversão Sensorial",{active:true,turnsRemaining:2});
+  e.active=true; e.turnsRemaining=2;
+  const m=ensure(state,ch.id,"class:ilusionista:count","Mundo Invertido",{stacks:0,meta:{ids:""}});
+  const set=new Set(String(m.meta.ids||"").split(",").filter(Boolean));
+  set.add(targetId);
+  m.meta={...m.meta,ids:[...set].join(",")};
+  if(set.size>=4){ m.meta={...m.meta,mundo:true}; return {note:"Inversão · Mundo Invertido pronto (4 alvos)"}; }
+  return {note:"Inversão Sensorial 2 turnos ("+set.size+"/4)"};
 }
