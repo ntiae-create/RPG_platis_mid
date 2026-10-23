@@ -12,6 +12,9 @@ export function InventoryPanel() {
   const unequip = usePlatis((s) => s.unequipItem);
   const discard = usePlatis((s) => s.discardItem);
   const useItem = usePlatis((s) => s.useItem);
+  const shopCatalog = usePlatis((s) => s.shopCatalog || []);
+  const buyFromShop = usePlatis((s) => s.buyFromShop);
+  const selfId = usePlatis((s) => s.selfId);
   const spend = usePlatis((s) => s.spendAttr);
   if (!ch) return null;
   const cap = inventorySlots(ch.level);
@@ -106,6 +109,34 @@ export function InventoryPanel() {
           ))}
         </div>
         <p className="mt-2 text-xs text-muted">{ch.poolPoints} pontos de pool</p>
+      </div>
+
+      <div className="panel p-4 lg:col-span-2">
+        <h2 className="font-display text-2xl">Loja do Mestre</h2>
+        <p className="text-xs text-muted">Itens publicados pelo mestre. Preço em Silver (converte de Gold/Platinum se precisar).</p>
+        {shopCatalog.length === 0 && <p className="mt-3 text-sm text-muted">Loja vazia no momento.</p>}
+        <ul className="mt-3 space-y-2">
+          {shopCatalog.map((it) => (
+            <li key={it.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-raised px-3 py-2">
+              <div>
+                <div className="text-sm">{it.name} <span className="text-[10px] text-muted">{it.rarity}</span></div>
+                <div className="text-[11px] text-muted">{it.desc}</div>
+                <div className="text-[11px]">{it.price ?? 0} Silver {it.slot ? "· " + it.slot : ""}</div>
+              </div>
+              <Button
+                size="sm"
+                disabled={!selfId}
+                onClick={() => {
+                  if (!selfId) return;
+                  const ok = buyFromShop(selfId, it.id);
+                  if (!ok) window.alert("Moedas insuficientes ou item indisponível.");
+                }}
+              >
+                Comprar
+              </Button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

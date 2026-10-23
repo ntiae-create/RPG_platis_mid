@@ -40,7 +40,7 @@ type MasterSection =
   | "configuracoes"
   | "log"
   | "bosses"
-  | "mundo"
+  | "store"
   | "jogadores"
   | "xp-mestre";
 
@@ -56,7 +56,7 @@ const SECTIONS = [
   { id: "configuracoes", label: "Configurações", icon: Settings2, desc: "Regras e configurações da mesa." },
   { id: "log", label: "Log", icon: FileText, desc: "Histórico das ações da mesa." },
   { id: "bosses", label: "Bosses Mundiais", icon: Crosshair, desc: "Controle dos Bosses do mundo." },
-  { id: "mundo", label: "Mundo", icon: Globe2, desc: "Controle geral do mundo de Platis." },
+  { id: "store", label: "Store (Loja)", icon: Package, desc: "Loja do mestre: cadastre itens para os players comprarem." },
   { id: "xp-mestre", label: "Personagens do Mestre", icon: Coins, desc: "Experiência e XP de Brasão do personagem do Mestre." },
   { id: "jogadores", label: "Jogadores", icon: Users, desc: "Gerencie os oito slots da mesa." },
 ] as const;
@@ -148,6 +148,9 @@ export function MasterPanel({
   const grantNpcXp = usePlatis((s) => s.grantNpcXp);
   const publishCharacterAsNpc = usePlatis((s) => s.publishCharacterAsNpc);
   const grantItem = usePlatis((s) => s.grantItem);
+  const shopCatalog = usePlatis((s) => s.shopCatalog || []);
+  const addShopListing = usePlatis((s) => s.addShopListing);
+  const removeShopListing = usePlatis((s) => s.removeShopListing);
   const grantCurrency = usePlatis((s) => s.grantCurrency);
   const restoreVitals = usePlatis((s) => s.restoreVitals);
   const equipItemFor = usePlatis((s) => s.equipItemFor);
@@ -185,6 +188,14 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const [itemFormPrice, setItemFormPrice] = useState(0);
   const [itemFormTarget, setItemFormTarget] = useState("");
   const [potionAmount, setPotionAmount] = useState(25);
+  const [shopFormName, setShopFormName] = useState("");
+  const [shopFormDesc, setShopFormDesc] = useState("");
+  const [shopFormPrice, setShopFormPrice] = useState(10);
+  const [shopFormRarity, setShopFormRarity] = useState("R");
+  const [shopFormSlot, setShopFormSlot] = useState("");
+  const [shopFormCategory, setShopFormCategory] = useState("equipamento");
+  const [shopFormEffect, setShopFormEffect] = useState("");
+  const [shopFormBonus, setShopFormBonus] = useState({ hp:0, mp:0, est:0, san:0, atk:0, atkMgc:0, def:0, res:0, agi:0, int:0 });
   const [itemFormBonus, setItemFormBonus] = useState({hp:0,mp:0,est:0,san:0,atk:0,atkMgc:0,def:0,res:0,agi:0,int:0});
   const [xpTargetId, setXpTargetId] = useState<string>("");
   const [coinTargetId, setCoinTargetId] = useState("");
@@ -1723,6 +1734,72 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               </p>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (section === "store") {
+    const bonusKeys = ["hp","mp","est","san","atk","atkMgc","def","res","agi","int"];
+    const rarities = ["R","SR","SSR","UR","UR MÁX.","LR","LR EXTRA"];
+    const publishShop = () => {
+      if (!shopFormName.trim()) return;
+      const bonus = {};
+      for (const k of bonusKeys) { if (shopFormBonus[k]) bonus[k] = shopFormBonus[k]; }
+      addShopListing({
+        id: "shop-" + Date.now(),
+        name: shopFormName.trim(),
+        rarity: shopFormRarity,
+        category: shopFormCategory,
+        slot: shopFormSlot || undefined,
+        effect: shopFormEffect.trim() || undefined,
+        desc: shopFormDesc.trim() || shopFormName.trim(),
+        price: Math.max(0, shopFormPrice),
+        qty: 1,
+        bonus: Object.keys(bonus).length ? bonus : undefined,
+      });
+      setShopFormName(""); setShopFormDesc(""); setShopFormEffect(""); setShopFormPrice(10);
+      setShopFormBonus({ hp:0, mp:0, est:0, san:0, atk:0, atkMgc:0, def:0, res:0, agi:0, int:0 });
+    };
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSection(null)}>← Menu do Mestre</Button>
+        <div>
+          <h2 className="font-display text-3xl">Store (Loja)</h2>
+          <p className="mt-1 text-sm text-muted">Cadastre equipamentos/itens com raridade, bônus e preço (em Silver). Os players compram na aba Inventário.</p>
+        </div>
+        <div className="panel space-y-3 p-4">
+          <h3 className="font-medium">Novo item na vitrine</h3>
+          <label className="block space-y-1"><span className="text-xs text-muted">Nome</span><input className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormName} onChange={(e) => setShopFormName(e.target.value)} /></label>
+          <label className="block space-y-1"><span className="text-xs text-muted">Descrição</span><textarea className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormDesc} onChange={(e) => setShopFormDesc(e.target.value)} /></label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block space-y-1"><span className="text-xs text-muted">Raridade</span><select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormRarity} onChange={(e) => setShopFormRarity(e.target.value)}>{rarities.map((r) => <option key={r} value={r}>{r}</option>)}</select></label>
+            <label className="block space-y-1"><span className="text-xs text-muted">Categoria</span><input className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormCategory} onChange={(e) => setShopFormCategory(e.target.value)} /></label>
+            <label className="block space-y-1"><span className="text-xs text-muted">Slot</span><select className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormSlot} onChange={(e) => setShopFormSlot(e.target.value)}><option value="">Consumível / sem slot</option>{["arma","armadura","botas","reliquia","colar"].map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
+            <label className="block space-y-1"><span className="text-xs text-muted">Preço (Silver)</span><input type="number" min="0" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormPrice} onChange={(e) => setShopFormPrice(Math.max(0, Number(e.target.value) || 0))} /></label>
+          </div>
+          <label className="block space-y-1"><span className="text-xs text-muted">Efeito (texto ou potion:hp:25)</span><input className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormEffect} onChange={(e) => setShopFormEffect(e.target.value)} /></label>
+          <p className="text-sm font-medium">Bônus de atributos</p>
+          <div className="grid grid-cols-2 gap-2">
+            {bonusKeys.map((k) => (
+              <label key={k} className="block space-y-1"><span className="text-xs text-muted">{k}</span><input type="number" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormBonus[k]} onChange={(e) => setShopFormBonus((old) => ({ ...old, [k]: Number(e.target.value) || 0 }))} /></label>
+            ))}
+          </div>
+          <Button onClick={publishShop} disabled={!shopFormName.trim()}>Publicar na loja</Button>
+        </div>
+        <div className="panel space-y-3 p-4">
+          <h3 className="font-medium">Vitrine atual ({shopCatalog.length})</h3>
+          {shopCatalog.length === 0 && <p className="text-sm text-muted">Nenhum item publicado.</p>}
+          {shopCatalog.map((it) => (
+            <div key={it.id} className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-line p-3">
+              <div>
+                <p className="font-medium">{it.name} <span className="text-xs text-muted">{it.rarity}</span></p>
+                <p className="text-xs text-muted">{it.desc}</p>
+                <p className="text-xs">Preço: {it.price ?? 0} Silver {it.slot ? "· " + it.slot : ""}</p>
+              </div>
+              <Button size="sm" variant="danger" onClick={() => removeShopListing(it.id)}>Remover</Button>
+            </div>
+          ))}
         </div>
       </div>
     );

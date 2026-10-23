@@ -255,6 +255,7 @@ type AppState = {
   selfId: string | null;
   characters: Record<string, Character>;
   npcs: Record<string, Character>;
+  shopCatalog: InventoryItem[];
   combatNpcIds: string[];
   slots: (string | null)[];
   masterId: string | null;
@@ -412,6 +413,9 @@ type AppState = {
   discardItem: (itemId: string) => void;
   useItem: (itemId: string) => void;
   grantItem: (characterId: string, item: InventoryItem) => void;
+  addShopListing: (item: InventoryItem) => void;
+  removeShopListing: (itemId: string) => void;
+  buyFromShop: (characterId: string, itemId: string) => boolean;
   grantCurrency: (characterId: string, amount: { bronze?: number; silver?: number; gold?: number; platinum?: number }) => void;
   disarmTrap: () => void;
 };
@@ -436,6 +440,7 @@ function empty(): Pick<
   | "selfId"
   | "characters"
   | "npcs"
+  | "shopCatalog"
   | "combatNpcIds"
   | "slots"
   | "masterId"
@@ -484,6 +489,7 @@ function empty(): Pick<
     selfId: null,
     characters: {},
     npcs: {},
+    shopCatalog: [],
     combatNpcIds: [],
     slots: Array.from({ length: 8 }, () => null),
     masterId: null,
@@ -4534,6 +4540,62 @@ export const usePlatis = create<AppState>()(
         if (s.npcs[characterId]) get().updateNpc(characterId, { currency });
       },
 
+      addShopListing: (item) => {
+        const listing = { ...item, id: item.id || uid("shop"), qty: Math.max(1, item.qty || 1) };
+        set((s) => ({ shopCatalog: [...(s.shopCatalog || []), listing] }));
+      },
+
+      removeShopListing: (itemId) => {
+        set((s) => ({ shopCatalog: (s.shopCatalog || []).filter((i) => i.id !== itemId) }));
+      },
+
+      buyFromShop: (characterId, itemId) => {
+        const s = get();
+        const ch = s.characters[characterId] ?? s.npcs[characterId];
+        if (!ch) return false;
+        const listing = (s.shopCatalog || []).find((i) => i.id === itemId);
+        if (!listing) return false;
+        const priceSilver = Math.max(0, Math.floor(listing.price ?? 0));
+        // total wealth in silver: bronze/80 + silver + gold*105 + platinum*105*1000
+        const c = ch.currency || { bronze: 0, silver: 0, gold: 0, platinum: 0 };
+        const wealth =
+          Math.floor((c.bronze || 0) / 80) +
+          (c.silver || 0) +
+          (c.gold || 0) * 105 +
+          (c.platinum || 0) * 105 * 1000;
+        if (wealth < priceSilver) return false;
+        // deduct from silver-equivalent, prefer silver then gold then platinum then bronze
+        let need = priceSilver;
+        let bronze = c.bronze || 0;
+        let silver = c.silver || 0;
+        let gold = c.gold || 0;
+        let platinum = c.platinum || 0;
+        const take = (have, rate) => {
+          if (need <= 0 || have <= 0) return have;
+          const can = Math.min(have, Math.ceil(need / rate));
+          const used = Math.min(can, Math.ceil(need / rate));
+          need -= used * rate;
+          if (need < 0) need = 0;
+          return have - used;
+        };
+        // simplify: burn silver first, then gold, platinum, bronze
+        if (silver >= need) { silver -= need; need = 0; }
+        else { need -= silver; silver = 0; }
+        while (need > 0 && gold > 0) { gold -= 1; silver += 105; if (silver >= need) { silver -= need; need = 0; } }
+        while (need > 0 && platinum > 0) { platinum -= 1; gold += 1000; while (need > 0 && gold > 0) { gold -= 1; silver += 105; if (silver >= need) { silver -= need; need = 0; } } }
+        while (need > 0 && bronze >= 80) { const conv = Math.min(Math.floor(bronze / 80), need); bronze -= conv * 80; need -= conv; }
+        if (need > 0) return false;
+        const currency = { bronze, silver, gold, platinum };
+        const granted = { ...listing, id: uid("item"), qty: 1 };
+        const inventory = [...(ch.inventory || [])];
+        const existing = inventory.find((i) => i.name === granted.name && i.effect === granted.effect && !i.slot);
+        if (existing && !granted.slot) existing.qty += 1;
+        else inventory.push(granted);
+        if (s.characters[characterId]) get().patchCharacter(characterId, { currency, inventory });
+        if (s.npcs[characterId]) get().updateNpc(characterId, { currency, inventory });
+        return true;
+      },
+
       disarmTrap: () => set({ trap: null }),
     }),
     {
@@ -4541,6 +4603,7 @@ export const usePlatis = create<AppState>()(
       version: SAVE_VERSION,
       storage: persistStorage,
       partialize: (s) => ({
+        shopCatalog: s.shopCatalog,
         version: s.version,
         role: s.role,
         selfId: s.selfId,
