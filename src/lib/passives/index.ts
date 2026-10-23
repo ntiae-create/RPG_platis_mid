@@ -285,5 +285,25 @@ export function listPassiveVisuals(
     }
   }
 
+  // runtime entries (stacks reais)
+  for (const e of state.entries) {
+    if (e.characterId !== ch.id) continue;
+    if (!e.active && !(e.stacks > 0)) continue;
+    if (visuals.some((v) => v.id === e.id)) continue;
+    visuals.push({
+      id: e.id,
+      name: e.name,
+      origin: e.origin === "class" ? "class" : e.origin === "race" ? "race" : "character",
+      active: Boolean(e.active),
+      detail: [
+        e.stacks ? `stacks ${e.stacks}${e.maxStacks != null ? "/" + e.maxStacks : ""}` : null,
+        e.turnsRemaining != null ? `${e.turnsRemaining} turnos` : null,
+      ].filter(Boolean).join(" · ") || "ativa",
+      stacks: e.stacks || undefined,
+      maxStacks: e.maxStacks ?? undefined,
+      turnsRemaining: e.turnsRemaining ?? undefined,
+    });
+  }
+
   return visuals;
 }

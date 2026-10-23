@@ -318,6 +318,7 @@ type AppState = {
   addCharacter: (ch: Character, asSelf?: boolean) => void;
   createNpc: (npc: Character) => void;
   addNpcToCombat: (npcId: string) => void;
+  addNpcAsEnemy: (npcId: string) => void;
   updateNpc: (id: string, patch: Partial<Character>) => void;
   removeNpc: (id: string) => void;
   grantNpcXp: (id: string, amount: number) => void;
@@ -889,6 +890,51 @@ export const usePlatis = create<AppState>()(
           combatLog,
         };
       }),
+      addNpcAsEnemy: (npcId) => {
+        const s = get();
+        if (s.combatMode === "world-boss") return;
+        const npc = s.npcs[npcId];
+        if (!npc || npc.current.hp <= 0) return;
+        const stats = finalStats(npc);
+        const id = uid("enemy");
+        const enemy = {
+          id,
+          name: npc.name,
+          kind: "monster" as const,
+          level: npc.level || 1,
+          stats: { ...stats },
+          current: {
+            hp: npc.current.hp,
+            mp: npc.current.mp,
+            est: npc.current.est,
+            san: npc.current.san,
+          },
+          skills: Array.isArray(npc.skills) ? npc.skills.map((sk) => ({ ...sk })) : [],
+          image: npc.portrait || undefined,
+        };
+        const combatEnemies = { ...s.combatEnemies, [id]: enemy };
+        let combatParticipants = s.combatParticipants;
+        let combatOrder = s.combatOrder;
+        let combatPositions = { ...s.combatPositions };
+        if (s.combatActive && !combatParticipants.includes(id)) {
+          combatParticipants = [...combatParticipants, id];
+          combatOrder = [...combatOrder, id];
+          combatPositions[id] = { x: 14, y: Math.min(11, 2 + Object.keys(combatEnemies).length * 2) };
+        }
+        set({
+          combatEnemies,
+          combatParticipants,
+          combatOrder,
+          combatPositions,
+          combatLog: [{
+            id: uid("lg"),
+            at: Date.now(),
+            kind: "system",
+            text: npc.name + " entrou como INIMIGO no combate.",
+          }, ...s.combatLog].slice(0, 80),
+        });
+      },
+
       updateNpc: (id, patch) => set((s) => {
         const current = s.npcs[id];
         if (!current) return s;
@@ -3016,12 +3062,30 @@ export const usePlatis = create<AppState>()(
       setWorldBoss: (id) => set({ worldBossId: id }),
 
       addCombatEnemy: (enemy) => {
+        // addCombatEnemy joins participants
         const id = uid("enemy");
+        const s = get();
+        const full = { ...enemy, id };
+        const combatEnemies = { ...s.combatEnemies, [id]: full };
+        let combatParticipants = s.combatParticipants;
+        let combatOrder = s.combatOrder;
+        let combatPositions = { ...s.combatPositions };
+        if (s.combatActive && !combatParticipants.includes(id)) {
+          combatParticipants = [...combatParticipants, id];
+          combatOrder = [...combatOrder, id];
+          combatPositions[id] = { x: 14, y: Math.min(11, 2 + Object.keys(combatEnemies).length * 2) };
+        }
         set({
-          combatEnemies: {
-            ...get().combatEnemies,
-            [id]: { ...enemy, id },
-          },
+          combatEnemies,
+          combatParticipants,
+          combatOrder,
+          combatPositions,
+          combatLog: [{
+            id: uid("lg"),
+            at: Date.now(),
+            kind: "system",
+            text: full.name + " (inimigo) adicionado ao combate.",
+          }, ...s.combatLog].slice(0, 80),
         });
       },
       removeCombatEnemy: (id) => {

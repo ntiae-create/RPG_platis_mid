@@ -6,6 +6,9 @@ import { WorldBossCard } from "./world-boss-card";
 import { WorldBossCombatPanel } from "./world-boss-combat-panel";
 import type { Character, CombatEnemy } from "@/data/types";
 import { useState, useEffect, useCallback } from "react";
+import { PassiveIndicators } from "./passive-indicators";
+import { listPassiveVisuals } from "@/lib/passives";
+import { finalStats } from "@/lib/stats";
 
 export function CombatPanel() {
   const [movingParticipantId, setMovingParticipantId] = useState<string | null>(null);
@@ -46,6 +49,10 @@ export function CombatPanel() {
   const setDomadorBond = usePlatis((s) => s.setDomadorBond);
   const setMarioneteLink = usePlatis((s) => s.setMarioneteLink);
   const assimilateTarget = usePlatis((s) => s.assimilateTarget);
+  const npcs = usePlatis((s) => s.npcs);
+  const addNpcToCombat = usePlatis((s) => s.addNpcToCombat);
+  const addNpcAsEnemy = usePlatis((s) => s.addNpcAsEnemy);
+  const combatPassiveState = usePlatis((s) => s.combatPassiveState);
   const endCombat = usePlatis((s) => s.endCombat);
 const nextTurn = usePlatis((s) => s.nextTurn);
   const clearCombatLog = usePlatis((s) => s.clearCombatLog);
@@ -417,8 +424,48 @@ const nextTurn = usePlatis((s) => s.nextTurn);
                 </Button>
               ))}
           </div>
+          {attacker && "raceId" in attacker && combatActive && (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-medium text-muted">Passivas (atacante)</p>
+              <PassiveIndicators
+                items={listPassiveVisuals(attacker, finalStats(attacker).hp, combatPassiveState)}
+              />
+            </div>
+          )}
+          {defender && "raceId" in defender && combatActive && (
+            <div className="mt-2">
+              <p className="mb-1 text-xs font-medium text-muted">Passivas (defensor)</p>
+              <PassiveIndicators
+                items={listPassiveVisuals(defender as Character, finalStats(defender as Character).hp, combatPassiveState)}
+              />
+            </div>
+          )}
+
+          <div className="mt-3 rounded-md border border-line bg-raised/40 p-3">
+            <p className="mb-2 text-xs font-medium text-muted">NPCs — entrar na batalha</p>
+            {Object.keys(npcs).length === 0 ? (
+              <p className="text-xs text-muted">Nenhum NPC criado. Publique um personagem como NPC ou crie no painel do mestre.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {Object.values(npcs).map((npc) => (
+                  <li key={npc.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="text-ink">{npc.name} <span className="text-xs text-muted">Nv.{npc.level}</span></span>
+                    <span className="flex gap-1">
+                      <Button size="sm" variant="secondary" type="button" onClick={() => addNpcToCombat(npc.id)}>
+                        Aliado
+                      </Button>
+                      <Button size="sm" variant="outline" type="button" onClick={() => addNpcAsEnemy(npc.id)}>
+                        Inimigo
+                      </Button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           {pending && (
-            <div className="mt-3 flex flex-wrap gap-2 rounded-md bg-raised p-3">
+                 <div className="mt-3 flex flex-wrap gap-2 rounded-md bg-raised p-3">
               <p className="w-full text-sm">Reação do defensor</p>
               <Button onClick={() => resolveCounter("attack")}>Contra-atacar (−3 EST)</Button>
               <Button variant="secondary" onClick={() => resolveCounter("defend")}>
