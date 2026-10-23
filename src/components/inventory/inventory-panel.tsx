@@ -113,7 +113,7 @@ export function InventoryPanel() {
 
       <div className="panel p-4 lg:col-span-2">
         <h2 className="font-display text-2xl">Loja do Mestre</h2>
-        <p className="text-xs text-muted">Itens publicados pelo mestre. Preço em Silver (converte de Gold/Platinum se precisar).</p>
+        <p className="text-xs text-muted">Itens do mestre. Preço em Bronze / Silver / Gold / Platinum (precisa ter cada moeda pedida).</p>
         {shopCatalog.length === 0 && <p className="mt-3 text-sm text-muted">Loja vazia no momento.</p>}
         <ul className="mt-3 space-y-2">
           {shopCatalog.map((it) => (
@@ -121,7 +121,7 @@ export function InventoryPanel() {
               <div>
                 <div className="text-sm">{it.name} <span className="text-[10px] text-muted">{it.rarity}</span></div>
                 <div className="text-[11px] text-muted">{it.desc}</div>
-                <div className="text-[11px]">{it.price ?? 0} Silver {it.slot ? "· " + it.slot : ""}</div>
+                <div className="text-[11px]">B{it.priceCurrency?.bronze ?? 0} · S{it.priceCurrency?.silver ?? it.price ?? 0} · G{it.priceCurrency?.gold ?? 0} · P{it.priceCurrency?.platinum ?? 0}{it.slot ? " · " + it.slot : ""}</div>
               </div>
               <Button
                 size="sm"

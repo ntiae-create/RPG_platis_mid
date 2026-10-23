@@ -190,7 +190,11 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   const [potionAmount, setPotionAmount] = useState(25);
   const [shopFormName, setShopFormName] = useState("");
   const [shopFormDesc, setShopFormDesc] = useState("");
-  const [shopFormPrice, setShopFormPrice] = useState(10);
+  const [shopFormPrice, setShopFormPrice] = useState(0);
+  const [shopFormBronze, setShopFormBronze] = useState(0);
+  const [shopFormSilver, setShopFormSilver] = useState(0);
+  const [shopFormGold, setShopFormGold] = useState(0);
+  const [shopFormPlatinum, setShopFormPlatinum] = useState(0);
   const [shopFormRarity, setShopFormRarity] = useState("R");
   const [shopFormSlot, setShopFormSlot] = useState("");
   const [shopFormCategory, setShopFormCategory] = useState("equipamento");
@@ -1754,11 +1758,17 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
         slot: shopFormSlot || undefined,
         effect: shopFormEffect.trim() || undefined,
         desc: shopFormDesc.trim() || shopFormName.trim(),
-        price: Math.max(0, shopFormPrice),
+        price: Math.max(0, shopFormSilver || shopFormPrice),
+        priceCurrency: {
+          bronze: Math.max(0, shopFormBronze),
+          silver: Math.max(0, shopFormSilver || shopFormPrice),
+          gold: Math.max(0, shopFormGold),
+          platinum: Math.max(0, shopFormPlatinum),
+        },
         qty: 1,
         bonus: Object.keys(bonus).length ? bonus : undefined,
       });
-      setShopFormName(""); setShopFormDesc(""); setShopFormEffect(""); setShopFormPrice(10);
+      setShopFormName(""); setShopFormDesc(""); setShopFormEffect(""); setShopFormPrice(0); setShopFormBronze(0); setShopFormSilver(0); setShopFormGold(0); setShopFormPlatinum(0);
       setShopFormBonus({ hp:0, mp:0, est:0, san:0, atk:0, atkMgc:0, def:0, res:0, agi:0, int:0 });
     };
     return (
@@ -1795,7 +1805,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               <div>
                 <p className="font-medium">{it.name} <span className="text-xs text-muted">{it.rarity}</span></p>
                 <p className="text-xs text-muted">{it.desc}</p>
-                <p className="text-xs">Preço: {it.price ?? 0} Silver {it.slot ? "· " + it.slot : ""}</p>
+                <p className="text-xs">Preço: B{it.priceCurrency?.bronze ?? 0} · S{it.priceCurrency?.silver ?? it.price ?? 0} · G{it.priceCurrency?.gold ?? 0} · P{it.priceCurrency?.platinum ?? 0} {it.slot ? "· " + it.slot : ""}</p>
               </div>
               <Button size="sm" variant="danger" onClick={() => removeShopListing(it.id)}>Remover</Button>
             </div>

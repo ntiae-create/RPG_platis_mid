@@ -466,6 +466,8 @@ export type InventoryItem = {
   desc: string;
   qty: number;
   price?: number;
+  /** Preço por tipo de moeda (loja). Se omitido, usa só price como Silver. */
+  priceCurrency?: Partial<{ bronze: number; silver: number; gold: number; platinum: number }>;
   bonus?: Partial<{ hp: number; mp: number; est: number; san: number; atk: number; atkMgc: number; def: number; res: number; agi: number; int: number }>;
 };
 

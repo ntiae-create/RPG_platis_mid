@@ -4555,41 +4555,31 @@ export const usePlatis = create<AppState>()(
         if (!ch) return false;
         const listing = (s.shopCatalog || []).find((i) => i.id === itemId);
         if (!listing) return false;
-        const priceSilver = Math.max(0, Math.floor(listing.price ?? 0));
-        // total wealth in silver: bronze/80 + silver + gold*105 + platinum*105*1000
-        const c = ch.currency || { bronze: 0, silver: 0, gold: 0, platinum: 0 };
-        const wealth =
-          Math.floor((c.bronze || 0) / 80) +
-          (c.silver || 0) +
-          (c.gold || 0) * 105 +
-          (c.platinum || 0) * 105 * 1000;
-        if (wealth < priceSilver) return false;
-        // deduct from silver-equivalent, prefer silver then gold then platinum then bronze
-        let need = priceSilver;
-        let bronze = c.bronze || 0;
-        let silver = c.silver || 0;
-        let gold = c.gold || 0;
-        let platinum = c.platinum || 0;
-        const take = (have, rate) => {
-          if (need <= 0 || have <= 0) return have;
-          const can = Math.min(have, Math.ceil(need / rate));
-          const used = Math.min(can, Math.ceil(need / rate));
-          need -= used * rate;
-          if (need < 0) need = 0;
-          return have - used;
+        const pc = listing.priceCurrency || {};
+        const cost = {
+          bronze: Math.max(0, Math.floor(pc.bronze ?? 0)),
+          silver: Math.max(0, Math.floor(pc.silver ?? (listing.price ?? 0))),
+          gold: Math.max(0, Math.floor(pc.gold ?? 0)),
+          platinum: Math.max(0, Math.floor(pc.platinum ?? 0)),
         };
-        // simplify: burn silver first, then gold, platinum, bronze
-        if (silver >= need) { silver -= need; need = 0; }
-        else { need -= silver; silver = 0; }
-        while (need > 0 && gold > 0) { gold -= 1; silver += 105; if (silver >= need) { silver -= need; need = 0; } }
-        while (need > 0 && platinum > 0) { platinum -= 1; gold += 1000; while (need > 0 && gold > 0) { gold -= 1; silver += 105; if (silver >= need) { silver -= need; need = 0; } } }
-        while (need > 0 && bronze >= 80) { const conv = Math.min(Math.floor(bronze / 80), need); bronze -= conv * 80; need -= conv; }
-        if (need > 0) return false;
-        const currency = { bronze, silver, gold, platinum };
+        const c = ch.currency || { bronze: 0, silver: 0, gold: 0, platinum: 0 };
+        if ((c.bronze || 0) < cost.bronze) return false;
+        if ((c.silver || 0) < cost.silver) return false;
+        if ((c.gold || 0) < cost.gold) return false;
+        if ((c.platinum || 0) < cost.platinum) return false;
+        const currency = {
+          bronze: (c.bronze || 0) - cost.bronze,
+          silver: (c.silver || 0) - cost.silver,
+          gold: (c.gold || 0) - cost.gold,
+          platinum: (c.platinum || 0) - cost.platinum,
+        };
         const granted = { ...listing, id: uid("item"), qty: 1 };
+        delete (granted as { priceCurrency?: unknown }).priceCurrency;
         const inventory = [...(ch.inventory || [])];
-        const existing = inventory.find((i) => i.name === granted.name && i.effect === granted.effect && !i.slot);
-        if (existing && !granted.slot) existing.qty += 1;
+        const existing = inventory.find(
+          (inv) => inv.name === granted.name && inv.effect === granted.effect && !inv.slot && !granted.slot,
+        );
+        if (existing) existing.qty += 1;
         else inventory.push(granted);
         if (s.characters[characterId]) get().patchCharacter(characterId, { currency, inventory });
         if (s.npcs[characterId]) get().updateNpc(characterId, { currency, inventory });
