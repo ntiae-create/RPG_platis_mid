@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { PassiveIndicators } from "./passive-indicators";
 import { listPassiveVisuals } from "@/lib/passives";
 import { finalStats } from "@/lib/stats";
-import { getCharacterKit } from "@/data/character-kits";
+import { getCharacterKit, characterBrasaoLevel } from "@/data/character-kits";
 
 export function CombatPanel() {
   const [movingParticipantId, setMovingParticipantId] = useState<string | null>(null);
@@ -407,7 +407,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
               Ataque mágico
             </Button>
             {attacker && "name" in attacker && getCharacterKit(attacker)?.skills
-              .filter((sk) => !sk.brasaoLevel || (attacker.level ?? 1) >= sk.brasaoLevel)
+              .filter((sk) => !sk.brasaoLevel || characterBrasaoLevel(attacker) >= sk.brasaoLevel)
               .map((sk) => (
                 <Button
                   key={sk.id}
