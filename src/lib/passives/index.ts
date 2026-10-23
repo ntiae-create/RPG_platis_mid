@@ -274,14 +274,97 @@ export function listPassiveVisuals(
         active: false,
         detail: "ATIVA em furtividade/costas · +25% dano",
       });
-    } else {
+    } else if (cls.id === "clerigo") {
+      const e = state.entries.find(
+        (x) => x.characterId === ch.id && x.id === "class:clerigo:bencao",
+      );
+      const stacks = e?.stacks ?? 0;
       visuals.push({
-        id: `class:${cls.id}`,
-        name: cls.passive.name,
+        id: "class:clerigo:bencao",
+        name: "Bênção Sagrada",
         origin: "class",
-        active: false,
-        detail: "Cadastrada — motor de classe em expansão",
+        active: stacks > 0 || Boolean(e?.active),
+        detail:
+          stacks > 0
+            ? `ATIVA · ${stacks}/3 stacks · +DEF/RES`
+            : "Suporte/cura concede stack (máx 3 → cura em área)",
+        stacks,
+        maxStacks: 3,
+        turnsRemaining: e?.turnsRemaining ?? undefined,
       });
+    } else if (cls.id === "guerreiro") {
+      const e = state.entries.find(
+        (x) => x.characterId === ch.id && x.id === "class:guerreiro:postura",
+      );
+      const stance = String(e?.meta?.stance ?? "ofensiva");
+      visuals.push({
+        id: "class:guerreiro:postura",
+        name: "Postura de Combate",
+        origin: "class",
+        active: true,
+        detail: `Postura: ${stance}`,
+      });
+    } else if (cls.id === "tank") {
+      visuals.push({
+        id: "class:tank:muralha",
+        name: "Muralha",
+        origin: "class",
+        active: true,
+        detail: "50% dano de aliado próximo · +3 DEF linha de frente",
+      });
+    } else if (cls.id === "monge") {
+      const e = state.entries.find(
+        (x) => x.characterId === ch.id && x.id === "class:monge:disc",
+      );
+      visuals.push({
+        id: "class:monge:disc",
+        name: "Disciplina Corporal",
+        origin: "class",
+        active: (e?.stacks ?? 0) > 0,
+        detail: e ? `Disciplina ${e.stacks}/3` : "A cada 3 ataques +1 stack",
+        stacks: e?.stacks ?? 0,
+        maxStacks: 3,
+      });
+    } else if (cls.id === "pugilista") {
+      const e = state.entries.find(
+        (x) => x.characterId === ch.id && x.id === "class:pugilista:seq",
+      );
+      visuals.push({
+        id: "class:pugilista:seq",
+        name: "Punhos de Ferro",
+        origin: "class",
+        active: (e?.stacks ?? 0) > 0,
+        detail: e ? `Sequência ${e.stacks}` : "Golpes consecutivos",
+        stacks: e?.stacks ?? 0,
+      });
+    } else {
+      // fallback: entry de classe no estado, senão descrição oficial
+      const e = state.entries.find(
+        (x) => x.characterId === ch.id && x.origin === "class" && (x.active || (x.stacks ?? 0) > 0),
+      );
+      if (e) {
+        visuals.push({
+          id: e.id,
+          name: e.name || cls.passive.name,
+          origin: "class",
+          active: Boolean(e.active),
+          detail: [
+            e.stacks ? `stacks ${e.stacks}${e.maxStacks != null ? "/" + e.maxStacks : ""}` : null,
+            e.turnsRemaining != null ? `${e.turnsRemaining} turnos` : null,
+          ].filter(Boolean).join(" · ") || cls.passive.description.slice(0, 96),
+          stacks: e.stacks || undefined,
+          maxStacks: e.maxStacks ?? undefined,
+          turnsRemaining: e.turnsRemaining ?? undefined,
+        });
+      } else {
+        visuals.push({
+          id: `class:${cls.id}`,
+          name: cls.passive.name,
+          origin: "class",
+          active: false,
+          detail: cls.passive.description.slice(0, 120),
+        });
+      }
     }
   }
 
