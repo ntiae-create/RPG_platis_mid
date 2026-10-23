@@ -3535,6 +3535,18 @@ export const usePlatis = create<AppState>()(
 
             const hpBefore = def.current.hp;
             const applied = applyDamage(def, damageToDef);
+            {
+              const dealt = Math.max(0, hpBefore - applied.ch.current.hp);
+              const maxHp = "raceId" in def ? finalStats(def).hp : ((def as { stats?: { hp: number } }).stats?.hp ?? hpBefore);
+              res.log.push({
+                id: uid("lg"),
+                at: Date.now(),
+                kind: dealt > 0 ? "hit" : "miss",
+                text: dealt > 0
+                  ? def.name + " sofreu " + dealt + " de dano · HP " + hpBefore + " → " + applied.ch.current.hp + "/" + maxHp
+                  : def.name + " nao perdeu HP (dano 0/bloqueado)",
+              });
+            }
             if (applied.survivedAt1 || applied.note) {
               res.log.push({
                 id: uid("lg"),

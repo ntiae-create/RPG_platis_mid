@@ -494,7 +494,7 @@ const nextTurn = usePlatis((s) => s.nextTurn);
           <ul className="space-y-2">
             {log.map((e) => (
               <li key={e.id} className="text-sm">
-                <span className="mr-2 text-[10px] tracking-wide text-faint uppercase">{e.kind}</span>
+                <span className="mr-2 text-[10px] font-semibold tracking-wide uppercase text-faint">{(e.kind === "hit" ? "DANO" : e.kind === "crit" ? "CRITICO" : e.kind === "heal" ? "CURA" : e.kind === "miss" ? "ERRO" : e.kind === "passive" ? "PASSIVA" : e.kind === "roll" ? "DADO" : e.kind === "system" ? "EFEITO" : e.kind)}</span>
                 {e.text}
               </li>
             ))}
