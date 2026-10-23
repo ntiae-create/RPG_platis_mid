@@ -1,3 +1,5 @@
+import { getCharacterKit, getKitSkill } from "@/data/character-kits";
+import { rollDie } from "@/lib/utils";
 import { parseSkillCommands, normalizeSkillPercent } from "./skill-command-runtime";
 import {
   blockAffinityReaction,
@@ -2277,6 +2279,22 @@ export const usePlatis = create<AppState>()(
           const ch = s.characters[id];
           if (!ch) continue;
           const raceNote = raceCombatStart(passiveState, ch);
+          {
+            const kit = getCharacterKit(ch);
+            if (kit?.onCombatStart) {
+              const allyIds = order.filter((id) => Boolean(s.characters[id]));
+              kit.onCombatStart({
+                self: ch,
+                allyIds,
+                passiveState,
+                applyStatus: (effectId, targetId, options) => {
+                  // deferred via get after set — use direct push for start
+                  get().applyCombatStatusEffect(effectId, targetId, { ...options, sourceId: ch.id });
+                },
+                log: (text) => startNotes.push(text),
+              });
+            }
+          }
           if (raceNote) startNotes.push(`${ch.name}: ${raceNote}`);
           const bufaoNote = classBufaoCombatStart(passiveState, ch);
           {
@@ -3231,6 +3249,72 @@ export const usePlatis = create<AppState>()(
             });
         if (res.passiveState) {
           set({ combatPassiveState: res.passiveState });
+        }
+
+
+        // Kit de personagem (ex.: Hilak) — só se o nome casar
+        if ("raceId" in atk) {
+          const kitSkillId = skillId && String(skillId).startsWith("kit:")
+            ? String(skillId).slice(4)
+            : (skill?.name ? skill.name : skillId);
+          const found = kitSkillId ? getKitSkill(atk, kitSkillId) : null;
+          if (found) {
+            const { kit, skill: kSkill } = found;
+            // custos do kit
+            const cur = { ...atk.current };
+            cur.hp -= kSkill.cost.hp;
+            cur.mp -= kSkill.cost.mp;
+            cur.est -= kSkill.cost.est;
+            if (cur.hp < 0 || cur.mp < 0 || cur.est < 0) {
+              set({ combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: "Recursos insuficientes para "+kSkill.name }, ...get().combatLog].slice(0,80) });
+              return;
+            }
+            get().patchCharacter(atk.id, { current: cur });
+            const allyIds = get().combatParticipants.filter((id) => Boolean(get().characters[id]));
+            const enemyIds = get().combatParticipants.filter((id) => Boolean(get().combatEnemies[id]));
+            const logs = [];
+            kit.resolveSkill(kSkill.id, {
+              attacker: get().characters[atk.id],
+              allyIds,
+              enemyIds,
+              defenderId: get().defenderId,
+              passiveState: get().combatPassiveState,
+              applyStatus: (effectId, targetId, options) => {
+                get().applyCombatStatusEffect(effectId, targetId, { ...options, sourceId: atk.id });
+              },
+              damageEnemy: (enemyId, amount) => {
+                const en = get().combatEnemies[enemyId];
+                if (!en) return;
+                const nh = Math.max(0, en.current.hp - amount);
+                set({
+                  combatEnemies: {
+                    ...get().combatEnemies,
+                    [enemyId]: { ...en, current: { ...en.current, hp: nh } },
+                  },
+                });
+              },
+              healAlly: (allyId, amount) => {
+                const al = get().characters[allyId];
+                if (!al) return;
+                const maxHp = finalStats(al).hp;
+                const heal = amount < 0 ? Math.floor(maxHp * 0.5) : amount;
+                get().patchCharacter(allyId, {
+                  current: { ...al.current, hp: Math.min(maxHp, al.current.hp + heal) },
+                });
+              },
+              log: (text) => logs.push(text),
+              rollDie: (sides) => rollDie(sides),
+            });
+            if (logs.length) {
+              set({
+                combatLog: [
+                  ...logs.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system", text })),
+                  ...get().combatLog,
+                ].slice(0, 80),
+                combatPassiveState: get().combatPassiveState,
+              });
+            }
+          }
         }
 
         // Skill used: stacks de classe (Feiticeiro / Mago)
