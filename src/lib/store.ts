@@ -97,7 +97,6 @@ import {
   computeTankShare,
   type PassiveCombatState,
 } from "./passives";
-import { rollDie } from "./utils";
 import { xpToNextLevel } from "@/data/progression";
 import { uid } from "./utils";
 
