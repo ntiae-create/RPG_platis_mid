@@ -35,6 +35,13 @@ import {
   emptyPassiveState,
   raceCombatStart,
   classBufaoCombatStart,
+  classCronomanteTryRewind,
+  classArtificeSetProject,
+  classGladiadorSetAdversary,
+  classCavaleiroArmInvestida,
+  classMarioneteShareToLinked,
+  classDomadorShareDamage,
+  classPaladinoShareDamage,
   classFeiticeiroOnSkill,
   classRoninOnTurnStart,
   classEspadachimOnTurn,
@@ -2216,6 +2223,14 @@ export const usePlatis = create<AppState>()(
           const raceNote = raceCombatStart(passiveState, ch);
           if (raceNote) startNotes.push(`${ch.name}: ${raceNote}`);
           const bufaoNote = classBufaoCombatStart(passiveState, ch);
+          {
+            const o = classOraculoCombatStart(passiveState, ch);
+            if (o) startNotes.push(ch.name+": "+o);
+            const c = classCavaleiroCelesteCombatStart(passiveState, ch);
+            if (c) startNotes.push(ch.name+": "+c);
+            const e = classEspadachimOnTurn(passiveState, ch);
+            if (e.note) startNotes.push(ch.name+": "+e.note);
+          }
           if (bufaoNote) startNotes.push(`${ch.name}: ${bufaoNote}`);
           if (ch.raceId === "orc") {
             for (const n of raceOrcCombatStart(passiveState, ch, partyChars)) {
@@ -2421,6 +2436,12 @@ export const usePlatis = create<AppState>()(
             if (actorCh) {
               classBufaoOnTurn(passives, actorCh);
               const dop = raceDoppelOnTurn(passives, actorCh);
+              {
+                const rn = classRoninOnTurnStart(passives, actorCh, false);
+                if (rn) { /* postura */ }
+                const es = classEspadachimOnTurn(passives, actorCh);
+                if (es.note) { /* stack turno */ }
+              }
               if (actorCh.raceId === "kitsune") {
                 const allies = currentState.combatParticipants
                   .map((pid) => currentState.characters[pid])
@@ -3371,6 +3392,36 @@ export const usePlatis = create<AppState>()(
             }
 
             get().patchCharacter(def.id, { current: applied.ch.current });
+            // Paladino / Domador / Marionete share
+            {
+              const st = get().combatPassiveState;
+              const dealt = Math.max(0, (typeof hpBefore==="number"?hpBefore:0) - applied.ch.current.hp);
+              for (const pid of get().combatParticipants) {
+                const pc = get().characters[pid];
+                if (!pc || pc.current.hp<=0) continue;
+                if (pc.classId==="paladino") {
+                  const sh = classPaladinoShareDamage(st, pid, def.id, dealt);
+                  if (sh.share>0) {
+                    const p2 = applyDamage(pc, sh.share);
+                    get().patchCharacter(pid,{current:p2.ch.current});
+                    res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+" assume "+sh.share+" (Juramento)"});
+                    if (sh.note) res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+": "+sh.note});
+                  }
+                }
+                if (pc.classId==="domador") {
+                  const sh = classDomadorShareDamage(st, pid, dealt);
+                  if (sh.share>0 && sh.creatureId) {
+                    const cr = get().characters[sh.creatureId]||get().combatEnemies[sh.creatureId];
+                    // log only if creature exists
+                    res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+" Laço: "+sh.share+" → vínculo"});
+                  }
+                }
+                if (pc.classId==="mestre-de-marionetes" && pid===atk.id) {
+                  const sh = classMarioneteShareToLinked(st, pid, dealt);
+                  if (sh.share>0) res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+" Fios: "+sh.share+" → alvo vinculado"});
+                }
+              }
+            }
 
             if (tankIdShare && tankShare > 0) {
               const tank = get().characters[tankIdShare];

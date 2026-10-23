@@ -44,6 +44,9 @@ import {
   classXamaOnHit,
   classEspadachimDamageMult,
   classRoninConsume,
+  classCavaleiroCelesteDamageTakenMult,
+  classAlquimistaOnHit,
+  classCavaleiroCelesteStatMods,
   classGuerreiroStanceMods,
   classBufaoExtremistBonusDamage,
   classBufaoAgiBonus,
@@ -418,6 +421,15 @@ export function resolveAttack(opts: {
       if (opp.mult !== 1) {
         damage = Math.round(damage * opp.mult);
         if (opp.note) notes.push(opp.note);
+      }
+      {
+        const celT = classCavaleiroCelesteDamageTakenMult(passiveState, opts.defender, opts.kind);
+        if (celT !== 1) { damage = Math.round(damage * celT); notes.push("Celeste: -30% corpo a corpo"); }
+      }
+      {
+        const alq = classAlquimistaOnHit(passiveState, opts.attacker, opts.defender.id);
+        if (alq && alq.note) notes.push(alq.note);
+        if (alq && alq.damageMult && alq.damageMult !== 1) damage = Math.round(damage * alq.damageMult);
       }
       const taken = defMods.damageTakenMult ?? 1;
       if (taken !== 1) {
