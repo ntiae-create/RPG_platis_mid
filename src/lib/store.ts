@@ -1906,7 +1906,19 @@ export const usePlatis = create<AppState>()(
                 id: uid("lg"),
                 at: Date.now(),
                 kind: "system" as const,
-                              // --- Kit Wendigo ---
+                              text: `O World Boss usa ${skillExecution.skill.name}.`,
+              };
+
+              set({
+                worldBossCombat: {
+                  ...get().worldBossCombat!,
+                  cooldowns: skillExecution.cooldowns,
+                  affinityReactionBlocks: reactionBlocks,
+                },
+                combatLog: [skillLog, ...get().combatLog].slice(0, 80),
+                tab: "combate",
+              });
+// --- Kit Wendigo ---
               if (combat.bossId === "wendigo" && skillExecution) {
                 const wb = get().worldBossCombat!;
                 const meta = wb.wendigoMeta || emptyWendigoMeta();
@@ -1973,18 +1985,6 @@ export const usePlatis = create<AppState>()(
                 }
               }
 
-text: `O World Boss usa ${skillExecution.skill.name}.`,
-              };
-
-              set({
-                worldBossCombat: {
-                  ...get().worldBossCombat!,
-                  cooldowns: skillExecution.cooldowns,
-                  affinityReactionBlocks: reactionBlocks,
-                },
-                combatLog: [skillLog, ...get().combatLog].slice(0, 80),
-                tab: "combate",
-              });
             }
 
             const triggeredExplosion =
