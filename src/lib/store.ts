@@ -1148,7 +1148,40 @@ export const usePlatis = create<AppState>()(
       patchCharacter: (id, patch) => {
         const ch = get().characters[id];
         if (!ch) return;
-        const next = { ...ch, ...patch };
+        let safePatch = patch;
+        if (
+          patch.current &&
+          typeof patch.current.hp === "number" &&
+          patch.current.hp > ch.current.hp
+        ) {
+          const st = get();
+          if (
+            st.combatMode === "world-boss" &&
+            st.worldBossCombat &&
+            st.worldBossCombat.bossId === "wendigo"
+          ) {
+            const maxHp = finalStats(ch).hp;
+            const ratio = maxHp > 0 ? ch.current.hp / maxHp : 1;
+            if (wendigoBlocksHeal(ratio)) {
+              safePatch = {
+                ...patch,
+                current: { ...patch.current, hp: ch.current.hp },
+              };
+              set({
+                combatLog: [
+                  {
+                    id: uid("lg"),
+                    at: Date.now(),
+                    kind: "system",
+                    text: ch.name + ": Vazio Interior bloqueia cura (HP < 25%).",
+                  },
+                  ...get().combatLog,
+                ].slice(0, 80),
+              });
+            }
+          }
+        }
+        const next = { ...ch, ...safePatch };
         const entities = get().entities.map((e) =>
           e.id === id
             ? {
@@ -1686,6 +1719,14 @@ export const usePlatis = create<AppState>()(
           }
         }
 
+        let turnNotes = [];
+        let wendigoMetaTurn = combat.wendigoMeta;
+        if (!executingMasterAction && combat.bossId === "wendigo") {
+          const adv = wendigoOnTurnAdvance(combat.wendigoMeta || emptyWendigoMeta());
+          wendigoMetaTurn = adv.meta;
+          turnNotes = adv.notes;
+        }
+
         set({
           characters: poisonCharacters,
           worldBossCombat: {
@@ -1696,7 +1737,21 @@ export const usePlatis = create<AppState>()(
             cooldowns: combat.cooldowns,
             effects: worldBossEffects,
             affinityReactionBlocks,
+            ...(wendigoMetaTurn ? { wendigoMeta: wendigoMetaTurn } : {}),
           },
+          ...(turnNotes.length
+            ? {
+                combatLog: [
+                  ...turnNotes.map((text) => ({
+                    id: uid("lg"),
+                    at: Date.now(),
+                    kind: "system",
+                    text,
+                  })),
+                  ...get().combatLog,
+                ].slice(0, 80),
+              }
+            : {}),
         });
 
         if (
@@ -2261,15 +2316,25 @@ export const usePlatis = create<AppState>()(
           ? rollDie(Math.max(1, stats.atk)) * critical
           : 0;
 
-        const nextHp = Math.max(0, combat.current.hp - damage);
+        let nextHp = Math.max(0, combat.current.hp - damage);
+        let wendigoMeta = combat.wendigoMeta;
+        let shieldNote = "";
+        if (hit && damage > 0 && combat.bossId === "wendigo") {
+          const meta = combat.wendigoMeta || emptyWendigoMeta();
+          const absorbed = wendigoAbsorbShield(meta, damage);
+          wendigoMeta = absorbed.meta;
+          nextHp = Math.max(0, combat.current.hp - absorbed.remaining);
+          const blocked = damage - absorbed.remaining;
+          if (blocked > 0) shieldNote = " (Carne Extra absorveu " + blocked + ")";
+        }
 
         const logEntry = {
           id: uid("lg"),
           at: Date.now(),
           kind: hit ? ("hit" as const) : ("miss" as const),
           text: hit
-            ? `${character.name} acerta o World Boss por ${damage} de dano.`
-            : `${character.name} erra o ataque contra o World Boss.`,
+            ? character.name + " acerta o World Boss por " + damage + " de dano" + shieldNote + "."
+            : character.name + " erra o ataque contra o World Boss.",
         };
 
         set({
@@ -2279,6 +2344,7 @@ export const usePlatis = create<AppState>()(
               ...combat.current,
               hp: nextHp,
             },
+            ...(wendigoMeta ? { wendigoMeta } : {}),
           },
           combatLog: [logEntry, ...s.combatLog].slice(0, 80),
           tab: "combate",
