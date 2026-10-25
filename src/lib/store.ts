@@ -6,6 +6,10 @@ import {
   wendigoEstCostMultiplier,
   wendigoBlocksHeal,
   type WendigoMeta,
+  emptyTsuchigumoMeta,
+  resolveTsuchigumoSkill,
+  tsuchiOnTurnAdvance,
+  type TsuchigumoMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -144,6 +148,7 @@ export type WorldBossCombatState = {
   affinityReactionBlocks: AffinityReactionBlock[];
   /** Kit Wendigo (só bossId === wendigo) */
   wendigoMeta?: WendigoMeta;
+  tsuchigumoMeta?: TsuchigumoMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1617,6 +1622,7 @@ export const usePlatis = create<AppState>()(
                 : bossTurnId,
             effects: initializeWorldBossEffects(bossId),
           wendigoMeta: bossId === "wendigo" ? emptyWendigoMeta() : undefined,
+          tsuchigumoMeta: bossId === "tsuchigumo" ? emptyTsuchigumoMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1721,6 +1727,16 @@ export const usePlatis = create<AppState>()(
 
         let turnNotes = [];
         let wendigoMetaTurn = combat.wendigoMeta;
+        if (!executingMasterAction && combat.bossId === "tsuchigumo") {
+          const adv = tsuchiOnTurnAdvance(
+            combat.tsuchigumoMeta || emptyTsuchigumoMeta(),
+            bossLevelSafeEst(combat),
+          );
+          // apply silk DoT + EST regen below after set — store notes
+          turnNotes = adv.notes;
+          // stash for set
+          (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
+        }
         if (!executingMasterAction && combat.bossId === "wendigo") {
           const adv = wendigoOnTurnAdvance(combat.wendigoMeta || emptyWendigoMeta());
           wendigoMetaTurn = adv.meta;
@@ -1974,6 +1990,84 @@ export const usePlatis = create<AppState>()(
                 tab: "combate",
               });
 // --- Kit Wendigo ---
+              if (combat.bossId === "tsuchigumo" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.tsuchigumoMeta || emptyTsuchigumoMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id,
+                  hp: c.current.hp,
+                  maxHp: finalStats(c).hp,
+                }));
+                const resolved = resolveTsuchigumoSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  let effects = wb.effects;
+                  for (const s of resolved.silkApplies) {
+                    effects = addWorldBossEffect(effects, {
+                      id: "silk_thread", name: "Fio de Seda", duration: 3, source: "boss",
+                      targetId: s.targetId, stacks: s.stacks,
+                    });
+                    get().applyCombatStatusEffect("silk_thread", s.targetId, {
+                      duration: 3, stacks: s.stacks, sourceId: "world-boss",
+                    });
+                  }
+                  for (const id of resolved.immobilizes) {
+                    get().applyCombatStatusEffect("immobilize", id, {
+                      duration: 1, sourceId: "world-boss",
+                    });
+                  }
+                  for (const p of resolved.poisons) {
+                    get().applyCombatStatusEffect("poison", p.targetId, {
+                      duration: p.duration, sourceId: "world-boss",
+                    });
+                  }
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp,
+                        mp: resolved.bossMp,
+                        est: resolved.bossEst,
+                      },
+                      effects,
+                      tsuchigumoMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({
+                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                      })),
+                      {
+                        id: uid("lg"), at: Date.now(), kind: "system",
+                        text: "O World Boss usa " + skillExecution.skill.name + ".",
+                      },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
               if (combat.bossId === "wendigo" && skillExecution) {
                 const wb = get().worldBossCombat!;
                 const meta = wb.wendigoMeta || emptyWendigoMeta();
