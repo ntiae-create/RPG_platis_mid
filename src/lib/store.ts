@@ -1,3 +1,12 @@
+import {
+  emptyWendigoMeta,
+  resolveWendigoSkill,
+  wendigoAbsorbShield,
+  wendigoOnTurnAdvance,
+  wendigoEstCostMultiplier,
+  wendigoBlocksHeal,
+  type WendigoMeta,
+} from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
 import { parseSkillCommands, normalizeSkillPercent } from "./skill-command-runtime";
@@ -133,6 +142,8 @@ export type WorldBossCombatState = {
   effects: WorldBossEffect[];
   cooldowns: WorldBossCooldown[];
   affinityReactionBlocks: AffinityReactionBlock[];
+  /** Kit Wendigo (só bossId === wendigo) */
+  wendigoMeta?: WendigoMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1572,6 +1583,7 @@ export const usePlatis = create<AppState>()(
                 ? playerIds[0] ?? null
                 : bossTurnId,
             effects: initializeWorldBossEffects(bossId),
+          wendigoMeta: bossId === "wendigo" ? emptyWendigoMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1894,7 +1906,74 @@ export const usePlatis = create<AppState>()(
                 id: uid("lg"),
                 at: Date.now(),
                 kind: "system" as const,
-                text: `O World Boss usa ${skillExecution.skill.name}.`,
+                              // --- Kit Wendigo ---
+              if (combat.bossId === "wendigo" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.wendigoMeta || emptyWendigoMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id,
+                  hp: c.current.hp,
+                  maxHp: finalStats(c).hp,
+                  coldStacks: (wb.effects.find((e) => e.id === "cold" && e.targetId === c.id)?.stacks) || 0,
+                  frozen: wb.effects.some((e) => e.id === "freeze" && e.targetId === c.id && e.stacks > 0),
+                }));
+                const resolved = resolveWendigoSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  let effects = wb.effects;
+                  for (const c of resolved.coldApplies) {
+                    effects = addWorldBossEffect(effects, {
+                      id: "cold", name: "Frio", duration: 2, source: "boss", targetId: c.targetId, stacks: c.stacks || 1,
+                    });
+                  }
+                  for (const fid of resolved.freezes) {
+                    effects = addWorldBossEffect(effects, {
+                      id: "freeze", name: "Congelamento", duration: 1, source: "boss", targetId: fid, stacks: 1,
+                    });
+                    get().applyCombatStatusEffect("freeze", fid, { duration: 1, sourceId: "world-boss" });
+                  }
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    const nh = Math.max(0, ch.current.hp - d.damage);
+                    get().patchCharacter(d.targetId, { current: { ...ch.current, hp: nh } });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp,
+                        mp: resolved.bossMp,
+                        est: resolved.bossEst,
+                      },
+                      effects,
+                      wendigoMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system", text })),
+                      { id: uid("lg"), at: Date.now(), kind: "system", text: "O World Boss usa " + skillExecution.skill.name + "." },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+text: `O World Boss usa ${skillExecution.skill.name}.`,
               };
 
               set({
