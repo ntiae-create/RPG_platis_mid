@@ -1168,37 +1168,40 @@ export const usePlatis = create<AppState>()(
           const st = get();
           if (
             st.combatMode === "world-boss" &&
-            st.worldBossCombat &&
-            st.worldBossCombat.bossId === "wendigo"
+            st.worldBossCombat
           ) {
-            const maxHp = finalStats(ch).hp;
-            const ratio = maxHp > 0 ? ch.current.hp / maxHp : 1;
-            if (wendigoBlocksHeal(ratio)) {
-              safePatch = {
-                ...patch,
-                current: { ...patch.current, hp: ch.current.hp },
-              };
+            if (st.worldBossCombat.bossId === "wendigo") {
+              const maxHp = finalStats(ch).hp;
+              const ratio = maxHp > 0 ? ch.current.hp / maxHp : 1;
+              if (wendigoBlocksHeal(ratio)) {
+                safePatch = {
+                  ...patch,
+                  current: { ...patch.current, hp: ch.current.hp },
+                };
+                set({
+                  combatLog: [
+                    {
+                      id: uid("lg"),
+                      at: Date.now(),
+                      kind: "system",
+                      text: ch.name + ": Vazio Interior bloqueia cura (HP < 25%).",
+                    },
+                    ...get().combatLog,
+                  ].slice(0, 80),
+                });
+              }
             } else if (st.worldBossCombat.bossId === "camazotz") {
-              const mult = camazotzPlayerHealMult(st.worldBossCombat.camazotzMeta || emptyCamazotzMeta());
-              if (mult < 1 && typeof patch.current.hp === "number") {
+              const mult = camazotzPlayerHealMult(
+                st.worldBossCombat.camazotzMeta || emptyCamazotzMeta()
+              );
+              if (mult < 1) {
                 const gained = patch.current.hp - ch.current.hp;
                 const reduced = Math.floor(gained * mult);
                 safePatch = {
                   ...patch,
                   current: { ...patch.current, hp: ch.current.hp + reduced },
                 };
-
-              set({
-                combatLog: [
-                  {
-                    id: uid("lg"),
-                    at: Date.now(),
-                    kind: "system",
-                    text: ch.name + ": Vazio Interior bloqueia cura (HP < 25%).",
-                  },
-                  ...get().combatLog,
-                ].slice(0, 80),
-              });
+              }
             }
           }
         }
