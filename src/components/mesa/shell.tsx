@@ -12,6 +12,7 @@ import {
 import type { MesaTab } from "@/lib/store";
 import { usePlatis } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { BackupControls } from "@/components/mesa/backup-controls";
 
 const TABS: { id: MesaTab; label: string; icon: typeof Map; master?: boolean }[] = [
   { id: "personagem", label: "Personagem", icon: UserRound },
@@ -39,11 +40,14 @@ export function MesaShell({
   return (
     <div className="min-h-dvh bg-bg text-ink">
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 py-3 backdrop-blur-sm">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-display text-xl leading-none">Platis</p>
           <p className="text-[11px] tracking-wide text-muted uppercase">
             {role === "mestre" ? "Mestre da mesa" : "Jogador"}
           </p>
+          <div className="mt-2">
+            <BackupControls variant="compact" />
+          </div>
         </div>
         <nav className="hidden items-center gap-1 lg:flex">
           {tabs.map((t) => (
