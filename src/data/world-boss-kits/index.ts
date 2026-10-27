@@ -7,3 +7,4 @@ export * from "./raiju";
 export * from "./jormungandr";
 export * from "./ratatoskr";
 export * from "./eikthyrnir";
+export * from "./hati-skoll";
