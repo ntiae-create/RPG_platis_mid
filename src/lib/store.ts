@@ -44,6 +44,12 @@ import {
   ratatoskrOnTurnAdvance,
   ratatoskrFellTree,
   type RatatoskrMeta,
+  emptyEikthyrnirMeta,
+  resolveEikthyrnirSkill,
+  eikthyrnirOnTurnAdvance,
+  eikthyrnirOnDamaged,
+  eikthyrnirApplyIncomingDamage,
+  type EikthyrnirMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -189,6 +195,7 @@ export type WorldBossCombatState = {
   raijuMeta?: RaijuMeta;
   jormungandrMeta?: JormungandrMeta;
   ratatoskrMeta?: RatatoskrMeta;
+  eikthyrnirMeta?: EikthyrnirMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1682,6 +1689,7 @@ export const usePlatis = create<AppState>()(
           raijuMeta: bossId === "raiju" ? emptyRaijuMeta() : undefined,
           jormungandrMeta: bossId === "jormungandr" ? emptyJormungandrMeta() : undefined,
           ratatoskrMeta: bossId === "ratatoskr" ? emptyRatatoskrMeta() : undefined,
+          eikthyrnirMeta: bossId === "eikthyrnir" ? emptyEikthyrnirMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1796,6 +1804,11 @@ export const usePlatis = create<AppState>()(
           // stash for set
           (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
         }
+        if (!executingMasterAction && combat.bossId === "eikthyrnir") {
+          const adv = eikthyrnirOnTurnAdvance(combat.eikthyrnirMeta || emptyEikthyrnirMeta());
+          turnNotes = (typeof turnNotes !== "undefined" ? turnNotes : []).concat(adv.notes);
+          (combat as any)._eikMeta = adv.meta;
+        }
         if (!executingMasterAction && combat.bossId === "ratatoskr") {
           const baseStats = {
             hp: 100, mp: 100, est: 100, atk: 20, atkMgc: 25, agi: 12, def: 12, res: 15, int: 20, san: 20,
@@ -1900,6 +1913,7 @@ export const usePlatis = create<AppState>()(
             effects: worldBossEffects,
             affinityReactionBlocks,
             ...(wendigoMetaTurn ? { wendigoMeta: wendigoMetaTurn } : {}),
+            ...((combat as any)._eikMeta ? { eikthyrnirMeta: (combat as any)._eikMeta } : {}),
             ...((combat as any)._rataMeta ? { ratatoskrMeta: (combat as any)._rataMeta, current: { ...combat.current, mp: (combat as any)._rataMp ?? combat.current.mp, hp: (combat as any)._rataHp ?? combat.current.hp } } : {}),
             ...((combat as any)._jormMeta ? { jormungandrMeta: (combat as any)._jormMeta, current: { ...combat.current, mp: (combat as any)._jormMp ?? combat.current.mp, est: (combat as any)._jormEst ?? combat.current.est } } : {}),
             ...((combat as any)._fenrirMeta
@@ -2215,6 +2229,61 @@ export const usePlatis = create<AppState>()(
                       },
                       effects,
                       tsuchigumoMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({
+                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                      })),
+                      {
+                        id: uid("lg"), at: Date.now(), kind: "system",
+                        text: "O World Boss usa " + skillExecution.skill.name + ".",
+                      },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+              if (combat.bossId === "eikthyrnir" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.eikthyrnirMeta || emptyEikthyrnirMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp,
+                }));
+                const resolved = resolveEikthyrnirSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp,
+                        mp: resolved.bossMp,
+                        est: resolved.bossEst,
+                      },
+                      eikthyrnirMeta: resolved.meta,
                       cooldowns: skillExecution.cooldowns,
                     },
                     combatLog: [
