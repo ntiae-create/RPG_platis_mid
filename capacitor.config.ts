@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'RPG Platis',
   webDir: 'dist',
   server: {
-    url: 'https://rpg-platis-mid.vercel.app',
+    url: 'https://rpg-platis-mid-nu.vercel.app',
     cleartext: false
   }
 };
