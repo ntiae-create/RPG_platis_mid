@@ -51,6 +51,12 @@ import {
   eikthyrnirApplyIncomingDamage,
   type EikthyrnirMeta,
   emptyHatiSkollMeta,
+  createDuoHatiSkollMeta,
+  twinApplyDamage,
+  twinDisplayCurrent,
+  twinActionOrder,
+  twinBothDefeated,
+  twinPickDamageTarget,
   resolveHatiSkill,
   resolveSkollSkill,
   hatiSkollOnTurnAdvance,
@@ -1703,7 +1709,12 @@ export const usePlatis = create<AppState>()(
           jormungandrMeta: bossId === "jormungandr" ? emptyJormungandrMeta() : undefined,
           ratatoskrMeta: bossId === "ratatoskr" ? emptyRatatoskrMeta() : undefined,
           eikthyrnirMeta: bossId === "eikthyrnir" ? emptyEikthyrnirMeta() : undefined,
-          hatiSkollMeta: bossId === "hati" || bossId === "skoll" ? emptyHatiSkollMeta() : undefined,
+          hatiSkollMeta:
+            bossId === "hati-skoll"
+              ? createDuoHatiSkollMeta(bossLevel.stats, bossLevel.stats)
+              : bossId === "hati" || bossId === "skoll"
+                ? emptyHatiSkollMeta()
+                : undefined,
           hraesvelgrMeta: bossId === "hraesvelgr" ? emptyHraesvelgrMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
@@ -2352,7 +2363,7 @@ export const usePlatis = create<AppState>()(
                 }
               }
 
-              if ((combat.bossId === "hati" || combat.bossId === "skoll") && skillExecution) {
+              if ((combat.bossId === "hati" || combat.bossId === "skoll" || combat.bossId === "hati-skoll") && skillExecution) {
                 const wb = get().worldBossCombat!;
                 const meta = wb.hatiSkollMeta || emptyHatiSkollMeta();
                 const alive = combat.turnOrder
@@ -2362,8 +2373,14 @@ export const usePlatis = create<AppState>()(
                 const targets = alive.map((c) => ({
                   id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp,
                 }));
+                /* twin-duo-resolve */
+                let actorId = combat.bossId === "skoll" ? "skoll" : combat.bossId === "hati" ? "hati" : (wb.hatiSkollMeta?.activeActor || "hati");
+                if (combat.bossId === "hati-skoll") {
+                  const order = twinActionOrder(wb.hatiSkollMeta || emptyHatiSkollMeta());
+                  actorId = order[0] || "hati";
+                }
                 const resolved =
-                  combat.bossId === "hati"
+                  actorId === "hati"
                     ? resolveHatiSkill(skillExecution.skill.name, {
                         level: combat.level,
                         baseStats: bossLevel.stats,
