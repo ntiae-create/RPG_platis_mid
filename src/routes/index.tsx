@@ -6,6 +6,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RACES } from "@/data/races";
 import { CLASSES } from "@/data/classes";
 import { CONTINENTS, TOTAL_DUNGEON_COUNT, BOSSES } from "@/data/world";
+import { BackupControls } from "@/components/mesa/backup-controls";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -67,6 +68,9 @@ function Landing() {
             <Button size="lg" variant="secondary" onClick={() => enter("mestre")}>
               Entrar como mestre
             </Button>
+          </div>
+          <div className="pt-2">
+            <BackupControls variant="panel" />
           </div>
           {selfId && (
             <button
