@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { WORLD_BOSS_DETAILS } from "@/data/world";
 import { usePlatis } from "@/lib/store";
@@ -24,39 +24,36 @@ export function WorldBossCombatPanel() {
     worldBossCombat.bossId === "hati-skoll" ||
     Boolean(worldBossCombat.hatiSkollMeta?.duoMode);
 
-  const boss = WORLD_BOSS_DETAILS.find((item) => item.id === worldBossCombat.bossId)
-    || WORLD_BOSS_DETAILS.find((item) => item.id === "hati")
-    || WORLD_BOSS_DETAILS.find((item) => item.id === "skoll");
+  const boss =
+    WORLD_BOSS_DETAILS.find((item) => item.id === worldBossCombat.bossId) ||
+    WORLD_BOSS_DETAILS.find((item) => item.id === "hati") ||
+    WORLD_BOSS_DETAILS.find((item) => item.id === "skoll");
 
-  const bossTurn = worldBossCombat.turnOrder[worldBossCombat.turnIndex] === "world-boss";
+  const bossTurn =
+    worldBossCombat.turnOrder[worldBossCombat.turnIndex] === "world-boss";
 
-  const availableSkills = (boss?.skills ?? []).filter(
+  let skillsForMaster = (boss?.skills ?? []).filter(
     (skill) =>
       (!skill.unlockLevel || skill.unlockLevel <= worldBossCombat.level) &&
-      (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)?.remaining ?? 0) <= 0,
+      (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)
+        ?.remaining ?? 0) <= 0,
   );
 
-  // Duo: mesclar skills de Hati + Skoll se detail for só um deles
-  const duoSkills = useMemo(() => {
-    if (!isDuo) return availableSkills;
+  if (isDuo) {
     const hati = WORLD_BOSS_DETAILS.find((b) => b.id === "hati");
     const skoll = WORLD_BOSS_DETAILS.find((b) => b.id === "skoll");
-    const merged = [
-      ...(hati?.skills ?? []),
-      ...(skoll?.skills ?? []),
-    ];
+    const merged = [...(hati?.skills ?? []), ...(skoll?.skills ?? [])];
     const seen = new Set<string>();
-    return merged.filter((skill) => {
+    skillsForMaster = merged.filter((skill) => {
       if (seen.has(skill.name)) return false;
       seen.add(skill.name);
       return (
         (!skill.unlockLevel || skill.unlockLevel <= worldBossCombat.level) &&
-        (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)?.remaining ?? 0) <= 0
+        (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)
+          ?.remaining ?? 0) <= 0
       );
     });
-  }, [isDuo, availableSkills, worldBossCombat.level, worldBossCombat.cooldowns]);
-
-  const skillsForMaster = isDuo ? duoSkills : availableSkills;
+  }
 
   const alivePlayers = worldBossCombat.turnOrder
     .filter((id) => id !== "world-boss")
@@ -70,16 +67,20 @@ export function WorldBossCombatPanel() {
       <div className="panel p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Combate</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
+              Combate
+            </p>
             <h2 className="font-display text-2xl">
               {isDuo ? "Skoll & Hati" : boss?.creatureType || "World Boss"}
             </h2>
           </div>
           <div className="text-sm text-muted">
             Rodada {worldBossCombat.round} · Turno{" "}
-            {worldBossCombat.turnOrder[worldBossCombat.turnIndex] === "world-boss"
+            {worldBossCombat.turnOrder[worldBossCombat.turnIndex] ===
+            "world-boss"
               ? "Boss"
-              : characters[worldBossCombat.turnOrder[worldBossCombat.turnIndex]]?.name || "—"}
+              : characters[worldBossCombat.turnOrder[worldBossCombat.turnIndex]]
+                  ?.name || "—"}
           </div>
         </div>
       </div>
@@ -92,7 +93,8 @@ export function WorldBossCombatPanel() {
               if (!player) return null;
               const stats = finalStats(player);
               const isTurn =
-                worldBossCombat.turnOrder[worldBossCombat.turnIndex] === player.id;
+                worldBossCombat.turnOrder[worldBossCombat.turnIndex] ===
+                player.id;
               return (
                 <div
                   key={player.id}
@@ -112,7 +114,10 @@ export function WorldBossCombatPanel() {
                       className="w-full"
                       onClick={() => worldBossAttack(player.id)}
                     >
-                      ⚔ Atacar{isDuo ? ` (${targetBrother === "hati" ? "Hati" : "Skoll"})` : ""}
+                      ⚔ Atacar
+                      {isDuo
+                        ? ` (${targetBrother === "hati" ? "Hati" : "Skoll"})`
+                        : ""}
                     </Button>
                   )}
                 </div>
@@ -121,7 +126,12 @@ export function WorldBossCombatPanel() {
           </div>
 
           {!bossTurn && role !== "mestre" && (
-            <Button type="button" variant="outline" className="w-full" onClick={() => nextWorldBossTurn()}>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => nextWorldBossTurn()}
+            >
               Passar turno
             </Button>
           )}
@@ -150,8 +160,8 @@ export function WorldBossCombatPanel() {
 
               {isDuo && (
                 <p className="text-xs text-muted">
-                  No duo, Hati e Skoll podem agir no mesmo ciclo. Skills de Trevas = Hati; Luz =
-                  Skoll; Eclipse Final funciona para os dois.
+                  Skills de Trevas = Hati; Luz = Skoll; Eclipse Final sinergiza
+                  com o irmão vivo.
                 </p>
               )}
 
@@ -194,7 +204,9 @@ export function WorldBossCombatPanel() {
                 type="button"
                 className="w-full"
                 disabled={!targetId}
-                onClick={() => worldBossMasterAction(selectedSkill || null, targetId)}
+                onClick={() =>
+                  worldBossMasterAction(selectedSkill || null, targetId)
+                }
               >
                 Executar ação do Boss
               </Button>
