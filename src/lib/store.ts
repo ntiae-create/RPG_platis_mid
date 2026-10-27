@@ -22,6 +22,12 @@ import {
   ammitIncomingDamageMult,
   addWeight as ammitAddWeight,
   type AmmitMeta,
+  emptyFenrirMeta,
+  resolveFenrirSkill,
+  fenrirOnTurnAdvance,
+  fenrirWeakenGleipnir,
+  fenrirAddFury,
+  type FenrirMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -163,6 +169,7 @@ export type WorldBossCombatState = {
   tsuchigumoMeta?: TsuchigumoMeta;
   camazotzMeta?: CamazotzMeta;
   ammitMeta?: AmmitMeta;
+  fenrirMeta?: FenrirMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1652,6 +1659,7 @@ export const usePlatis = create<AppState>()(
           tsuchigumoMeta: bossId === "tsuchigumo" ? emptyTsuchigumoMeta() : undefined,
           camazotzMeta: bossId === "camazotz" ? emptyCamazotzMeta() : undefined,
           ammitMeta: bossId === "ammit" ? emptyAmmitMeta() : undefined,
+          fenrirMeta: bossId === "fenrir" ? emptyFenrirMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1765,6 +1773,11 @@ export const usePlatis = create<AppState>()(
           turnNotes = adv.notes;
           // stash for set
           (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
+        }
+        if (!executingMasterAction && combat.bossId === "fenrir") {
+          const adv = fenrirOnTurnAdvance(combat.fenrirMeta || emptyFenrirMeta(), true);
+          turnNotes = (typeof turnNotes !== "undefined" ? turnNotes : []).concat(adv.notes);
+          (combat as any)._fenrirMeta = adv.meta;
         }
         if (!executingMasterAction && combat.bossId === "ammit") {
           const adv = ammitOnTurnAdvance(combat.ammitMeta || emptyAmmitMeta());
@@ -2101,6 +2114,54 @@ export const usePlatis = create<AppState>()(
                         id: uid("lg"), at: Date.now(), kind: "system",
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+              if (combat.bossId === "fenrir" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.fenrirMeta || emptyFenrirMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp, adjacent: true,
+                }));
+                const resolved = resolveFenrirSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp, mp: resolved.bossMp, est: resolved.bossEst,
+                      },
+                      fenrirMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system" as const, text })),
+                      { id: uid("lg"), at: Date.now(), kind: "system" as const, text: "O World Boss usa " + skillExecution.skill.name + "." },
                       ...get().combatLog,
                     ].slice(0, 80),
                   });
