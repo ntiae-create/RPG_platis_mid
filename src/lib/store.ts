@@ -34,6 +34,11 @@ import {
   raijuMeleeReflect,
   raijuBlocksHeal,
   type RaijuMeta,
+  emptyJormungandrMeta,
+  resolveJormungandrSkill,
+  jormungandrOnTurnAdvance,
+  jormungandrPhysicalDamageTakenMult,
+  type JormungandrMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -177,6 +182,7 @@ export type WorldBossCombatState = {
   ammitMeta?: AmmitMeta;
   fenrirMeta?: FenrirMeta;
   raijuMeta?: RaijuMeta;
+  jormungandrMeta?: JormungandrMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1668,6 +1674,7 @@ export const usePlatis = create<AppState>()(
           ammitMeta: bossId === "ammit" ? emptyAmmitMeta() : undefined,
           fenrirMeta: bossId === "fenrir" ? emptyFenrirMeta() : undefined,
           raijuMeta: bossId === "raiju" ? emptyRaijuMeta() : undefined,
+          jormungandrMeta: bossId === "jormungandr" ? emptyJormungandrMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1782,6 +1789,35 @@ export const usePlatis = create<AppState>()(
           // stash for set
           (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
         }
+        if (!executingMasterAction && combat.bossId === "jormungandr") {
+          const adj = combat.turnOrder.filter(
+            (id) => id !== "world-boss" && (get().characters[id]?.current.hp ?? 0) > 0,
+          );
+          const adv = jormungandrOnTurnAdvance(
+            combat.jormungandrMeta || emptyJormungandrMeta(),
+            (get().worldBossCombat ? { hp: get().worldBossCombat!.current.hp || 1, mp: 100, est: 100, atk: 20, atkMgc: 20, agi: 10, def: 10, res: 10, int: 10, san: 10 } : { hp: 1, mp: 100, est: 100, atk: 20, atkMgc: 20, agi: 10, def: 10, res: 10, int: 10, san: 10 }),
+            combat.current.hp,
+            combat.current.mp,
+            combat.current.est,
+            adj,
+          );
+          turnNotes = (typeof turnNotes !== "undefined" ? turnNotes : []).concat(adv.notes);
+          for (const d of [...adv.dragDamages, ...adv.whirlpoolDamages]) {
+            const ch = poisonCharacters[d.targetId] ?? get().characters[d.targetId];
+            if (ch && ch.current.hp > 0) {
+              poisonCharacters = {
+                ...poisonCharacters,
+                [d.targetId]: {
+                  ...ch,
+                  current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                },
+              };
+            }
+          }
+          (combat as any)._jormMeta = adv.meta;
+          (combat as any)._jormMp = adv.bossMp;
+          (combat as any)._jormEst = adv.bossEst;
+        }
         if (!executingMasterAction && combat.bossId === "raiju") {
           const aliveIds = combat.turnOrder.filter(
             (id) => id !== "world-boss" && (get().characters[id]?.current.hp ?? 0) > 0,
@@ -1842,6 +1878,7 @@ export const usePlatis = create<AppState>()(
             effects: worldBossEffects,
             affinityReactionBlocks,
             ...(wendigoMetaTurn ? { wendigoMeta: wendigoMetaTurn } : {}),
+            ...((combat as any)._jormMeta ? { jormungandrMeta: (combat as any)._jormMeta, current: { ...combat.current, mp: (combat as any)._jormMp ?? combat.current.mp, est: (combat as any)._jormEst ?? combat.current.est } } : {}),
             ...((combat as any)._fenrirMeta
               ? { fenrirMeta: (combat as any)._fenrirMeta }
               : {}),
@@ -2155,6 +2192,61 @@ export const usePlatis = create<AppState>()(
                       },
                       effects,
                       tsuchigumoMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({
+                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                      })),
+                      {
+                        id: uid("lg"), at: Date.now(), kind: "system",
+                        text: "O World Boss usa " + skillExecution.skill.name + ".",
+                      },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+              if (combat.bossId === "jormungandr" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.jormungandrMeta || emptyJormungandrMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp,
+                }));
+                const resolved = resolveJormungandrSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp,
+                        mp: resolved.bossMp,
+                        est: resolved.bossEst,
+                      },
+                      jormungandrMeta: resolved.meta,
                       cooldowns: skillExecution.cooldowns,
                     },
                     combatLog: [
