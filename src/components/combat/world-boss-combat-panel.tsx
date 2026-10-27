@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { WORLD_BOSS_DETAILS } from "@/data/world";
 import { usePlatis } from "@/lib/store";
-import { finalStats } from "@/lib/utils";
+import { finalStats } from "@/lib/stats";
 import { HatiSkollDuoHud } from "./hati-skoll-duo-hud";
 import { WorldBossCard } from "./world-boss-card";
 
