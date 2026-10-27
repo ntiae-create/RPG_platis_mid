@@ -56,6 +56,11 @@ import {
   hatiSkollOnTurnAdvance,
   twinOnBrotherFallen,
   type HatiSkollMeta,
+  emptyHraesvelgrMeta,
+  resolveHraesvelgrSkill,
+  hraesvelgrOnTurnAdvance,
+  hraesvelgrBlocksMelee,
+  type HraesvelgrMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -203,6 +208,7 @@ export type WorldBossCombatState = {
   ratatoskrMeta?: RatatoskrMeta;
   eikthyrnirMeta?: EikthyrnirMeta;
   hatiSkollMeta?: HatiSkollMeta;
+  hraesvelgrMeta?: HraesvelgrMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1698,6 +1704,7 @@ export const usePlatis = create<AppState>()(
           ratatoskrMeta: bossId === "ratatoskr" ? emptyRatatoskrMeta() : undefined,
           eikthyrnirMeta: bossId === "eikthyrnir" ? emptyEikthyrnirMeta() : undefined,
           hatiSkollMeta: bossId === "hati" || bossId === "skoll" ? emptyHatiSkollMeta() : undefined,
+          hraesvelgrMeta: bossId === "hraesvelgr" ? emptyHraesvelgrMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1811,6 +1818,36 @@ export const usePlatis = create<AppState>()(
           turnNotes = adv.notes;
           // stash for set
           (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
+        }
+        if (!executingMasterAction && combat.bossId === "hraesvelgr") {
+          const alive = combat.turnOrder
+            .filter((id) => id !== "world-boss")
+            .map((id) => get().characters[id])
+            .filter((c) => c && c.current.hp > 0)
+            .map((c) => ({ id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp }));
+          const baseStats = {
+            hp: 100, mp: 100, est: 100, atk: 22, atkMgc: 24, agi: 18, def: 12, res: 12, int: 14, san: 14,
+          };
+          const adv = hraesvelgrOnTurnAdvance(
+            combat.hraesvelgrMeta || emptyHraesvelgrMeta(),
+            baseStats,
+            alive,
+            rollDie,
+          );
+          turnNotes = (typeof turnNotes !== "undefined" ? turnNotes : []).concat(adv.notes);
+          for (const d of adv.skyfallDamages) {
+            const ch = poisonCharacters[d.targetId] ?? get().characters[d.targetId];
+            if (ch && ch.current.hp > 0) {
+              poisonCharacters = {
+                ...poisonCharacters,
+                [d.targetId]: {
+                  ...ch,
+                  current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                },
+              };
+            }
+          }
+          (combat as any)._hraeMeta = adv.meta;
         }
         if (!executingMasterAction && (combat.bossId === "hati" || combat.bossId === "skoll")) {
           const adv = hatiSkollOnTurnAdvance(combat.hatiSkollMeta || emptyHatiSkollMeta());
@@ -1926,6 +1963,7 @@ export const usePlatis = create<AppState>()(
             effects: worldBossEffects,
             affinityReactionBlocks,
             ...(wendigoMetaTurn ? { wendigoMeta: wendigoMetaTurn } : {}),
+            ...((combat as any)._hraeMeta ? { hraesvelgrMeta: (combat as any)._hraeMeta } : {}),
             ...((combat as any)._twinMeta ? { hatiSkollMeta: (combat as any)._twinMeta } : {}),
             ...((combat as any)._eikMeta ? { eikthyrnirMeta: (combat as any)._eikMeta } : {}),
             ...((combat as any)._rataMeta ? { ratatoskrMeta: (combat as any)._rataMeta, current: { ...combat.current, mp: (combat as any)._rataMp ?? combat.current.mp, hp: (combat as any)._rataHp ?? combat.current.hp } } : {}),
@@ -2243,6 +2281,61 @@ export const usePlatis = create<AppState>()(
                       },
                       effects,
                       tsuchigumoMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({
+                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                      })),
+                      {
+                        id: uid("lg"), at: Date.now(), kind: "system",
+                        text: "O World Boss usa " + skillExecution.skill.name + ".",
+                      },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+              if (combat.bossId === "hraesvelgr" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.hraesvelgrMeta || emptyHraesvelgrMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp,
+                }));
+                const resolved = resolveHraesvelgrSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp,
+                        mp: resolved.bossMp,
+                        est: resolved.bossEst,
+                      },
+                      hraesvelgrMeta: resolved.meta,
                       cooldowns: skillExecution.cooldowns,
                     },
                     combatLog: [
