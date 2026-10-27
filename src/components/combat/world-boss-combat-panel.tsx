@@ -1,135 +1,205 @@
-import { useState } from "react";
-import { CharacterCard } from "@/components/character/character-card";
-import { WORLD_BOSS_DETAILS } from "@/data/world";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { WORLD_BOSS_DETAILS } from "@/data/world";
 import { usePlatis } from "@/lib/store";
+import { finalStats } from "@/lib/utils";
+import { HatiSkollDuoHud } from "./hati-skoll-duo-hud";
 import { WorldBossCard } from "./world-boss-card";
 
 export function WorldBossCombatPanel() {
   const worldBossCombat = usePlatis((s) => s.worldBossCombat);
   const characters = usePlatis((s) => s.characters);
-  const slots = usePlatis((s) => s.slots);
-  const worldBossAttack = usePlatis((s) => s.worldBossAttack);
   const role = usePlatis((s) => s.role);
+  const worldBossAttack = usePlatis((s) => s.worldBossAttack);
+  const nextWorldBossTurn = usePlatis((s) => s.nextWorldBossTurn);
   const worldBossMasterAction = usePlatis((s) => s.worldBossMasterAction);
+
   const [selectedSkill, setSelectedSkill] = useState("");
   const [selectedTarget, setSelectedTarget] = useState("");
+  const [targetBrother, setTargetBrother] = useState<"hati" | "skoll">("hati");
 
   if (!worldBossCombat) return null;
 
-  const players = slots
-    .map((id) => (id ? characters[id] : null))
-    .filter(Boolean);
-  const alivePlayers = players.filter((player) => player && player.current.hp > 0);
-  const boss = WORLD_BOSS_DETAILS.find((item) => item.id === worldBossCombat.bossId);
+  const isDuo =
+    worldBossCombat.bossId === "hati-skoll" ||
+    Boolean(worldBossCombat.hatiSkollMeta?.duoMode);
+
+  const boss = WORLD_BOSS_DETAILS.find((item) => item.id === worldBossCombat.bossId)
+    || WORLD_BOSS_DETAILS.find((item) => item.id === "hati")
+    || WORLD_BOSS_DETAILS.find((item) => item.id === "skoll");
+
   const bossTurn = worldBossCombat.turnOrder[worldBossCombat.turnIndex] === "world-boss";
-  const availableSkills = (boss?.skills ?? []).filter((skill) =>
-    !skill.ultimate &&
-    (!skill.unlockLevel || skill.unlockLevel <= worldBossCombat.level) &&
-    (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)?.remaining ?? 0) <= 0
+
+  const availableSkills = (boss?.skills ?? []).filter(
+    (skill) =>
+      (!skill.unlockLevel || skill.unlockLevel <= worldBossCombat.level) &&
+      (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)?.remaining ?? 0) <= 0,
   );
-  const targetId = alivePlayers.some((player) => player?.id === selectedTarget)
-    ? selectedTarget
-    : alivePlayers[0]?.id ?? "";
+
+  // Duo: mesclar skills de Hati + Skoll se detail for só um deles
+  const duoSkills = useMemo(() => {
+    if (!isDuo) return availableSkills;
+    const hati = WORLD_BOSS_DETAILS.find((b) => b.id === "hati");
+    const skoll = WORLD_BOSS_DETAILS.find((b) => b.id === "skoll");
+    const merged = [
+      ...(hati?.skills ?? []),
+      ...(skoll?.skills ?? []),
+    ];
+    const seen = new Set<string>();
+    return merged.filter((skill) => {
+      if (seen.has(skill.name)) return false;
+      seen.add(skill.name);
+      return (
+        (!skill.unlockLevel || skill.unlockLevel <= worldBossCombat.level) &&
+        (worldBossCombat.cooldowns.find((cd) => cd.skillName === skill.name)?.remaining ?? 0) <= 0
+      );
+    });
+  }, [isDuo, availableSkills, worldBossCombat.level, worldBossCombat.cooldowns]);
+
+  const skillsForMaster = isDuo ? duoSkills : availableSkills;
+
+  const alivePlayers = worldBossCombat.turnOrder
+    .filter((id) => id !== "world-boss")
+    .map((id) => characters[id])
+    .filter((c) => c && c.current.hp > 0);
+
+  const targetId = selectedTarget || alivePlayers[0]?.id || "";
 
   return (
     <div className="space-y-4">
-      <div className="panel p-4">
-        <div className="mb-4">
-          <h2 className="font-display text-2xl">Combate · World Boss</h2>
-          <p className="text-xs text-muted">
-            Combate especial entre os jogadores e o Guardião do Brasão.
-          </p>
+      <div className="panel p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Combate</p>
+            <h2 className="font-display text-2xl">
+              {isDuo ? "Skoll & Hati" : boss?.creatureType || "World Boss"}
+            </h2>
+          </div>
+          <div className="text-sm text-muted">
+            Rodada {worldBossCombat.round} · Turno{" "}
+            {worldBossCombat.turnOrder[worldBossCombat.turnIndex] === "world-boss"
+              ? "Boss"
+              : characters[worldBossCombat.turnOrder[worldBossCombat.turnIndex]]?.name || "—"}
+          </div>
         </div>
+      </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
-          <div className="space-y-3">
-            <h3 className="font-display text-lg">Jogadores</h3>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {players.map((player) => {
-                if (!player) return null;
-
-                const isCurrentTurn =
-                  worldBossCombat.turnOrder[worldBossCombat.turnIndex] ===
-                  player.id;
-
-                return (
-                  <div key={player.id} className="space-y-2">
-                    <CharacterCard
-                      character={player}
-                      compact
-                    />
-
-                    {isCurrentTurn && (
-                      <Button
-                        type="button"
-                        className="w-full"
-                        onClick={() => worldBossAttack(player.id)}
-                      >
-                        ⚔ Atacar
-                      </Button>
-                    )}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <h3 className="font-display text-lg">Jogadores</h3>
+          <div className="space-y-2">
+            {alivePlayers.map((player) => {
+              if (!player) return null;
+              const stats = finalStats(player);
+              const isTurn =
+                worldBossCombat.turnOrder[worldBossCombat.turnIndex] === player.id;
+              return (
+                <div
+                  key={player.id}
+                  className={`panel space-y-2 p-3 ${
+                    isTurn ? "ring-1 ring-amber-400/50" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-display text-lg">{player.name}</span>
+                    <span className="text-xs text-muted">
+                      HP {player.current.hp}/{stats.hp}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  {isTurn && role !== "mestre" && (
+                    <Button
+                      type="button"
+                      className="w-full"
+                      onClick={() => worldBossAttack(player.id)}
+                    >
+                      ⚔ Atacar{isDuo ? ` (${targetBrother === "hati" ? "Hati" : "Skoll"})` : ""}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          <div className="space-y-3">
-            <h3 className="font-display text-lg">World Boss</h3>
+          {!bossTurn && role !== "mestre" && (
+            <Button type="button" variant="outline" className="w-full" onClick={() => nextWorldBossTurn()}>
+              Passar turno
+            </Button>
+          )}
+        </div>
 
+        <div className="space-y-3">
+          <h3 className="font-display text-lg">World Boss</h3>
+
+          {isDuo && worldBossCombat.hatiSkollMeta ? (
+            <HatiSkollDuoHud
+              meta={worldBossCombat.hatiSkollMeta}
+              level={worldBossCombat.level}
+              targetBrother={targetBrother}
+              onSelectBrother={setTargetBrother}
+            />
+          ) : (
             <WorldBossCard
               bossId={worldBossCombat.bossId}
               level={worldBossCombat.level}
             />
+          )}
 
-            {role === "mestre" && bossTurn && (
-              <div className="panel space-y-3 p-3">
-                <h4 className="font-display text-lg">Ação do Mestre</h4>
+          {role === "mestre" && bossTurn && (
+            <div className="panel space-y-3 p-3">
+              <h4 className="font-display text-lg">Ação do Mestre</h4>
 
-                <label className="block space-y-1 text-sm">
-                  <span>Habilidade</span>
-                  <select
-                    className="w-full rounded-md border border-border bg-bg p-2"
-                    value={selectedSkill}
-                    onChange={(event) => setSelectedSkill(event.target.value)}
-                  >
-                    <option value="">Ataque básico</option>
-                    {availableSkills.map((skill) => (
-                      <option key={skill.name} value={skill.name}>
-                        {skill.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              {isDuo && (
+                <p className="text-xs text-muted">
+                  No duo, Hati e Skoll podem agir no mesmo ciclo. Skills de Trevas = Hati; Luz =
+                  Skoll; Eclipse Final funciona para os dois.
+                </p>
+              )}
 
-                <label className="block space-y-1 text-sm">
-                  <span>Alvo</span>
-                  <select
-                    className="w-full rounded-md border border-border bg-bg p-2"
-                    value={targetId}
-                    onChange={(event) => setSelectedTarget(event.target.value)}
-                  >
-                    {alivePlayers.map((player) => player && (
-                      <option key={player.id} value={player.id}>
-                        {player.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <Button
-                  type="button"
-                  className="w-full"
-                  disabled={!targetId}
-                  onClick={() => worldBossMasterAction(selectedSkill || null, targetId)}
+              <label className="block space-y-1 text-sm">
+                <span>Habilidade</span>
+                <select
+                  className="w-full rounded-md border border-border bg-bg p-2"
+                  value={selectedSkill}
+                  onChange={(event) => setSelectedSkill(event.target.value)}
                 >
-                  Executar ação do Boss
-                </Button>
-              </div>
-            )}
-          </div>
+                  <option value="">Ataque básico</option>
+                  {skillsForMaster.map((skill) => (
+                    <option key={skill.name} value={skill.name}>
+                      {skill.name}
+                      {skill.unlockLevel ? ` (Lv.${skill.unlockLevel})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-1 text-sm">
+                <span>Alvo</span>
+                <select
+                  className="w-full rounded-md border border-border bg-bg p-2"
+                  value={targetId}
+                  onChange={(event) => setSelectedTarget(event.target.value)}
+                >
+                  {alivePlayers.map(
+                    (player) =>
+                      player && (
+                        <option key={player.id} value={player.id}>
+                          {player.name}
+                        </option>
+                      ),
+                  )}
+                </select>
+              </label>
+
+              <Button
+                type="button"
+                className="w-full"
+                disabled={!targetId}
+                onClick={() => worldBossMasterAction(selectedSkill || null, targetId)}
+              >
+                Executar ação do Boss
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
