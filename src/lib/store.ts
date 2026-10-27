@@ -10,6 +10,11 @@ import {
   resolveTsuchigumoSkill,
   tsuchiOnTurnAdvance,
   type TsuchigumoMeta,
+  emptyCamazotzMeta,
+  resolveCamazotzSkill,
+  camazotzOnTurnAdvance,
+  camazotzPlayerHealMult,
+  type CamazotzMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -149,6 +154,7 @@ export type WorldBossCombatState = {
   /** Kit Wendigo (só bossId === wendigo) */
   wendigoMeta?: WendigoMeta;
   tsuchigumoMeta?: TsuchigumoMeta;
+  camazotzMeta?: CamazotzMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1172,6 +1178,16 @@ export const usePlatis = create<AppState>()(
                 ...patch,
                 current: { ...patch.current, hp: ch.current.hp },
               };
+            } else if (st.worldBossCombat.bossId === "camazotz") {
+              const mult = camazotzPlayerHealMult(st.worldBossCombat.camazotzMeta || emptyCamazotzMeta());
+              if (mult < 1 && typeof patch.current.hp === "number") {
+                const gained = patch.current.hp - ch.current.hp;
+                const reduced = Math.floor(gained * mult);
+                safePatch = {
+                  ...patch,
+                  current: { ...patch.current, hp: ch.current.hp + reduced },
+                };
+
               set({
                 combatLog: [
                   {
@@ -1623,6 +1639,7 @@ export const usePlatis = create<AppState>()(
             effects: initializeWorldBossEffects(bossId),
           wendigoMeta: bossId === "wendigo" ? emptyWendigoMeta() : undefined,
           tsuchigumoMeta: bossId === "tsuchigumo" ? emptyTsuchigumoMeta() : undefined,
+          camazotzMeta: bossId === "camazotz" ? emptyCamazotzMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1736,6 +1753,11 @@ export const usePlatis = create<AppState>()(
           turnNotes = adv.notes;
           // stash for set
           (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
+        }
+        if (!executingMasterAction && combat.bossId === "camazotz") {
+          const adv = camazotzOnTurnAdvance(combat.camazotzMeta || emptyCamazotzMeta());
+          turnNotes = turnNotes.concat(adv.notes);
+          (combat as any)._camaMeta = adv.meta;
         }
         if (!executingMasterAction && combat.bossId === "wendigo") {
           const adv = wendigoOnTurnAdvance(combat.wendigoMeta || emptyWendigoMeta());
@@ -2060,6 +2082,71 @@ export const usePlatis = create<AppState>()(
                       })),
                       {
                         id: uid("lg"), at: Date.now(), kind: "system",
+                        text: "O World Boss usa " + skillExecution.skill.name + ".",
+                      },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+              if (combat.bossId === "camazotz" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.camazotzMeta || emptyCamazotzMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id,
+                  hp: c.current.hp,
+                  maxHp: finalStats(c).hp,
+                  bleeding: get().combatStatusEffects.some((e) => e.id === "bleeding" && e.targetId === c.id),
+                }));
+                const resolved = resolveCamazotzSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  for (const b of resolved.bleeds) {
+                    get().applyCombatStatusEffect("bleeding", b.targetId, {
+                      duration: b.duration,
+                      stacks: b.stacks || 1,
+                      sourceId: "world-boss",
+                    });
+                  }
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp,
+                        mp: resolved.bossMp,
+                        est: resolved.bossEst,
+                      },
+                      camazotzMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
+                      })),
+                      {
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
