@@ -15,6 +15,13 @@ import {
   camazotzOnTurnAdvance,
   camazotzPlayerHealMult,
   type CamazotzMeta,
+  emptyAmmitMeta,
+  resolveAmmitSkill,
+  ammitOnTurnAdvance,
+  ammitRegisterHitTaken,
+  ammitIncomingDamageMult,
+  addWeight as ammitAddWeight,
+  type AmmitMeta,
 } from "@/data/world-boss-kits";
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
@@ -155,6 +162,7 @@ export type WorldBossCombatState = {
   wendigoMeta?: WendigoMeta;
   tsuchigumoMeta?: TsuchigumoMeta;
   camazotzMeta?: CamazotzMeta;
+  ammitMeta?: AmmitMeta;
 };
 export type MesaTab =
   | "personagem"
@@ -1643,6 +1651,7 @@ export const usePlatis = create<AppState>()(
           wendigoMeta: bossId === "wendigo" ? emptyWendigoMeta() : undefined,
           tsuchigumoMeta: bossId === "tsuchigumo" ? emptyTsuchigumoMeta() : undefined,
           camazotzMeta: bossId === "camazotz" ? emptyCamazotzMeta() : undefined,
+          ammitMeta: bossId === "ammit" ? emptyAmmitMeta() : undefined,
             cooldowns: [],
       affinityReactionBlocks: [],
           },
@@ -1756,6 +1765,11 @@ export const usePlatis = create<AppState>()(
           turnNotes = adv.notes;
           // stash for set
           (combat as { _tsuchiAdv?: typeof adv })._tsuchiAdv = adv;
+        }
+        if (!executingMasterAction && combat.bossId === "ammit") {
+          const adv = ammitOnTurnAdvance(combat.ammitMeta || emptyAmmitMeta());
+          turnNotes = (typeof turnNotes !== "undefined" ? turnNotes : []).concat(adv.notes);
+          (combat as any)._ammitMeta = adv.meta;
         }
         if (!executingMasterAction && combat.bossId === "camazotz") {
           const adv = camazotzOnTurnAdvance(combat.camazotzMeta || emptyCamazotzMeta());
@@ -2087,6 +2101,57 @@ export const usePlatis = create<AppState>()(
                         id: uid("lg"), at: Date.now(), kind: "system",
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
+                      ...get().combatLog,
+                    ].slice(0, 80),
+                  });
+                }
+              }
+
+              if (combat.bossId === "ammit" && skillExecution) {
+                const wb = get().worldBossCombat!;
+                const meta = wb.ammitMeta || emptyAmmitMeta();
+                const alive = combat.turnOrder
+                  .filter((id) => id !== "world-boss")
+                  .map((id) => get().characters[id])
+                  .filter((c) => c && c.current.hp > 0);
+                const targets = alive.map((c) => ({
+                  id: c.id, hp: c.current.hp, maxHp: finalStats(c).hp,
+                }));
+                const resolved = resolveAmmitSkill(skillExecution.skill.name, {
+                  level: combat.level,
+                  baseStats: bossLevel.stats,
+                  meta,
+                  bossHp: wb.current.hp,
+                  bossMp: wb.current.mp,
+                  bossEst: wb.current.est,
+                  primaryTargetId: targetId,
+                  targets,
+                  rollDie,
+                });
+                if (resolved) {
+                  for (const id of resolved.immobilizes) {
+                    get().applyCombatStatusEffect("immobilize", id, { duration: 1, sourceId: "world-boss" });
+                  }
+                  for (const d of resolved.damages) {
+                    const ch = get().characters[d.targetId];
+                    if (!ch) continue;
+                    get().patchCharacter(d.targetId, {
+                      current: { ...ch.current, hp: Math.max(0, ch.current.hp - d.damage) },
+                    });
+                  }
+                  set({
+                    worldBossCombat: {
+                      ...get().worldBossCombat!,
+                      current: {
+                        ...get().worldBossCombat!.current,
+                        hp: resolved.bossHp, mp: resolved.bossMp, est: resolved.bossEst,
+                      },
+                      ammitMeta: resolved.meta,
+                      cooldowns: skillExecution.cooldowns,
+                    },
+                    combatLog: [
+                      ...resolved.notes.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system" as const, text })),
+                      { id: uid("lg"), at: Date.now(), kind: "system" as const, text: "O World Boss usa " + skillExecution.skill.name + "." },
                       ...get().combatLog,
                     ].slice(0, 80),
                   });
@@ -2503,7 +2568,17 @@ export const usePlatis = create<AppState>()(
         let nextHp = Math.max(0, combat.current.hp - damage);
         let wendigoMeta = combat.wendigoMeta;
         let shieldNote = "";
-        if (hit && damage > 0 && combat.bossId === "wendigo") {
+        if (hit && damage > 0 && combat.bossId === "ammit") {
+          let meta = ammitRegisterHitTaken(combat.ammitMeta || emptyAmmitMeta());
+          const mult = ammitIncomingDamageMult(meta);
+          const reduced = Math.max(0, Math.floor(damage * mult));
+          // weight on attacker for dealing damage
+          meta = addWeight(meta, characterId, 1);
+          nextHp = Math.max(0, combat.current.hp - reduced);
+          wendigoMeta = undefined as never;
+          (combat as any)._ammitAfterHit = meta;
+          shieldNote = mult < 1 ? " (Corpo de Rocha)" : "";
+        } else if (hit && damage > 0 && combat.bossId === "wendigo") {
           const meta = combat.wendigoMeta || emptyWendigoMeta();
           const absorbed = wendigoAbsorbShield(meta, damage);
           wendigoMeta = absorbed.meta;
