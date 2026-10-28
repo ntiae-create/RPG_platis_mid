@@ -1,5 +1,8 @@
 import type { Character, Stats } from "@/data/types";
 
+export type PassiveMetaValue = string | number | boolean | null | undefined;
+export type PassiveMeta = Record<string, PassiveMetaValue>;
+
 export type PassiveOrigin = "race" | "class" | "personal";
 
 export type PassiveTrigger =
@@ -22,7 +25,7 @@ export type PassiveRuntimeEntry = {
   maxStacks: number | null;
   turnsRemaining: number | null;
   active: boolean;
-  meta: Record<string, string | number | boolean>;
+  meta: PassiveMeta;
 };
 
 export type PassiveCombatState = {
