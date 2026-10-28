@@ -1,6 +1,6 @@
 import type { Character, Stats } from "@/data/types";
 
-export type PassiveOrigin = "race" | "class" | "personal";
+export type PassiveOrigin = "race" | "class" | "personal" | "character";
 
 export type PassiveTrigger =
   | "combat_start"
