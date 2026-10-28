@@ -1,6 +1,5 @@
 /**
  * Regras mecânicas das passivas de classe oficiais (src/data/classes.ts).
- * Implementation lives in class-rules-impl.ts.
  */
 export {
   classBerserkAtkBonus,
@@ -25,6 +24,8 @@ export {
   classTankAllyDefBonus,
   classBufaoExtremistBonusDamage,
   classMongeOnHit,
+} from "./class-rules-a";
+export {
   classDuelistaOnHit,
   classGladiadorSetAdversary,
   classGladiadorOnHit,
@@ -47,6 +48,8 @@ export {
   classBufferHealerOnSupport,
   classPaladinoCombatStart,
   classPaladinoShareDamage,
+} from "./class-rules-b";
+export {
   classBruxoOnSkill,
   classRoninOnTurnStart,
   classRoninConsume,
@@ -69,4 +72,4 @@ export {
   classMarioneteSetLink,
   classArmadilheiroTrigger,
   classIlusionistaOnHit,
-} from "./class-rules-impl";
+} from "./class-rules-c";
