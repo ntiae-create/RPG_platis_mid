@@ -165,7 +165,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ataques e habilidades possuem 20% de chance de causar Stun no alvo.",
     },
-    base: s(30, 30, 35, 100, 3, 7, 6, 9, 10, 15),
+    base: s(30, 30, 35, 100, 5, 8, 5, 9, 8, 15),
   },
 
   {
@@ -183,7 +183,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ataques e habilidades possuem 40% de chance de causar Stun no alvo.",
     },
-    base: s(29, 33, 35, 100, 3, 8, 5, 9, 12, 16),
+    base: s(29, 33, 35, 100, 5, 8, 5, 9, 9, 16),
   },
 
   {
@@ -201,7 +201,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ao ficar com 50% ou menos de HP, recebe +2 AGI até o fim do combate.",
     },
-    base: s(37, 18, 45, 90, 9, 3, 7, 6, 10, 10),
+    base: s(37, 18, 45, 90, 9, 3, 7, 6, 12, 13),
   },
 
   {
@@ -219,7 +219,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ao ficar com 50% ou menos de HP, recebe +3 ATK até o fim do combate.",
     },
-    base: s(42, 16, 50, 80, 11, 2, 6, 5, 9, 6),
+    base: s(42, 16, 50, 80, 12, 2, 8, 6, 10, 8),
   },
 
   {
@@ -237,7 +237,7 @@ export const RACES: RaceDef[] = [
       description:
         "Recebe 10% menos dano físico.",
     },
-    base: s(40, 20, 42, 90, 7, 3, 10, 7, 6, 10),
+    base: s(40, 20, 42, 90, 9, 5, 12, 10, 8, 10),
   },
 
   {
@@ -255,7 +255,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ataques possuem 20% de chance de aplicar um Selo do Além, reduzindo em 10% a recuperação de HP do alvo durante 2 turnos.",
     },
-    base: s(28, 36, 32, 100, 3, 8, 5, 10, 9, 14),
+    base: s(28, 36, 32, 100, 5, 9, 6, 13, 9, 19),
   },
 
   {
@@ -291,7 +291,7 @@ export const RACES: RaceDef[] = [
       description:
         "Possui 20% de chance de ignorar completamente um efeito negativo recebido.",
     },
-    base: s(34, 28, 38, 70, 8, 7, 6, 6, 9, 12),
+    base: s(40, 30, 40, 120, 13, 8, 8, 10, 9, 22),
   },
 
   {
@@ -309,7 +309,7 @@ export const RACES: RaceDef[] = [
       description:
         "Possui 20% de chance de refletir um efeito negativo recebido de volta ao inimigo que o aplicou.",
     },
-    base: s(33, 32, 36, 110, 5, 8, 7, 10, 7, 15),
+    base: s(30, 40, 40, 120, 8, 13, 8, 10, 9, 22),
   },
 
   {
@@ -327,7 +327,7 @@ export const RACES: RaceDef[] = [
       description:
         "Enquanto estiver em terreno natural, recupera 2% do HP máximo por turno.",
     },
-    base: s(30, 34, 32, 100, 3, 9, 6, 9, 8, 14),
+    base: s(30, 45, 38, 160, 4, 11, 7, 9, 9, 17),
   },
 
   {
@@ -345,7 +345,7 @@ export const RACES: RaceDef[] = [
       description:
         "Quando houver pelo menos 1 aliado próximo, recebe +2 AGI.",
     },
-    base: s(36, 18, 44, 85, 8, 3, 6, 6, 12, 10),
+    base: s(40, 25, 45, 130, 13, 6, 8, 8, 13, 15),
   },
 
   {
@@ -363,7 +363,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ao receber um ataque que reduziria seu HP para 50% ou menos, recebe +2 DEF até o fim do combate.",
     },
-    base: s(40, 16, 38, 95, 7, 3, 12, 8, 4, 10),
+    base: s(40, 16, 38, 95, 7, 3, 15, 12, 4, 20),
   },
 
   {
@@ -381,7 +381,7 @@ export const RACES: RaceDef[] = [
       description:
         "FERA COVARDE — Ao entrar na batalha, todo personagem com nível inferior ou igual ao do Orc perde -1 de todos os atributos.",
     },
-    base: s(44, 14, 46, 75, 12, 2, 8, 5, 6, 6),
+    base: s(44, 14, 46, 75, 10, 2, 10, 8, 6, 6),
   },
 
   {
@@ -399,7 +399,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ao atacar um inimigo com 50% ou menos de HP, causa +20% de dano.",
     },
-    base: s(26, 20, 40, 80, 6, 4, 4, 5, 14, 12),
+    base: s(26, 20, 40, 80, 6, 4, 4, 5, 9, 16),
   },
 
   {
@@ -417,7 +417,7 @@ export const RACES: RaceDef[] = [
       description:
         "Inimigos próximos ao Oni sofrem -2 DEF enquanto ele estiver em combate.",
     },
-    base: s(42, 22, 40, 70, 10, 5, 7, 6, 7, 8),
+    base: s(45, 20, 50, 110, 14, 5, 10, 8, 12, 14),
   },
 
   {
@@ -435,7 +435,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ataques básicos possuem 20% de chance de causar Stun.",
     },
-    base: s(50, 12, 48, 85, 14, 2, 10, 4, 3, 6),
+    base: s(50, 25, 55, 110, 15, 5, 17, 17, 4, 10),
   },
 
   {
@@ -453,7 +453,7 @@ export const RACES: RaceDef[] = [
       description:
         "No início da batalha, recebe +2 em um atributo aleatório.",
     },
-    base: s(38, 24, 40, 80, 8, 6, 7, 7, 8, 10),
+    base: s(40, 30, 45, 80, 10, 10, 10, 10, 10, 10),
   },
 
   {
@@ -471,7 +471,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ao ser derrotado, o Homúnculo não morre nem concede XP. Fica em Stun. Ao ser tocado por qualquer personagem, é reativado e retorna ao combate.",
     },
-    base: s(28, 30, 35, 50, 5, 8, 8, 8, 6, 16),
+    base: s(30, 30, 60, 200, 5, 8, 8, 8, 6, 16),
   },
 
   // ========================================================
@@ -493,7 +493,7 @@ export const RACES: RaceDef[] = [
       description:
         "Sempre que acertar um inimigo, aplica 1 Marca Dracônica nesse alvo, até o máximo de 5 marcas. Ao atingir 5 marcas no mesmo alvo, todas são consumidas e o Dragonoide ativa o Efeito da Morte, causando dano adicional igual à soma do dano final de todos os ataques que geraram essas marcas, incluindo críticos e modificadores. Em seguida, ativa a Fúria do Dragão: recebe +2 em todos os atributos até o fim da batalha e ganha afinidade Fogo temporariamente. Se já possuir outra afinidade, mantém ambas ao mesmo tempo.",
     },
-    base: s(46, 24, 42, 90, 12, 8, 10, 8, 6, 12),
+    base: s(75, 54, 72, 194, 21, 16, 20, 17, 18, 30),
   },
 
   {
@@ -523,7 +523,7 @@ export const RACES: RaceDef[] = [
       description:
         "Seus ataques aplicam 1 Marca Umbral no alvo. Ao atingir 3 Marcas, elas são consumidas e o alvo fica Cego por 1 turno.",
     },
-    base: s(32, 36, 38, 70, 6, 10, 5, 9, 14, 14),
+    base: s(66, 80, 69, 210, 17, 21, 15, 16, 20, 32),
   },
 
   // ========================================================
@@ -545,7 +545,7 @@ export const RACES: RaceDef[] = [
       description:
         "O Vampiro possui 3 Blood para acumular. Cada uma de suas 3 habilidades base possui um efeito Blood, concedendo 1 Blood ao ser utilizada. Ao alcançar 3 Blood, atinge seu estado máximo de regeneração, mantendo o Roubo de Vida máximo pelo restante da partida. Enquanto estiver nesse estado, ataques básicos que causarem Sangramento recuperam 50% do dano causado em HP.",
     },
-    base: s(36, 30, 40, 60, 9, 8, 6, 8, 11, 13),
+    base: s(72, 71, 66, 205, 19, 19, 15, 17, 19, 42),
   },
 
   {
@@ -575,7 +575,7 @@ export const RACES: RaceDef[] = [
       description:
         "Ao entrar na batalha, entra imediatamente em Frenesi, mas mantém controle total de suas ações. Recebe +2 AGI e +2 ATK.",
     },
-    base: s(28, 38, 36, 90, 4, 10, 5, 10, 14, 16),
+    base: s(60, 89, 80, 203, 17, 17, 15, 19, 21, 43),
   },
 
   // ========================================================
@@ -617,7 +617,7 @@ export const RACES: RaceDef[] = [
       },
     ],
 
-    base: s(40, 40, 40, 100, 10, 10, 10, 10, 16, 20),
+    base: s(110, 110, 110, 250, 25, 20, 21, 21, 22, 50),
   },
 
   {
@@ -655,7 +655,7 @@ export const RACES: RaceDef[] = [
       },
     ],
 
-    base: s(38, 48, 45, 110, 8, 15, 8, 14, 18, 24),
+    base: s(110, 110, 110, 250, 20, 25, 21, 20, 23, 50),
   },
 ];
 
