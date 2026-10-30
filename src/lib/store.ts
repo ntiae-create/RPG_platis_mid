@@ -938,6 +938,34 @@ function executeWorldBossSkill(
   };
 }
 
+function applyCharacterXpProgression(
+  character: Character,
+  amount: number,
+): { next: Character; gained: number } {
+  let xp = character.xp + amount;
+  const next = { ...character, xp };
+  let gained = 0;
+  const maxLevel = next.isMaster ? 999 : 150;
+
+  while (next.level < maxLevel && xp >= xpToNextLevel(next.level)) {
+    xp -= xpToNextLevel(next.level);
+    next.level += 1;
+    next.attrPoints += 3;
+    next.allocated = {
+      ...next.allocated,
+      san: (next.allocated.san ?? 0) + 2,
+    };
+    if (next.level % 5 === 0) next.poolPoints += 8;
+    gained += 1;
+  }
+
+  next.xp = xp;
+  const stats = finalStats(next);
+  next.current = { ...next.current, san: stats.san };
+
+  return { next, gained };
+}
+
 export const usePlatis = create<AppState>()(
   persist(
     (set, get) => ({
@@ -1042,13 +1070,68 @@ export const usePlatis = create<AppState>()(
       grantNpcXp: (id, amount) => {
         const npc = get().npcs[id];
         if (!npc || !Number.isFinite(amount) || amount <= 0) return;
+
+        const xpAmount = Math.floor(amount);
+        if (xpAmount <= 0) return;
+
         if (npc.npcSourceCharacterId) {
-          get().grantXp(npc.npcSourceCharacterId, Math.floor(amount));
+          const sourceId = npc.npcSourceCharacterId;
+          if (!get().characters[sourceId]) return;
+
+          get().grantXp(sourceId, xpAmount);
+
+          const updatedCharacter = get().characters[sourceId];
+          if (!updatedCharacter) return;
+
+          set((s) => {
+            const currentNpc = s.npcs[id];
+            if (!currentNpc) return s;
+
+            return {
+              npcs: {
+                ...s.npcs,
+                [id]: {
+                  ...currentNpc,
+                  ...updatedCharacter,
+                  id,
+                  isMaster: currentNpc.isMaster,
+                  npcSourceCharacterId: sourceId,
+                },
+              },
+            };
+          });
           return;
         }
-        set((s) => ({
-          npcs: { ...s.npcs, [id]: { ...npc, xp: npc.xp + Math.floor(amount) } },
-        }));
+
+        let gained = 0;
+        let finalLevel = npc.level;
+
+        set((s) => {
+          const currentNpc = s.npcs[id];
+          if (!currentNpc) return s;
+
+          const result = applyCharacterXpProgression(currentNpc, xpAmount);
+          gained = result.gained;
+          finalLevel = result.next.level;
+
+          return {
+            npcs: {
+              ...s.npcs,
+              [id]: result.next,
+            },
+          };
+        });
+
+        if (gained > 0) {
+          set((s) => ({
+            combatLog: [{
+              id: uid("lg"),
+              at: Date.now(),
+              kind: "xp" as const,
+              text: `${npc.name} sobe ${gained} nível(is) → Nv. ${finalLevel}.`,
+            }, ...s.combatLog].slice(0, 80),
+          }));
+        }
       },
       publishCharacterAsNpc: (characterId) => set((s) => {
         const character = s.characters[characterId];
@@ -1364,22 +1447,10 @@ export const usePlatis = create<AppState>()(
       grantXp: (characterId, amount) => {
         const ch = get().characters[characterId];
         if (!ch) return;
-        let xp = ch.xp + amount;
-        const next = { ...ch, xp };
-        let gained = 0;
-        const maxLevel = next.isMaster ? 999 : 150;
-        while (next.level < maxLevel && xp >= xpToNextLevel(next.level)) {
-          xp -= xpToNextLevel(next.level);
-          next.level += 1;
-          next.attrPoints += 3;
-          next.allocated = { ...next.allocated, san: (next.allocated.san ?? 0) + 2 };
-          if (next.level % 5 === 0) next.poolPoints += 8;
-          gained += 1;
-        }
-        next.xp = xp;
-        const stats = finalStats(next);
-        next.current = { ...next.current, san: stats.san };
+
+        const { next, gained } = applyCharacterXpProgression(ch, amount);
         get().patchCharacter(characterId, next);
+
         if (gained) {
           set({
             combatLog: [
