@@ -20,8 +20,8 @@ function readPayload(name) {
     i += 1;
   }
   if (!out) {
-    console.error("[expand] missing payload", name);
-    process.exit(1);
+    console.warn("[expand] missing payload (optional)", name);
+    return null;
   }
   return out;
 }
@@ -40,6 +40,7 @@ function expand(name, outRel, force = false) {
     }
   }
   const b64 = readPayload(name);
+  if (!b64) return;
   const src = inflateSync(Buffer.from(b64, "base64")).toString("utf8");
   writeFileSync(outPath, src);
   console.log("[expand] wrote", outRel, `(${src.length} bytes)`);
