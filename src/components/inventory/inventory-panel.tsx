@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { inventorySlots, MYSTERY_BOX_SILVER, STAT_LABELS } from "@/data/progression";
 import type { StatKey } from "@/data/types";
 import { usePlatis } from "@/lib/store";
+import { NegotiationsPanel } from "@/components/trade/negotiations-panel";
 
 const EQUIP = ["arma", "armadura", "botas", "reliquia", "colar"] as const;
 
@@ -22,6 +23,7 @@ export function InventoryPanel() {
   const pool: StatKey[] = ["hp", "mp", "est"];
 
   return (
+    <div className="space-y-6">
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="panel p-4">
         <h2 className="font-display text-2xl">Equipamento</h2>
@@ -138,6 +140,14 @@ export function InventoryPanel() {
           ))}
         </ul>
       </div>
+    </div>
+      <section className="panel p-4">
+        <h2 className="font-display text-2xl">Negociações</h2>
+        <p className="mb-3 text-xs text-muted">
+          Troca e envio de itens entre personagens da mesa.
+        </p>
+        <NegotiationsPanel />
+      </section>
     </div>
   );
 }
