@@ -40,69 +40,7 @@ expand("src__lib__trade__engine.ts.b64", "src/lib/trade/engine.ts", ["applyTrade
 expand("src__components__trade__negotiations-panel.tsx.b64", "src/components/trade/negotiations-panel.tsx", ["NegotiationsPanel"]);
 expand("scripts__trade-engine.test.mjs.b64", "scripts/trade-engine.test.mjs", ["trade engine"]);
 
-const mesaPath = join(root, "src/routes/mesa.tsx");
-if (existsSync(mesaPath)) {
-  let m = readFileSync(mesaPath, "utf8");
-  if (!m.includes("NegotiationsPanel")) {
-    m = m.replace(
-      'import { InventoryPanel } from "@/components/inventory/inventory-panel";',
-      'import { InventoryPanel } from "@/components/inventory/inventory-panel";\nimport { NegotiationsPanel } from "@/components/trade/negotiations-panel";',
-    );
-    m = m.replace(
-      'import type { SkillP2PMessage } from "@/lib/multiplayer/skill-events";',
-      'import type { SkillP2PMessage } from "@/lib/multiplayer/skill-events";\nimport type { TradeP2PMessage } from "@/lib/trade/types";',
-    );
-    m = m.replace(
-      '{tab === "inventario" && <InventoryPanel />}',
-      '{tab === "inventario" && <InventoryPanel />}\n      {tab === "negociacoes" && <NegotiationsPanel />}',
-    );
-    if (!m.includes("trade-upsert")) {
-      const marker = 'console.log("[Mesa P2P] mensagem:", from, channel, data);';
-      const tradeBlock = `if (channel === "reliable" && typeof data === "object" && data !== null && "type" in data) {
-          const tradeMsg = data as TradeP2PMessage;
-          if (tradeMsg.type === "trade-upsert") {
-            usePlatis.getState().upsertTradeProposal(tradeMsg.proposal);
-          }
-          if (tradeMsg.type === "trade-accept") {
-            usePlatis.getState().acceptTradeProposal(tradeMsg.tradeId);
-          }
-          if (tradeMsg.type === "trade-reject") {
-            usePlatis.getState().rejectTradeProposal(tradeMsg.tradeId);
-          }
-          if (tradeMsg.type === "trade-cancel") {
-            usePlatis.getState().cancelTradeProposal(tradeMsg.tradeId);
-          }
-        }
-
-        ` + marker;
-      if (m.includes(marker)) m = m.replace(marker, tradeBlock);
-    }
-    if (!m.includes("platis-trade")) {
-      const idx = m.indexOf('window.removeEventListener("platis-skill-decision"');
-      if (idx >= 0) {
-        const end = m.indexOf("}, [", idx);
-        const end2 = m.indexOf(");\n", end);
-        const fx = `
-
-  useEffect(() => {
-    const handleTrade = (event: Event) => {
-      const customEvent = event as CustomEvent<TradeP2PMessage>;
-      if (!customEvent.detail || !p2pRef.current) return;
-      p2pRef.current.broadcast(customEvent.detail);
-    };
-    window.addEventListener("platis-trade", handleTrade);
-    return () => window.removeEventListener("platis-trade", handleTrade);
-  }, []);
-`;
-        m = m.slice(0, end2 + 3) + fx + m.slice(end2 + 3);
-      }
-    }
-    writeFileSync(mesaPath, m);
-    console.log("[expand-trade] patched mesa.tsx");
-  } else {
-    console.log("[expand-trade] skip mesa.tsx");
-  }
-}
+// Negociações: UI vive no InventoryPanel (não há aba de topo nem patch em mesa.tsx).
 
 const apply = spawnSync(process.execPath, [join(root, "scripts/apply-trade-to-store.mjs")], {
   cwd: root,
@@ -111,3 +49,11 @@ const apply = spawnSync(process.execPath, [join(root, "scripts/apply-trade-to-st
 if (apply.stdout) process.stdout.write(apply.stdout);
 if (apply.stderr) process.stderr.write(apply.stderr);
 if (apply.status !== 0) process.exit(apply.status ?? 1);
+
+const invPatch = spawnSync(process.execPath, [join(root, "scripts/patch-inventory-negotiations.mjs")], {
+  cwd: root,
+  encoding: "utf8",
+});
+if (invPatch.stdout) process.stdout.write(invPatch.stdout);
+if (invPatch.stderr) process.stderr.write(invPatch.stderr);
+if (invPatch.status !== 0) process.exit(invPatch.status ?? 1);
