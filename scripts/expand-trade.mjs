@@ -35,6 +35,7 @@ function expand(name, outRel, mustContain) {
   console.log("[expand-trade] wrote", outRel, src.length);
 }
 
+expand("apply-trade-to-store.mjs.b64", "scripts/apply-trade-to-store.mjs", ["apply-trade"]);
 expand("src__lib__trade__engine.ts.b64", "src/lib/trade/engine.ts", ["applyTradeTransfer"]);
 expand("src__components__trade__negotiations-panel.tsx.b64", "src/components/trade/negotiations-panel.tsx", ["NegotiationsPanel"]);
 expand("scripts__trade-engine.test.mjs.b64", "scripts/trade-engine.test.mjs", ["trade engine"]);
