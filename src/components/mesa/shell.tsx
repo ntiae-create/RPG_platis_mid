@@ -8,7 +8,6 @@ import {
   Swords,
   UserRound,
   Users,
-  ArrowLeftRight,
 } from "lucide-react";
 import type { MesaTab } from "@/lib/store";
 import { usePlatis } from "@/lib/store";
@@ -22,7 +21,6 @@ const TABS: { id: MesaTab; label: string; icon: typeof Map; master?: boolean }[]
   { id: "config-combate", label: "Config. Combate", icon: Settings2, master: true },
   { id: "habilidades", label: "Habilidades", icon: ScrollText },
   { id: "inventario", label: "Inventário", icon: Backpack },
-  { id: "negociacoes", label: "Negociações", icon: ArrowLeftRight },
   { id: "mundo", label: "Mundo", icon: Dices },
   { id: "mesa", label: "Mesa", icon: Users, master: true },
 ];
