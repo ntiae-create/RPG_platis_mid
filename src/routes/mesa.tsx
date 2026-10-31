@@ -20,6 +20,51 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/mesa")({ component: MesaPage });
 
+
+function createCombatSyncSnapshot() {
+  const s = usePlatis.getState();
+  const ids = new Set([
+    ...s.combatParticipants,
+    ...s.combatOrder,
+    ...s.combatXpParticipants,
+    ...s.combatNpcIds,
+    ...Object.keys(s.combatEnemies),
+    ...(s.attackerId ? [s.attackerId] : []),
+    ...(s.defenderId ? [s.defenderId] : []),
+  ]);
+
+  return {
+    combatActive: s.combatActive,
+    combatMode: s.combatMode,
+    combatParticipants: s.combatParticipants,
+    combatXpParticipants: s.combatXpParticipants,
+    combatNpcIds: s.combatNpcIds,
+    combatPositions: s.combatPositions,
+    allowBossEscape: s.allowBossEscape,
+    attackerId: s.attackerId,
+    defenderId: s.defenderId,
+    combatEnemies: s.combatEnemies,
+    combatStatusEffects: s.combatStatusEffects,
+    combatPassiveState: s.combatPassiveState,
+    combatArena: s.combatArena,
+    worldBossCombat: s.worldBossCombat,
+    worldBossId: s.worldBossId,
+    combatOrder: s.combatOrder,
+    combatTurnIndex: s.combatTurnIndex,
+    combatRound: s.combatRound,
+    combatLog: s.combatLog,
+    lastRoll: s.lastRoll,
+    pendingCounter: s.pendingCounter,
+    combatXpAward: s.combatXpAward,
+    characters: Object.fromEntries(
+      [...ids].filter(id => s.characters[id]).map(id => [id, s.characters[id]])
+    ),
+    npcs: Object.fromEntries(
+      [...ids].filter(id => s.npcs[id]).map(id => [id, s.npcs[id]])
+    ),
+  };
+}
+
 function MesaPage() {
   return (
     <PersistGate>
@@ -75,6 +120,13 @@ function Mesa() {
             peerId,
           );
         }
+        if (role === "mestre" && usePlatis.getState().combatActive) {
+          p2pRef.current?.send({
+            type: "combat-sync",
+            snapshot: createCombatSyncSnapshot(),
+          }, peerId);
+        }
+
         const currentCharacter = selfId
           ? usePlatis.getState().characters[selfId]
           : null;
@@ -89,6 +141,63 @@ function Mesa() {
       },
       onPeersChanged: (peers) => { setP2pPeers(peers); console.log("[Mesa P2P] peers:", peers); },
       onMessage: (from, data, channel) => {
+        if (
+          channel === "reliable" &&
+          typeof data === "object" &&
+          data !== null &&
+          "type" in data &&
+          data.type === "combat-sync" &&
+          role !== "mestre"
+        ) {
+          const message = data as {
+            type: "combat-sync";
+            snapshot: Record<string, any>;
+          };
+
+          const masterPeer = p2pRef.current?.peerList().find(
+            peer => peer.id === from && peer.role === "mestre"
+          );
+
+          if (masterPeer && message.snapshot) {
+            const snapshot = message.snapshot;
+
+            usePlatis.setState(current => ({
+              combatActive: snapshot.combatActive,
+              combatMode: snapshot.combatMode,
+              combatParticipants: snapshot.combatParticipants,
+              combatXpParticipants: snapshot.combatXpParticipants,
+              combatNpcIds: snapshot.combatNpcIds,
+              combatPositions: snapshot.combatPositions,
+              allowBossEscape: snapshot.allowBossEscape,
+              attackerId: snapshot.attackerId,
+              defenderId: snapshot.defenderId,
+              combatEnemies: snapshot.combatEnemies,
+              combatStatusEffects: snapshot.combatStatusEffects,
+              combatPassiveState: snapshot.combatPassiveState,
+              combatArena: snapshot.combatArena,
+              worldBossCombat: snapshot.worldBossCombat,
+              worldBossId: snapshot.worldBossId,
+              combatOrder: snapshot.combatOrder,
+              combatTurnIndex: snapshot.combatTurnIndex,
+              combatRound: snapshot.combatRound,
+              combatLog: snapshot.combatLog,
+              lastRoll: snapshot.lastRoll,
+              pendingCounter: snapshot.pendingCounter,
+              combatXpAward: snapshot.combatXpAward,
+              characters: {
+                ...current.characters,
+                ...snapshot.characters,
+              },
+              npcs: {
+                ...current.npcs,
+                ...snapshot.npcs,
+              },
+              tab: snapshot.combatActive ? "combate" : current.tab,
+            }));
+
+            console.log("[Mesa P2P] combate sincronizado do Mestre");
+          }
+        }
           if (channel === "reliable" && typeof data === "object" && data !== null && "type" in data && (data.type === "skill-submitted" || data.type === "skill-decision")) {
             const message = data as SkillP2PMessage;
 
@@ -236,6 +345,72 @@ function Mesa() {
     if (role !== "mestre" || !p2pRef.current) return;
     p2pRef.current.send({ type: "quests-sync", quests });
   }, [quests, role, p2pConnected]);
+
+  useEffect(() => {
+    if (role !== "mestre" || !p2pConnected || !p2pRef.current) return;
+
+    let previous = "";
+
+    const publishCombat = (state: ReturnType<typeof usePlatis.getState>) => {
+      const ids = new Set([
+        ...state.combatParticipants,
+        ...state.combatOrder,
+        ...state.combatXpParticipants,
+        ...state.combatNpcIds,
+        ...Object.keys(state.combatEnemies),
+        ...(state.attackerId ? [state.attackerId] : []),
+        ...(state.defenderId ? [state.defenderId] : []),
+      ]);
+
+      const snapshot = {
+        combatActive: state.combatActive,
+        combatMode: state.combatMode,
+        combatParticipants: state.combatParticipants,
+        combatXpParticipants: state.combatXpParticipants,
+        combatNpcIds: state.combatNpcIds,
+        combatPositions: state.combatPositions,
+        allowBossEscape: state.allowBossEscape,
+        attackerId: state.attackerId,
+        defenderId: state.defenderId,
+        combatEnemies: state.combatEnemies,
+        combatStatusEffects: state.combatStatusEffects,
+        combatPassiveState: state.combatPassiveState,
+        combatArena: state.combatArena,
+        worldBossCombat: state.worldBossCombat,
+        worldBossId: state.worldBossId,
+        combatOrder: state.combatOrder,
+        combatTurnIndex: state.combatTurnIndex,
+        combatRound: state.combatRound,
+        combatLog: state.combatLog,
+        lastRoll: state.lastRoll,
+        pendingCounter: state.pendingCounter,
+        combatXpAward: state.combatXpAward,
+        characters: Object.fromEntries(
+          [...ids].filter(id => state.characters[id]).map(id => [id, state.characters[id]])
+        ),
+        npcs: Object.fromEntries(
+          [...ids].filter(id => state.npcs[id]).map(id => [id, state.npcs[id]])
+        ),
+      };
+
+      const serialized = JSON.stringify(snapshot);
+      if (serialized === previous) return;
+      previous = serialized;
+
+      p2pRef.current?.send({
+        type: "combat-sync",
+        snapshot,
+      });
+    };
+
+    publishCombat(usePlatis.getState());
+
+    const unsubscribe = usePlatis.subscribe(state => {
+      publishCombat(state);
+    });
+
+    return unsubscribe;
+  }, [role, p2pConnected]);
 
   const slots = usePlatis((s) => s.slots);
   const characters = usePlatis((s) => s.characters);
