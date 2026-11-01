@@ -71,6 +71,8 @@ import {
 import { getCharacterKit, getKitSkill } from "@/data/character-kits";
 import { rollDie } from "@/lib/utils";
 import { parseSkillCommands, normalizeSkillPercent } from "./skill-command-runtime";
+import type { TradeProposal, TradeCurrencyOffer, TradeKind } from "./trade/types";
+import { applyTradeTransfer, buildOfferFromInventory, currencyTotal } from "./trade/engine";
 import {
   blockAffinityReaction,
   isAffinityReactionBlocked,
@@ -495,6 +497,18 @@ type AppState = {
   discardItem: (itemId: string) => void;
   useItem: (itemId: string) => void;
   grantItem: (characterId: string, item: InventoryItem) => void;
+  trades: TradeProposal[];
+  createTradeProposal: (input: {
+    kind: TradeKind;
+    toCharacterId: string;
+    fromItems: { itemId: string; qty: number }[];
+    toItems?: { itemId: string; qty: number }[];
+    fromCurrency?: TradeCurrencyOffer;
+    toCurrency?: TradeCurrencyOffer;
+  }) => string | null;
+  acceptTradeProposal: (tradeId: string) => boolean;
+  rejectTradeProposal: (tradeId: string) => void;
+  cancelTradeProposal: (tradeId: string) => void;
   addShopListing: (item: InventoryItem) => void;
   removeShopListing: (itemId: string) => void;
   buyFromShop: (characterId: string, itemId: string) => boolean;
@@ -522,6 +536,7 @@ function empty(): Pick<
   | "selfId"
   | "characters"
   | "npcs"
+  | "trades"
   | "shopCatalog"
   | "combatNpcIds"
   | "slots"
@@ -571,6 +586,7 @@ function empty(): Pick<
     selfId: null,
     characters: {},
     npcs: {},
+    trades: [],
     shopCatalog: [],
     combatNpcIds: [],
     slots: Array.from({ length: 8 }, () => null),
@@ -1032,7 +1048,7 @@ export const usePlatis = create<AppState>()(
             san: npc.current.san,
           },
           skills: Array.isArray(npc.skills) ? npc.skills.map((sk) => ({ ...sk })) : [],
-          image: npc.portrait || undefined,
+          image: npc.image || undefined,
         };
         const combatEnemies = { ...s.combatEnemies, [id]: enemy };
         let combatParticipants = s.combatParticipants;
@@ -1051,7 +1067,7 @@ export const usePlatis = create<AppState>()(
           combatLog: [{
             id: uid("lg"),
             at: Date.now(),
-            kind: "system",
+            kind: "system" as const,
             text: npc.name + " entrou como INIMIGO no combate.",
           }, ...s.combatLog].slice(0, 80),
         });
@@ -1326,7 +1342,7 @@ export const usePlatis = create<AppState>()(
                     {
                       id: uid("lg"),
                       at: Date.now(),
-                      kind: "system",
+                      kind: "system" as const,
                       text: ch.name + ": Vazio Interior bloqueia cura (HP < 25%).",
                     },
                     ...get().combatLog,
@@ -1692,7 +1708,7 @@ export const usePlatis = create<AppState>()(
 
         // Homunculo: tocado = adjacente (manhattan 1) enquanto stun de Corpo Artificial
         const s = get();
-        const logs = [];
+        const logs: CombatLogEntry[] = [];
         for (const hid of s.combatParticipants) {
           const h = s.characters[hid];
           if (!h || h.raceId !== "homunculo") continue;
@@ -1708,7 +1724,7 @@ export const usePlatis = create<AppState>()(
           const r = raceHomunculusTryReactivate(h, true);
           if (r.ok) {
             get().removeCombatStatusEffect("stun", hid);
-            logs.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: h.name+": "+(r.note||"reativado") });
+            logs.push({ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: h.name+": "+(r.note||"reativado") });
           }
         }
         if (logs.length) set({ combatLog: [...logs, ...get().combatLog].slice(0, 80) });
@@ -1890,12 +1906,12 @@ export const usePlatis = create<AppState>()(
           }
         }
 
-        let turnNotes = [];
+        let turnNotes: string[] = [];
         let wendigoMetaTurn = combat.wendigoMeta;
         if (!executingMasterAction && combat.bossId === "tsuchigumo") {
           const adv = tsuchiOnTurnAdvance(
             combat.tsuchigumoMeta || emptyTsuchigumoMeta(),
-            bossLevelSafeEst(combat),
+            combat.level,
           );
           // apply silk DoT + EST regen below after set — store notes
           turnNotes = adv.notes;
@@ -2073,7 +2089,7 @@ export const usePlatis = create<AppState>()(
                   ...turnNotes.map((text) => ({
                     id: uid("lg"),
                     at: Date.now(),
-                    kind: "system",
+                    kind: "system" as const,
                     text,
                   })),
                   ...get().combatLog,
@@ -2368,10 +2384,10 @@ export const usePlatis = create<AppState>()(
                     },
                     combatLog: [
                       ...resolved.notes.map((text) => ({
-                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
                       })),
                       {
-                        id: uid("lg"), at: Date.now(), kind: "system",
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2423,10 +2439,10 @@ export const usePlatis = create<AppState>()(
                     },
                     combatLog: [
                       ...resolved.notes.map((text) => ({
-                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
                       })),
                       {
-                        id: uid("lg"), at: Date.now(), kind: "system",
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2513,10 +2529,10 @@ export const usePlatis = create<AppState>()(
                     },
                     combatLog: [
                       ...resolved.notes.map((text) => ({
-                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
                       })),
                       {
-                        id: uid("lg"), at: Date.now(), kind: "system",
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2568,10 +2584,10 @@ export const usePlatis = create<AppState>()(
                     },
                     combatLog: [
                       ...resolved.notes.map((text) => ({
-                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
                       })),
                       {
-                        id: uid("lg"), at: Date.now(), kind: "system",
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2623,10 +2639,10 @@ export const usePlatis = create<AppState>()(
                     },
                     combatLog: [
                       ...resolved.notes.map((text) => ({
-                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
                       })),
                       {
-                        id: uid("lg"), at: Date.now(), kind: "system",
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2678,10 +2694,10 @@ export const usePlatis = create<AppState>()(
                     },
                     combatLog: [
                       ...resolved.notes.map((text) => ({
-                        id: uid("lg"), at: Date.now(), kind: "system", text,
+                        id: uid("lg"), at: Date.now(), kind: "system" as const, text,
                       })),
                       {
-                        id: uid("lg"), at: Date.now(), kind: "system",
+                        id: uid("lg"), at: Date.now(), kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2740,13 +2756,13 @@ export const usePlatis = create<AppState>()(
                       ...resolved.notes.map((text) => ({
                         id: uid("lg"),
                         at: Date.now(),
-                        kind: "system",
+                        kind: "system" as const,
                         text,
                       })),
                       {
                         id: uid("lg"),
                         at: Date.now(),
-                        kind: "system",
+                        kind: "system" as const,
                         text: "O World Boss usa " + skillExecution.skill.name + ".",
                       },
                       ...get().combatLog,
@@ -2977,8 +2993,8 @@ export const usePlatis = create<AppState>()(
                       cooldowns: skillExecution.cooldowns,
                     },
                     combatLog: [
-                      ...resolved.notes.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system", text })),
-                      { id: uid("lg"), at: Date.now(), kind: "system", text: "O World Boss usa " + skillExecution.skill.name + "." },
+                      ...resolved.notes.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system" as const, text })),
+                      { id: uid("lg"), at: Date.now(), kind: "system" as const, text: "O World Boss usa " + skillExecution.skill.name + "." },
                       ...get().combatLog,
                     ].slice(0, 80),
                   });
@@ -3269,7 +3285,7 @@ export const usePlatis = create<AppState>()(
           const mult = ammitIncomingDamageMult(meta);
           const reduced = Math.max(0, Math.floor(damage * mult));
           // weight on attacker for dealing damage
-          meta = addWeight(meta, characterId, 1);
+          meta = ammitAddWeight(meta, characterId, 1);
           nextHp = Math.max(0, combat.current.hp - reduced);
           wendigoMeta = undefined as never;
           (combat as any)._ammitAfterHit = meta;
@@ -3485,7 +3501,7 @@ export const usePlatis = create<AppState>()(
         classCavaleiroArmInvestida(st, ch);
         set({
           combatPassiveState: st,
-          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Investida armada (+50% próximo ataque)" }, ...s.combatLog].slice(0, 80),
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": Investida armada (+50% próximo ataque)" }, ...s.combatLog].slice(0, 80),
         });
       },
 
@@ -3498,7 +3514,7 @@ export const usePlatis = create<AppState>()(
         const tname = (s.characters[targetId]||s.combatEnemies[targetId])?.name || targetId;
         set({
           combatPassiveState: st,
-          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Adversário = "+tname }, ...s.combatLog].slice(0, 80),
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": Adversário = "+tname }, ...s.combatLog].slice(0, 80),
         });
       },
 
@@ -3510,7 +3526,7 @@ export const usePlatis = create<AppState>()(
         classArtificeSetProject(st, ch, tier);
         set({
           combatPassiveState: st,
-          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Projeto "+tier }, ...s.combatLog].slice(0, 80),
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": Projeto "+tier }, ...s.combatLog].slice(0, 80),
         });
       },
 
@@ -3524,7 +3540,7 @@ export const usePlatis = create<AppState>()(
         const ratio = maxHp > 0 ? target.current.hp / maxHp : 1;
         const r = classCronomanteTryRewind(st, ch, ratio);
         if (!r.ok) {
-          set({ combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Retrocesso indisponível" }, ...s.combatLog].slice(0, 80) });
+          set({ combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": Retrocesso indisponível" }, ...s.combatLog].slice(0, 80) });
           return;
         }
         // simplificação: cura 40% do HP máximo (proxy do snapshot do turno anterior)
@@ -3532,7 +3548,7 @@ export const usePlatis = create<AppState>()(
         get().patchCharacter(targetId, { current: { ...target.current, hp: Math.min(maxHp, target.current.hp + heal) } });
         set({
           combatPassiveState: st,
-          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "passive", text: ch.name+": "+(r.note||"Retrocesso")+" em "+target.name+" (+"+heal+" HP)" }, ...s.combatLog].slice(0, 80),
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: ch.name+": "+(r.note||"Retrocesso")+" em "+target.name+" (+"+heal+" HP)" }, ...s.combatLog].slice(0, 80),
         });
       },
 
@@ -3544,7 +3560,7 @@ export const usePlatis = create<AppState>()(
         const note = classPaladinoCombatStart(st, ch, allyId);
         set({
           combatPassiveState: st,
-          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": "+(note||"Juramento") }, ...s.combatLog].slice(0, 80),
+          combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": "+(note||"Juramento") }, ...s.combatLog].slice(0, 80),
         });
       },
 
@@ -3554,7 +3570,7 @@ export const usePlatis = create<AppState>()(
         if (!ch || ch.classId !== "domador") return;
         const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
         classDomadorSetBond(st, ch, creatureId);
-        set({ combatPassiveState: st, combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Laço Bestial" }, ...s.combatLog].slice(0, 80) });
+        set({ combatPassiveState: st, combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": Laço Bestial" }, ...s.combatLog].slice(0, 80) });
       },
 
       setMarioneteLink: (characterId, linkedId) => {
@@ -3563,7 +3579,7 @@ export const usePlatis = create<AppState>()(
         if (!ch || ch.classId !== "mestre-de-marionetes") return;
         const st = { ...s.combatPassiveState, entries: s.combatPassiveState.entries.map((e) => ({ ...e, meta: { ...e.meta } })) };
         classMarioneteSetLink(st, ch, linkedId);
-        set({ combatPassiveState: st, combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: ch.name+": Fio vinculado" }, ...s.combatLog].slice(0, 80) });
+        set({ combatPassiveState: st, combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: ch.name+": Fio vinculado" }, ...s.combatLog].slice(0, 80) });
       },
 
       assimilateTarget: (doppelId, targetId) => {
@@ -3709,6 +3725,38 @@ export const usePlatis = create<AppState>()(
             tickPassiveDurations(passives, nextId);
             const actorCh = nextCharacters[nextId];
             if (actorCh) {
+              const kit = getCharacterKit(actorCh);
+              if (kit?.onPassiveTurn) {
+                const kitTurnLogs: string[] = [];
+                kit.onPassiveTurn({
+                  self: actorCh,
+                  allyIds: currentState.combatParticipants.filter(
+                    (pid) => Boolean(nextCharacters[pid]),
+                  ),
+                  turnInCombat: currentState.combatRound,
+                  passiveState: passives,
+                  applyStatus: (effectId, targetId, options) =>
+                    get().applyCombatStatusEffect(effectId, targetId, {
+                      ...options,
+                      sourceId: actorCh.id,
+                    }),
+                  log: (text) => kitTurnLogs.push(text),
+                });
+                if (kitTurnLogs.length) {
+                  currentState = {
+                    ...currentState,
+                    combatLog: [
+                      ...kitTurnLogs.map((text) => ({
+                        id: uid("lg"),
+                        at: Date.now(),
+                        kind: "system" as const,
+                        text,
+                      })),
+                      ...currentState.combatLog,
+                    ].slice(0, 80),
+                  };
+                }
+              }
               classBufaoOnTurn(passives, actorCh);
               const dop = raceDoppelOnTurn(passives, actorCh);
               {
@@ -4062,7 +4110,7 @@ export const usePlatis = create<AppState>()(
             combatLog: [...s.combatLog, {
               id: uid("log"),
               at: Date.now(),
-              kind: "system",
+              kind: "system" as const,
               text: `${target.name} está protegido contra debuffs por Limpeza.`,
             }],
           });
@@ -4077,7 +4125,7 @@ export const usePlatis = create<AppState>()(
               combatLog: [{
                 id: uid("lg"),
                 at: Date.now(),
-                kind: "passive",
+                kind: "passive" as const,
                 text: `${targetChar.name}: Sorte Feérica — debuff anulado/convertido`,
               }, ...s.combatLog].slice(0, 80),
             });
@@ -4171,7 +4219,7 @@ export const usePlatis = create<AppState>()(
           combatLog: [...s.combatLog, {
             id: uid("log"),
             at: Date.now(),
-            kind: "system",
+            kind: "system" as const,
             text: `${definition.name} aplicado em ${target.name}.`,
           }],
         });
@@ -4213,7 +4261,7 @@ export const usePlatis = create<AppState>()(
           combatLog: [{
             id: uid("lg"),
             at: Date.now(),
-            kind: "system",
+            kind: "system" as const,
             text: full.name + " (inimigo) adicionado ao combate.",
           }, ...s.combatLog].slice(0, 80),
         });
@@ -4378,13 +4426,13 @@ export const usePlatis = create<AppState>()(
             cur.mp -= kSkill.cost.mp;
             cur.est -= kSkill.cost.est;
             if (cur.hp < 0 || cur.mp < 0 || cur.est < 0) {
-              set({ combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system", text: "Recursos insuficientes para "+kSkill.name }, ...get().combatLog].slice(0,80) });
+              set({ combatLog: [{ id: uid("lg"), at: Date.now(), kind: "system" as const, text: "Recursos insuficientes para "+kSkill.name }, ...get().combatLog].slice(0,80) });
               return;
             }
             get().patchCharacter(atk.id, { current: cur });
             const allyIds = get().combatParticipants.filter((id) => Boolean(get().characters[id]));
             const enemyIds = get().combatParticipants.filter((id) => Boolean(get().combatEnemies[id]));
-            const logs = [];
+            const logs: string[] = [];
             kit.resolveSkill(kSkill.id, {
               attacker: get().characters[atk.id],
               allyIds,
@@ -4420,7 +4468,7 @@ export const usePlatis = create<AppState>()(
             if (logs.length) {
               set({
                 combatLog: [
-                  ...logs.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system", text })),
+                  ...logs.map((text) => ({ id: uid("lg"), at: Date.now(), kind: "system" as const, text })),
                   ...get().combatLog,
                 ].slice(0, 80),
                 combatPassiveState: get().combatPassiveState,
@@ -4460,31 +4508,31 @@ export const usePlatis = create<AppState>()(
           if (atk.classId === "bruxo") {
             const r = classBruxoOnSkill(st, atk, skill.type==="ataque"||skill.type==="ataque-magico");
             if (r.hpCost) get().patchCharacter(atk.id,{current:{...get().characters[atk.id].current,hp:Math.max(1,get().characters[atk.id].current.hp-r.hpCost)}});
-            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:r.note},...get().combatLog].slice(0,80)});
             if (r.mult!==1) res.damage=Math.round(res.damage*r.mult);
           }
           if (atk.classId === "alquimista-sombrio") {
             const r = classAlquimistaSombrioOnSkill(st, atk, true);
-            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:r.note},...get().combatLog].slice(0,80)});
             if (r.mult!==1) res.damage=Math.round(res.damage*r.mult);
           }
           if (atk.classId === "elementalista") {
             const r = classElementalistaOnSkill(st, atk, atk.affinityId);
-            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+            if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:r.note},...get().combatLog].slice(0,80)});
             if (r.mult!==1) res.damage=Math.round(res.damage*r.mult);
           }
-          if (skill.type==="suporte"||skill.type==="cura"||skill.type==="buff") {
+          if (skill.type === "heal" || skill.type === "buff") {
             if (atk.classId==="clerigo") {
               const r=classClerigoOnSupport(st,atk);
-              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:r.note},...get().combatLog].slice(0,80)});
             }
             if (atk.classId==="bardo") {
               const r=classBardoOnSupport(st,atk);
-              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:r.note},...get().combatLog].slice(0,80)});
             }
             if (atk.classId==="buffer-healer") {
               const r=classBufferHealerOnSupport(st,atk);
-              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:r.note},...get().combatLog].slice(0,80)});
+              if(r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:r.note},...get().combatLog].slice(0,80)});
             }
           }
 
@@ -4601,7 +4649,7 @@ export const usePlatis = create<AppState>()(
             res.log.push({
               id: uid("lg"),
               at: Date.now(),
-              kind: "passive",
+              kind: "passive" as const,
               text: lazuli.note.includes("Efeito da Morte")
                 ? `${lazuli.note} contra ${def.name}.`
                 : `Lazuli: ${def.name} recebe a Marca Dracônica (${lazuli.mark?.stacks ?? 0}/5).`,
@@ -4611,7 +4659,7 @@ export const usePlatis = create<AppState>()(
             res.log.push({
               id: uid("lg"),
               at: Date.now(),
-              kind: "passive",
+              kind: "passive" as const,
               text: `Lazuli — Fúria do Dragão: ${atk.name} recebe +2 em todos os atributos e afinidade Fogo temporária até o fim da batalha.`,
             });
           }
@@ -4664,7 +4712,7 @@ export const usePlatis = create<AppState>()(
               res.log.push({
                 id: uid("lg"),
                 at: Date.now(),
-                kind: "passive",
+                kind: "passive" as const,
                 text: applied.note ?? `${def.name} permanece com 1 HP (Criação Indesejada).`,
               });
             }
@@ -4684,7 +4732,7 @@ export const usePlatis = create<AppState>()(
                 res.log.push({
                   id: uid("lg"),
                   at: Date.now(),
-                  kind: "passive",
+                  kind: "passive" as const,
                   text: `${def.name}: ${note}`,
                 });
                 set({ combatPassiveState: get().combatPassiveState });
@@ -4701,7 +4749,7 @@ export const usePlatis = create<AppState>()(
                   res.log.push({
                     id: uid("lg"),
                     at: Date.now(),
-                    kind: "passive",
+                    kind: "passive" as const,
                     text: `${def.name}: ${umbralNote}`,
                   });
                   set({ combatPassiveState: get().combatPassiveState });
@@ -4716,12 +4764,12 @@ export const usePlatis = create<AppState>()(
                 const amt = Math.max(1, parseInt(String(mirNote).split(":")[1], 10) || 1);
                 const appliedM = applyDamage(atk, amt);
                 get().patchCharacter(atk.id, { current: appliedM.ch.current });
-                res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Espelho devolve "+amt+" em "+atk.name });
+                res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: def.name+": Espelho devolve "+amt+" em "+atk.name });
               }
             }
             if ("raceId" in def && def.raceId === "kitsune") {
               const kt = raceKitsuneOnDamageTaken(get().combatPassiveState, applied.ch, Math.max(0, hpBefore - applied.ch.current.hp));
-              for (const n of kt.notes) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+n });
+              for (const n of kt.notes) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: def.name+": "+n });
               if (kt.releaseDamage > 0) {
                 const enemies = get().combatParticipants.filter((pid) => {
                   if (pid === def.id) return false;
@@ -4742,25 +4790,25 @@ export const usePlatis = create<AppState>()(
                     const en = get().combatEnemies[pid];
                     if (en) {
                       const nh = Math.max(0, en.current.hp - each);
-                      get().removeCombatEnemy && null;
+                      /* remoção não necessária: o HP é atualizado abaixo */;
                       set({
                         combatEnemies: {
                           ...get().combatEnemies,
                           [pid]: { ...en, current: { ...en.current, hp: nh } },
                         },
                       });
-                      res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Cauda → "+en.name+" -"+each });
+                      res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: def.name+": Cauda → "+en.name+" -"+each });
                     }
                   }
                 } else {
-                  res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": Caudas liberam "+kt.releaseDamage+" (sem alvos)" });
+                  res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: def.name+": Caudas liberam "+kt.releaseDamage+" (sem alvos)" });
                 }
               }
               set({ combatPassiveState: get().combatPassiveState });
             }
             if ("raceId" in def && def.raceId === "doppelganger") {
-              const dnote = raceDoppelCheckDesperation(get().combatPassiveState, applied.ch, maxHp);
-              if (dnote) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive", text: def.name+": "+dnote });
+              const dnote = raceDoppelCheckDesperation(get().combatPassiveState, applied.ch, finalStats(applied.ch).hp);
+              if (dnote) res.log.push({ id: uid("lg"), at: Date.now(), kind: "passive" as const, text: def.name+": "+dnote });
             }
 
             get().patchCharacter(def.id, { current: applied.ch.current });
@@ -4776,8 +4824,8 @@ export const usePlatis = create<AppState>()(
                   if (sh.share>0) {
                     const p2 = applyDamage(pc, sh.share);
                     get().patchCharacter(pid,{current:p2.ch.current});
-                    res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+" assume "+sh.share+" (Juramento)"});
-                    if (sh.note) res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+": "+sh.note});
+                    res.log.push({id:uid("lg"),at:Date.now(),kind:"passive" as const,text:pc.name+" assume "+sh.share+" (Juramento)"});
+                    if (sh.note) res.log.push({id:uid("lg"),at:Date.now(),kind:"passive" as const,text:pc.name+": "+sh.note});
                   }
                 }
                 if (pc.classId==="domador") {
@@ -4785,12 +4833,12 @@ export const usePlatis = create<AppState>()(
                   if (sh.share>0 && sh.creatureId) {
                     const cr = get().characters[sh.creatureId]||get().combatEnemies[sh.creatureId];
                     // log only if creature exists
-                    res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+" Laço: "+sh.share+" → vínculo"});
+                    res.log.push({id:uid("lg"),at:Date.now(),kind:"passive" as const,text:pc.name+" Laço: "+sh.share+" → vínculo"});
                   }
                 }
                 if (pc.classId==="mestre-de-marionetes" && pid===atk.id) {
                   const sh = classMarioneteShareToLinked(st, pid, dealt);
-                  if (sh.share>0) res.log.push({id:uid("lg"),at:Date.now(),kind:"passive",text:pc.name+" Fios: "+sh.share+" → alvo vinculado"});
+                  if (sh.share>0) res.log.push({id:uid("lg"),at:Date.now(),kind:"passive" as const,text:pc.name+" Fios: "+sh.share+" → alvo vinculado"});
                 }
               }
             }
@@ -4803,7 +4851,7 @@ export const usePlatis = create<AppState>()(
                 res.log.push({
                   id: uid("lg"),
                   at: Date.now(),
-                  kind: "passive",
+                  kind: "passive" as const,
                   text: `${tank.name} (Muralha) assume ${tankShare} de dano de ${def.name}`,
                 });
               }
@@ -4829,7 +4877,7 @@ export const usePlatis = create<AppState>()(
                   res.log.push({
                     id: uid("lg"),
                     at: Date.now(),
-                    kind: "passive",
+                    kind: "passive" as const,
                     text: `${atk.name}: Blood Hugh rouba ${heal} HP (requer sangramento)`,
                   });
                 }
@@ -5057,12 +5105,12 @@ export const usePlatis = create<AppState>()(
                   const heal = Math.max(1, Math.floor(r.healPool / Math.max(1,get().combatParticipants.filter(id=>get().characters[id]?.current.hp>0).length)));
                   get().patchCharacter(pid,{current:{...ally.current,hp:Math.min(maxHp,ally.current.hp+heal)}});
                 }
-                set({combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:killer.name+": "+r.note},...get().combatLog].slice(0,80)});
+                set({combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:killer.name+": "+r.note},...get().combatLog].slice(0,80)});
               }
             }
             if (killer?.classId === "necromante") {
               const r = classNecromanteOnKill(st, killer);
-              if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive",text:killer.name+": "+r.note},...get().combatLog].slice(0,80)});
+              if (r.note) set({combatPassiveState:st,combatLog:[{id:uid("lg"),at:Date.now(),kind:"passive" as const,text:killer.name+": "+r.note},...get().combatLog].slice(0,80)});
             }
           }
           const nextParticipants = get().combatParticipants.filter(
@@ -5597,7 +5645,7 @@ export const usePlatis = create<AppState>()(
         if (!item || item.qty < 1) return;
         const match = item.effect && item.effect.match(/^potion:(hp|mp|est|san):(\d+)$/i);
         if (!match) return;
-        const stat = match[1].toLowerCase();
+        const stat = match[1].toLowerCase() as "hp" | "mp" | "est" | "san";
         const amount = Math.max(0, Number(match[2]) || 0);
         if (amount <= 0) return;
         const maximum = finalStats(ch)[stat];
@@ -5622,7 +5670,7 @@ export const usePlatis = create<AppState>()(
           combatLog: [{
             id: uid("lg"),
             at: Date.now(),
-            kind: "heal",
+            kind: "heal" as const,
             text: ch.name + " recuperou HP/MP/EST/SAN completos.",
           }, ...get().combatLog].slice(0, 80),
         });
@@ -5640,6 +5688,110 @@ export const usePlatis = create<AppState>()(
         };
         if (s.characters[characterId]) get().patchCharacter(characterId, { currency });
         if (s.npcs[characterId]) get().updateNpc(characterId, { currency });
+      },
+
+
+      createTradeProposal: (input) => {
+        const state = get();
+        const fromId = state.selfId;
+        if (!fromId || fromId === input.toCharacterId) return null;
+        const from = state.characters[fromId];
+        const to = state.characters[input.toCharacterId];
+        if (!from || !to) return null;
+
+        const fromItems = [];
+        for (const row of input.fromItems) {
+          const offer = buildOfferFromInventory(from.inventory, row.itemId, row.qty);
+          if (!offer) return null;
+          fromItems.push(offer);
+        }
+
+        const toItems = [];
+        if (input.kind === "trade") {
+          for (const row of input.toItems ?? []) {
+            const offer = buildOfferFromInventory(to.inventory, row.itemId, row.qty);
+            if (!offer) return null;
+            toItems.push(offer);
+          }
+        }
+
+        if (fromItems.length === 0 && currencyTotal(input.fromCurrency ?? {}) === 0) return null;
+
+        const proposal: TradeProposal = {
+          id: uid("tr"),
+          kind: input.kind,
+          status: "pending",
+          fromCharacterId: fromId,
+          toCharacterId: input.toCharacterId,
+          fromItems,
+          toItems: input.kind === "gift" ? [] : toItems,
+          fromCurrency: input.fromCurrency ?? {},
+          toCurrency: input.kind === "gift" ? {} : (input.toCurrency ?? {}),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        set((st) => ({ trades: [proposal, ...st.trades].slice(0, 100) }));
+        return proposal.id;
+      },
+
+      acceptTradeProposal: (tradeId) => {
+        const state = get();
+        const proposal = state.trades.find((trade) => trade.id === tradeId);
+        if (!proposal || proposal.status !== "pending" || state.selfId !== proposal.toCharacterId) return false;
+
+        const from = state.characters[proposal.fromCharacterId];
+        const to = state.characters[proposal.toCharacterId];
+        if (!from || !to) return false;
+
+        const result = applyTradeTransfer(from, to, proposal);
+        if (!result.ok) {
+          set((st) => ({
+            trades: st.trades.map((trade) =>
+              trade.id === tradeId
+                ? { ...trade, status: "failed", failReason: result.reason, updatedAt: Date.now() }
+                : trade
+            ),
+          }));
+          return false;
+        }
+
+        get().patchCharacter(result.from.id, {
+          inventory: result.from.inventory,
+          currency: result.from.currency,
+        });
+        get().patchCharacter(result.to.id, {
+          inventory: result.to.inventory,
+          currency: result.to.currency,
+        });
+        set((st) => ({
+          trades: st.trades.map((trade) =>
+            trade.id === tradeId ? { ...trade, status: "accepted", updatedAt: Date.now() } : trade
+          ),
+        }));
+        return true;
+      },
+
+      rejectTradeProposal: (tradeId) => {
+        const state = get();
+        const proposal = state.trades.find((trade) => trade.id === tradeId);
+        if (!proposal || proposal.status !== "pending" || state.selfId !== proposal.toCharacterId) return;
+        set((st) => ({
+          trades: st.trades.map((trade) =>
+            trade.id === tradeId ? { ...trade, status: "rejected", updatedAt: Date.now() } : trade
+          ),
+        }));
+      },
+
+      cancelTradeProposal: (tradeId) => {
+        const state = get();
+        const proposal = state.trades.find((trade) => trade.id === tradeId);
+        if (!proposal || proposal.status !== "pending" || state.selfId !== proposal.fromCharacterId) return;
+        set((st) => ({
+          trades: st.trades.map((trade) =>
+            trade.id === tradeId ? { ...trade, status: "cancelled", updatedAt: Date.now() } : trade
+          ),
+        }));
       },
 
       addShopListing: (item) => {
@@ -5719,6 +5871,7 @@ export const usePlatis = create<AppState>()(
         combatXpAward: s.combatXpAward,
         chat: s.chat,
         tab: s.tab,
+        trades: s.trades,
       }),
     },
   ),

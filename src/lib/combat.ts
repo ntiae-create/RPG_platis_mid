@@ -142,7 +142,11 @@ export function resolveEnemyAttack(opts: {
   statusEffects?: StatusEffectInstance[];
   attackerRoll?: number;
   defenderRoll?: number;
+  passiveState?: ReturnType<typeof emptyPassiveState>;
 }): CombatResolution {
+  const passiveState = opts.passiveState ?? emptyPassiveState();
+
+
   const notes: string[] = [];
   const logs: CombatLogEntry[] = [];
   const attackerRoll = opts.attackerRoll ?? rollDie(20);
@@ -151,6 +155,8 @@ export function resolveEnemyAttack(opts: {
   const dBase = "raceId" in opts.defender ? finalStats(opts.defender as Character) : opts.defender.stats;
   const aStats = applyCombatStatusStats(aBase, opts.attacker.id, opts.statusEffects);
   const dStats = applyCombatStatusStats(dBase, opts.defender.id, opts.statusEffects);
+
+
 
   logs.push(
     log(
@@ -161,7 +167,7 @@ export function resolveEnemyAttack(opts: {
 
 
   {
-    const mir = raceDoppelMirrorAbsorb(passiveState, opts.defender);
+    const mir = "raceId" in opts.defender ? raceDoppelMirrorAbsorb(passiveState, opts.defender) : { absorb: false, note: null };
     if (mir.absorb) {
       if (mir.note) notes.push(mir.note);
       const reflect = Math.max(1, Math.round((opts.kind === "magical" ? aStats.atkMgc : aStats.atk) * 0.5));
@@ -427,9 +433,9 @@ export function resolveAttack(opts: {
         if (celT !== 1) { damage = Math.round(damage * celT); notes.push("Celeste: -30% corpo a corpo"); }
       }
       {
-        const alq = classAlquimistaOnHit(passiveState, opts.attacker, opts.defender.id);
-        if (alq && alq.note) notes.push(alq.note);
-        if (alq && alq.damageMult && alq.damageMult !== 1) damage = Math.round(damage * alq.damageMult);
+        const targetHasPoison = (opts.statusEffects ?? []).some((e) => e.targetId === opts.defender.id && e.id === "poison" && e.stacks > 0);
+        const alq = "raceId" in opts.attacker ? classAlquimistaOnHit(passiveState, opts.attacker as Character, opts.defender.id, targetHasPoison) : null;
+        if (alq?.notes?.length) notes.push(...alq.notes);
       }
       const taken = defMods.damageTakenMult ?? 1;
       if (taken !== 1) {

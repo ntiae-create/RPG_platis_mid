@@ -672,12 +672,12 @@ export function raceDoppelTryRestore(
 
 
 /** Fae — Sorte Feérica: 20% transformar debuff em buff equivalente */
-export function raceFaeOnNegativeStatus(ch, roll=Math.random){
+export function raceFaeOnNegativeStatus(ch: Character, roll: () => number = Math.random): "apply" | "convert_to_buff" {
   if(ch.raceId!=="fae") return "apply";
   return roll()<0.2 ? "convert_to_buff" : "apply";
 }
 /** Umbral — Forma da Marca do Vazio ao cruzar ≤50% HP (2 turnos intocável) */
-export function raceUmbralCheckForm(state,ch,maxHp,hpBefore,hpAfter){
+export function raceUmbralCheckForm(state: PassiveCombatState, ch: Character, maxHp: number, hpBefore: number, hpAfter: number): string | null {
   if(ch.raceId!=="umbral"||maxHp<=0) return null;
   const th=maxHp*0.5;
   if(!(hpBefore>th && hpAfter<=th)) return null;
@@ -687,7 +687,7 @@ export function raceUmbralCheckForm(state,ch,maxHp,hpBefore,hpAfter){
   return "Forma da Marca do Vazio: intocável por 2 turnos";
 }
 /** True se não pode ser atacado (Umbral forma / Kitsune ilusão) */
-export function raceIsUntargetable(state,characterId){
+export function raceIsUntargetable(state: PassiveCombatState, characterId: string): boolean {
   const u=state.entries.find(e=>e.characterId===characterId&&e.id==="race:umbral:forma"&&e.active);
   if(u&&(u.turnsRemaining==null||u.turnsRemaining>0)) return true;
   const il=state.entries.find(e=>e.characterId===characterId&&e.id==="race:kitsune:ilusao-ativa"&&e.active);
@@ -699,20 +699,20 @@ export function raceIsUntargetable(state,characterId){
 export const DARK_ARENA_IDS = new Set([
   "dark_arena.jpg","night_arena.jpg","void_arena.jpg","cave_arena.jpg","shadow_arena.jpg","umbral_arena.jpg",
 ]);
-export function isDarkTerrain(arenaId){
+export function isDarkTerrain(arenaId: string | null | undefined): boolean {
   if(!arenaId) return false;
   const id=String(arenaId).toLowerCase();
   return DARK_ARENA_IDS.has(arenaId)||id.includes("dark")||id.includes("night")||id.includes("void")||id.includes("cave")||id.includes("shadow");
 }
-export function raceUmbralOnArenaEnter(state,ch,arenaId){
+export function raceUmbralOnArenaEnter(state: PassiveCombatState, ch: Character, arenaId: string | null | undefined): string | null {
   if(ch.raceId!=="umbral"||!isDarkTerrain(arenaId)) return null;
   let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:umbral:corpo");
   if(!e){e={id:"race:umbral:corpo",characterId:ch.id,origin:"race",name:"Corpo Umbral",stacks:1,maxStacks:1,turnsRemaining:1,active:true,meta:{}};state.entries.push(e);}
   e.active=true;e.turnsRemaining=1;
   return "Corpo Umbral: invisível/intocável 1 turno";
 }
-export function raceKitsuneOnDamageTaken(state,ch,damage){
-  const notes=[];
+export function raceKitsuneOnDamageTaken(state: PassiveCombatState, ch: Character, damage: number): { releaseDamage: number; notes: string[] } {
+  const notes: string[] = [];
   if(ch.raceId!=="kitsune"||damage<=0) return {releaseDamage:0,notes};
   let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:kitsune:caudas");
   if(!e){e={id:"race:kitsune:caudas",characterId:ch.id,origin:"race",name:"Caudas Vingativas",stacks:0,maxStacks:9,turnsRemaining:null,active:true,meta:{damageSum:0}};state.entries.push(e);}
@@ -727,7 +727,7 @@ export function raceKitsuneOnDamageTaken(state,ch,damage){
   }
   return {releaseDamage:0,notes};
 }
-export function raceKitsuneCheckDesperation(state,kitsune,allies){
+export function raceKitsuneCheckDesperation(state: PassiveCombatState, kitsune: Character, allies: Array<{ id: string; maxHp: number; hp: number }>): string | null {
   if(kitsune.raceId!=="kitsune") return null;
   const critical=allies.some(a=>a.id!==kitsune.id&&a.maxHp>0&&a.hp>0&&a.hp/a.maxHp<=0.25);
   if(!critical) return null;
@@ -737,7 +737,7 @@ export function raceKitsuneCheckDesperation(state,kitsune,allies){
   e.active=true;e.meta={mult:2.7};
   return "Liberação de Desespero: status x2.7";
 }
-export function raceDoppelCheckDesperation(state,ch,maxHp){
+export function raceDoppelCheckDesperation(state: PassiveCombatState, ch: Character, maxHp: number): string | null {
   if(ch.raceId!=="doppelganger"||maxHp<=0) return null;
   if(ch.current.hp/maxHp>0.2) return null;
   let e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:doppel:desespero");
@@ -746,32 +746,32 @@ export function raceDoppelCheckDesperation(state,ch,maxHp){
   e.active=true;e.meta={mult:2.7,locked:true};
   return "Liberação de Desespero: status x2.7";
 }
-export function raceDesperationStatMult(state,characterId){
+export function raceDesperationStatMult(state: PassiveCombatState, characterId: string): number {
   for(const id of ["race:kitsune:desespero","race:doppel:desespero"]){
     const e=state.entries.find(x=>x.characterId===characterId&&x.id===id&&x.active);
     if(e) return Number(e.meta&&e.meta.mult||2.7);
   }
   return 1;
 }
-export function raceDoppelRoninDamageMult(ch){
+export function raceDoppelRoninDamageMult(ch: Character): { mult: number; note?: string } {
   if(ch.raceId!=="doppelganger"||ch.classId!=="ronin") return {mult:1};
   return {mult:2,note:"Alma Ronin: espirito x2 dano"};
 }
-export function raceDoppelMirrorAbsorb(state,ch){
+export function raceDoppelMirrorAbsorb(state: PassiveCombatState, ch: Character): { absorb: boolean; mirrorReflect?: boolean; note?: string } {
   const e=state.entries.find(x=>x.characterId===ch.id&&x.id==="race:doppel:assimilacao");
   if(!e||!e.meta||!e.meta.assimilating) return {absorb:false};
   if(e.meta.mirrorUsedThisTurn) return {absorb:false};
   e.meta={...e.meta,mirrorUsedThisTurn:true};
   return {absorb:true,mirrorReflect:true,note:"Maldito Espelho: golpe anulado e devolvido"};
 }
-export function raceDoppelMirrorTurnReset(state,characterId){
+export function raceDoppelMirrorTurnReset(state: PassiveCombatState, characterId: string): void {
   const e=state.entries.find(x=>x.characterId===characterId&&x.id==="race:doppel:assimilacao");
   if(e&&e.meta&&e.meta.assimilating) e.meta={...e.meta,mirrorUsedThisTurn:false};
 }
-export function raceKitsuneJokerExtraStack(ch){
+export function raceKitsuneJokerExtraStack(ch: Character): boolean {
   return ch.raceId==="kitsune"&&ch.classId==="bufao";
 }
-export function raceHomunculusTryReactivate(ch,isStunnedNotDead){
+export function raceHomunculusTryReactivate(ch: Character, isStunnedNotDead: boolean): { ok: boolean; note?: string } {
   if(ch.raceId!=="homunculo"||!isStunnedNotDead) return {ok:false};
   return {ok:true,note:"Corpo Artificial: reativado ao ser tocado"};
 }

@@ -1741,18 +1741,18 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
   }
 
   if (section === "store") {
-    const bonusKeys = ["hp","mp","est","san","atk","atkMgc","def","res","agi","int"];
+    const bonusKeys = ["hp","mp","est","san","atk","atkMgc","def","res","agi","int"] as const;
     const rarities = ["R","SR","SSR","UR","UR MÁX.","LR","LR EXTRA"];
     const publishShop = () => {
       if (!shopFormName.trim()) return;
-      const bonus = {};
+      const bonus: Partial<Record<(typeof bonusKeys)[number], number>> = {};
       for (const k of bonusKeys) { if (shopFormBonus[k]) bonus[k] = shopFormBonus[k]; }
       addShopListing({
         id: "shop-" + Date.now(),
         name: shopFormName.trim(),
-        rarity: shopFormRarity,
+        rarity: shopFormRarity as import("@/data/types").ItemRarity,
         category: shopFormCategory,
-        slot: shopFormSlot || undefined,
+        slot: (shopFormSlot || undefined) as "arma" | "armadura" | "botas" | "reliquia" | "colar" | undefined,
         effect: shopFormEffect.trim() || undefined,
         desc: shopFormDesc.trim() || shopFormName.trim(),
         price: Math.max(0, shopFormSilver || shopFormPrice),
@@ -1789,7 +1789,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
           <p className="text-sm font-medium">Bônus de atributos</p>
           <div className="grid grid-cols-2 gap-2">
             {bonusKeys.map((k) => (
-              <label key={k} className="block space-y-1"><span className="text-xs text-muted">{k}</span><input type="number" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={shopFormBonus[k]} onChange={(e) => setShopFormBonus((old) => ({ ...old, [k]: Number(e.target.value) || 0 }))} /></label>
+              <label key={k} className="block space-y-1"><span className="text-xs text-muted">{k}</span><input type="number" className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm" value={(shopFormBonus as Record<string, number>)[k] ?? 0} onChange={(e) => setShopFormBonus((old) => ({ ...old, [k]: Number(e.target.value) || 0 }))} /></label>
             ))}
           </div>
           <Button onClick={publishShop} disabled={!shopFormName.trim()}>Publicar na loja</Button>
