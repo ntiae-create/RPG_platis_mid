@@ -277,14 +277,17 @@ export function PlayerSlots({
   const centerOn = usePlatis((s) => s.centerOn);
   const selectFighter = usePlatis((s) => s.selectFighter);
   const seedDemo = usePlatis((s) => s.seedDemo);
+  const role = usePlatis((s) => s.role);
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-2xl">Oito slots</h2>
-        <Button size="sm" variant="secondary" onClick={seedDemo}>
-          <UserPlus className="size-4" /> Demo
-        </Button>
+        {role === "mestre" && (
+          <Button size="sm" variant="secondary" onClick={seedDemo}>
+            <UserPlus className="size-4" /> Demo
+          </Button>
+        )}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {slots.map((id, i) => {

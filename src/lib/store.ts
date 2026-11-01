@@ -1372,6 +1372,7 @@ export const usePlatis = create<AppState>()(
 
       seedDemo: () => {
         const s = get();
+        if (s.role !== "mestre") return;
         const party = demoParty();
         const characters = { ...s.characters };
         const slots = [...s.slots];
@@ -3311,6 +3312,7 @@ export const usePlatis = create<AppState>()(
 
       startCombat: () => {
         const s = get();
+        if (s.role !== "mestre") return;
 
         const allParticipants = [...new Set([
           ...s.combatParticipants,
@@ -4006,6 +4008,7 @@ export const usePlatis = create<AppState>()(
 
       endCombat: () => {
         const s = get();
+        if (s.role !== "mestre") return;
         if (s.combatMode === "world-boss") return;
 
         const characters = { ...s.characters };

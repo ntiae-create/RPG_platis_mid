@@ -858,10 +858,7 @@ const updateCombatEnemySkill = usePlatis((s) => s.updateCombatEnemySkill);
               Encerrar combate
             </Button>
           ) : (
-            <Button
-              disabled={Object.keys(combatEnemies).length === 0}
-              onClick={startCombat}
-            >
+            <Button onClick={startCombat}>
               Iniciar combate
             </Button>
           )}

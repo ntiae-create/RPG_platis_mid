@@ -36,6 +36,7 @@ export function CombatPanel() {
     ["tsuchigumo_arena.jpg", "Domínio de Tsuchigumo"],
     ["wendigo_arena.jpg", "Domínio de Wendigo"],
   ] as const;
+  const role = usePlatis((s) => s.role);
   const combatActive = usePlatis((s) => s.combatActive);
   const combatMode = usePlatis((s) => s.combatMode);
   const worldBossId = usePlatis((s) => s.worldBossId);
@@ -316,13 +317,23 @@ const nextTurn = usePlatis((s) => s.nextTurn);
             que o do atacante.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button disabled={combatActive} onClick={startCombat}>
-              {combatActive ? "Combate em andamento" : "Iniciar combate"}
-            </Button>
-            {combatActive && (
-              <Button variant="secondary" onClick={() => endCombat()}>
-                Encerrar combate
-              </Button>
+            {role === "mestre" ? (
+              <>
+                <Button disabled={combatActive} onClick={startCombat}>
+                  {combatActive ? "Combate em andamento" : "Iniciar combate"}
+                </Button>
+                {combatActive && (
+                  <Button variant="secondary" onClick={() => endCombat()}>
+                    Encerrar combate
+                  </Button>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted">
+                {combatActive
+                  ? "Combate em andamento — apenas o Mestre controla o início e o fim."
+                  : "Aguardando o Mestre iniciar o combate."}
+              </p>
             )}
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">

@@ -23,12 +23,14 @@ export const Route = createFileRoute("/mesa")({ component: MesaPage });
 
 function createCombatSyncSnapshot() {
   const s = usePlatis.getState();
+  const slotIds = s.slots.filter((id): id is string => Boolean(id));
   const ids = new Set([
     ...s.combatParticipants,
     ...s.combatOrder,
     ...s.combatXpParticipants,
     ...s.combatNpcIds,
     ...Object.keys(s.combatEnemies),
+    ...slotIds,
     ...(s.attackerId ? [s.attackerId] : []),
     ...(s.defenderId ? [s.defenderId] : []),
   ]);
@@ -56,6 +58,7 @@ function createCombatSyncSnapshot() {
     lastRoll: s.lastRoll,
     pendingCounter: s.pendingCounter,
     combatXpAward: s.combatXpAward,
+    slots: s.slots,
     characters: Object.fromEntries(
       [...ids].filter(id => s.characters[id]).map(id => [id, s.characters[id]])
     ),
@@ -120,7 +123,7 @@ function Mesa() {
             peerId,
           );
         }
-        if (role === "mestre" && usePlatis.getState().combatActive) {
+        if (role === "mestre") {
           p2pRef.current?.send({
             type: "combat-sync",
             snapshot: createCombatSyncSnapshot(),
@@ -184,6 +187,7 @@ function Mesa() {
               lastRoll: snapshot.lastRoll,
               pendingCounter: snapshot.pendingCounter,
               combatXpAward: snapshot.combatXpAward,
+              ...(Array.isArray(snapshot.slots) ? { slots: snapshot.slots } : {}),
               characters: {
                 ...current.characters,
                 ...snapshot.characters,
@@ -352,12 +356,14 @@ function Mesa() {
     let previous = "";
 
     const publishCombat = (state: ReturnType<typeof usePlatis.getState>) => {
+      const slotIds = state.slots.filter((id): id is string => Boolean(id));
       const ids = new Set([
         ...state.combatParticipants,
         ...state.combatOrder,
         ...state.combatXpParticipants,
         ...state.combatNpcIds,
         ...Object.keys(state.combatEnemies),
+        ...slotIds,
         ...(state.attackerId ? [state.attackerId] : []),
         ...(state.defenderId ? [state.defenderId] : []),
       ]);
@@ -385,6 +391,7 @@ function Mesa() {
         lastRoll: state.lastRoll,
         pendingCounter: state.pendingCounter,
         combatXpAward: state.combatXpAward,
+        slots: state.slots,
         characters: Object.fromEntries(
           [...ids].filter(id => state.characters[id]).map(id => [id, state.characters[id]])
         ),
