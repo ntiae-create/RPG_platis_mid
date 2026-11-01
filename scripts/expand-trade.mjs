@@ -73,6 +73,14 @@ if (apply.stdout) process.stdout.write(apply.stdout);
 if (apply.stderr) process.stderr.write(apply.stderr);
 if (apply.status !== 0) process.exit(apply.status ?? 1);
 
+const tradesApply = spawnSync(process.execPath, [join(root, "scripts/apply-trades-to-store.mjs")], {
+  cwd: root,
+  encoding: "utf8",
+});
+if (tradesApply.stdout) process.stdout.write(tradesApply.stdout);
+if (tradesApply.stderr) process.stderr.write(tradesApply.stderr);
+if (tradesApply.status !== 0) process.exit(tradesApply.status ?? 1);
+
 const invPatch = spawnSync(process.execPath, [join(root, "scripts/patch-inventory-negotiations.mjs")], {
   cwd: root,
   encoding: "utf8",
